@@ -1,4 +1,4 @@
-# SQL Definition files for idGames Archive Cataloger/Indexer #
+## SQL Definition files for idGames Archive Cataloger/Indexer ##
 
 Right now, only `wadindex.sql`.
 

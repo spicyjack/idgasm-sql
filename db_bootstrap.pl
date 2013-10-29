@@ -32,12 +32,13 @@ our $VERSION = '0.01';
  -i|--input         The input file to read information from
  -o|--output        The output file to write information to
  --create-db        Create a database file using the given INI file
- --create-ini       Create INI file using schema info in database
+ --create-ini       Create an INI file using schema info in database
+ --create-yaml      Create a YAML file using schema info in database
 
  Example usage:
 
  # build a database file using the given INI file
- db_bootstrap.pl --source /path/to/db.ini --create-db
+ db_bootstrap.pl --input /path/to/db.ini --output sample.db --create-db
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
 db_bootstrap.pl>.
@@ -52,8 +53,11 @@ our @options = (
     q(colorize|c), # always colorize output
     # other options
 
-    q(option|o=s),
-    q(some-option),
+    q(output|o=s),
+    q(input|i=s),
+    q(create-db),
+    q(create-ini),
+    q(create-yaml),
 );
 
 =head1 DESCRIPTION
@@ -62,7 +66,7 @@ Creates databases using config specified in INI file.
 
 =head1 OBJECTS
 
-=head2 Template::Config
+=head2 DBBootstrap::Config
 
 An object used for storing configuration data.
 
@@ -71,9 +75,9 @@ An object used for storing configuration data.
 =cut
 
 #############################
-# Template::Config #
+# DBBootstrap::Config #
 #############################
-package Template::Config;
+package DBBootstrap::Config;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -85,7 +89,7 @@ use POSIX qw(strftime);
 
 =item new( )
 
-Creates the L<Template::Config> object, and parses out options using
+Creates the L<DBBootstrap::Config> object, and parses out options using
 L<Getopt::Long>.
 
 =cut
@@ -107,9 +111,6 @@ sub new {
     # assign the args hash to this object so it can be reused later on
     $self->{_args} = \%args;
 
-    # dump and bail if we get called with --help
-    if ( $self->get(q(help)) ) { pod2usage(-exitstatus => 1); }
-
     # return this object to the caller
     return $self;
 }
@@ -117,7 +118,7 @@ sub new {
 =item get($key)
 
 Returns the scalar value of the key passed in as C<key>, or C<undef> if the
-key does not exist in the L<Template::Config> object.
+key does not exist in the L<DBBootstrap::Config> object.
 
 =cut
 
@@ -133,9 +134,9 @@ sub get {
 
 =item set( key => $value )
 
-Sets in the L<Template::Config> object the key/value pair passed in as
+Sets in the L<DBBootstrap::Config> object the key/value pair passed in as
 arguments.  Returns the old value if the key already existed in the
-L<Template::Config> object, or C<undef> otherwise.
+L<DBBootstrap::Config> object, or C<undef> otherwise.
 
 =cut
 
@@ -204,13 +205,20 @@ use strict;
 use warnings;
 use utf8;
 use Carp;
+use Config::Std;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
+use Data::Dumper;
+$Data::Dumper::Indent = 1;
+$Data::Dumper::Sortkeys = 1;
+$Data::Dumper::Terse = 1;
 
     binmode(STDOUT, ":utf8");
-    #my $catalog_file = q(/srv/www/purl/html/Ural_Catalog/UralCatalog.xls);
     # create a logger object
-    my $cfg = Template::Config->new();
+    my $cfg = DBBootstrap::Config->new();
+
+    # dump and bail if we get called with --help
+    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
 
     # Start setting up the Log::Log4perl object
     my $log4perl_conf = qq(log4perl.rootLogger = WARN, Screen\n);
@@ -250,16 +258,28 @@ use Log::Log4perl::Level;
     Log::Log4perl::init( \$log_conf );
     my $log = get_logger("");
 
-    $log->logdie(qq(Missing '--option' file argument))
-        unless ( $cfg->defined(q(option)) );
-    $log->logdie(qq(Can't read option file ) . $cfg->get(q(option)) )
-        unless ( -r $cfg->get(q(option)) );
+    # check input file before doing any processing
+    $log->logdie(qq(Missing '--input' file argument))
+        unless ( $cfg->defined(q(input)) );
+    $log->logdie(qq(Can't read option file ) . $cfg->get(q(input)) )
+        unless ( -r $cfg->get(q(input)) );
 
     # print a nice banner
     $log->info(qq(Starting db_bootstrap.pl, version $VERSION));
     $log->info(qq(My PID is $$));
 
-    # FIXME script guts go here
+    if ( $cfg->defined(q(create-db)) ) {
+        my %config;
+        if ( -r $cfg->get(q(input)) ) {
+            %config = read_config $cfg->get(q(input));
+            print Dumper %config;
+        }
+    } elsif ( $cfg->defined(q(create-yaml)) ) {
+    } elsif ( $cfg->defined(q(create-ini)) ) {
+    } else {
+        $log->logerror(q(Please specify what type of output file to create));
+        pod2usage(-exitstatus => 1);
+    }
 
 =cut
 

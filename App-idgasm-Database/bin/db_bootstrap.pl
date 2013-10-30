@@ -269,9 +269,9 @@ $Data::Dumper::Terse = 1;
     $log->info(qq(My PID is $$));
 
     if ( $cfg->defined(q(create-db)) ) {
-        my %config;
+        my $db_cfg;
         if ( -r $cfg->get(q(input)) ) {
-            %config = read_config $cfg->get(q(input));
+            read_config($cfg->get(q(input) => $db_cfg);
             print Dumper %config;
         }
     } elsif ( $cfg->defined(q(create-yaml)) ) {

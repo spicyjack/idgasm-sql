@@ -2,6 +2,7 @@
 # package App::idgasmDBTools::Config #
 ######################################
 package App::idgasmDBTools::Config;
+
 =head1 App::idgasmDBTools::Config
 
 Configure/manage script options using L<Getopt::Long>.
@@ -34,7 +35,7 @@ has q(options) => (
 
 =over
 
-=item new() (aka BUILD)
+=item BUILD() (aka 'new')
 
 Creates the L<App::idgasmDBTools::Config> object, parses options from the
 command line via L<Getopt::Long>, and returns the object to the caller.

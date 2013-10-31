@@ -66,7 +66,7 @@ Creates databases using config specified in INI file.
 
 =head1 OBJECTS
 
-=head2 DBBootstrap::Config
+=head2 App::idgasmDBTools::Config
 
 An object used for storing configuration data.
 
@@ -74,136 +74,18 @@ An object used for storing configuration data.
 
 =cut
 
-#############################
-# DBBootstrap::Config #
-#############################
-package DBBootstrap::Config;
-use strict;
-use warnings;
-use Getopt::Long;
-use Log::Log4perl;
-use Pod::Usage;
-use POSIX qw(strftime);
-
-=over
-
-=item new( )
-
-Creates the L<DBBootstrap::Config> object, and parses out options using
-L<Getopt::Long>.
-
-=cut
-
-sub new {
-    my $class = shift;
-
-    my $self = bless ({}, $class);
-
-    # script arguments
-    my %args;
-
-    # parse the command line arguments (if any)
-    my $parser = Getopt::Long::Parser->new();
-
-    # pass in a reference to the args hash as the first argument
-    $parser->getoptions( \%args, @options );
-
-    # assign the args hash to this object so it can be reused later on
-    $self->{_args} = \%args;
-
-    # return this object to the caller
-    return $self;
-}
-
-=item get($key)
-
-Returns the scalar value of the key passed in as C<key>, or C<undef> if the
-key does not exist in the L<DBBootstrap::Config> object.
-
-=cut
-
-sub get {
-    my $self = shift;
-    my $key = shift;
-    # turn the args reference back into a hash with a copy
-    my %args = %{$self->{_args}};
-
-    if ( exists $args{$key} ) { return $args{$key}; }
-    return undef;
-}
-
-=item set( key => $value )
-
-Sets in the L<DBBootstrap::Config> object the key/value pair passed in as
-arguments.  Returns the old value if the key already existed in the
-L<DBBootstrap::Config> object, or C<undef> otherwise.
-
-=cut
-
-sub set {
-    my $self = shift;
-    my $key = shift;
-    my $value = shift;
-    # turn the args reference back into a hash with a copy
-    my %args = %{$self->{_args}};
-
-    if ( exists $args{$key} ) {
-        my $oldvalue = $args{$key};
-        $args{$key} = $value;
-        $self->{_args} = \%args;
-        return $oldvalue;
-    } else {
-        $args{$key} = $value;
-        $self->{_args} = \%args;
-    }
-    return undef;
-}
-
-=item defined($key)
-
-Returns "true" (C<1>) if the value for the key passed in as C<key> is
-C<defined>, and "false" (C<0>) if the value is undefined, or the key doesn't
-exist.
-
-=cut
-
-sub defined {
-    my $self = shift;
-    my $key = shift;
-    # turn the args reference back into a hash with a copy
-    my %args = %{$self->{_args}};
-
-    # Can't use Log4perl here, since it hasn't been set up yet
-    if ( exists $args{$key} ) {
-        #warn qq(exists: $key\n);
-        if ( defined $args{$key} ) {
-            #warn qq(defined: $key; ) . $args{$key} . qq(\n);
-            return 1;
-        }
-    }
-    return 0;
-}
-
-=item get_args( )
-
-Returns a hash containing the parsed script arguments.
-
-=cut
-
-sub get_args {
-    my $self = shift;
-    # hash-ify the return arguments
-    return %{$self->{_args}};
-}
-
 ################
 # package main #
 ################
 package main;
+
+# pragmas
 use 5.010;
 use strict;
 use warnings;
 use utf8;
+
+# system packages
 use Carp;
 use Config::Std;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
@@ -213,9 +95,12 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
+# local packages
+use App::idgasmDBTools::Config;
+
     binmode(STDOUT, ":utf8");
     # create a logger object
-    my $cfg = DBBootstrap::Config->new();
+    my $cfg = App::idgasmDBTools::Config->new();
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }

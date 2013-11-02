@@ -90,6 +90,9 @@ use Carp;
 use Config::Std;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
+use Pod::Usage;
+
+# Data::Dumper gets it's own block, cause it has extra baggage
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
@@ -100,7 +103,7 @@ use App::idgasmDBTools::Config;
 
     binmode(STDOUT, ":utf8");
     # create a logger object
-    my $cfg = App::idgasmDBTools::Config->new();
+    my $cfg = App::idgasmDBTools::Config->new(options => \@options);
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
@@ -125,7 +128,7 @@ use App::idgasmDBTools::Config;
             . qq(= Log::Log4perl::Appender::Screen\n);
     }
 
-    $log_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
+    $log4perl_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
         . qq(log4perl.appender.Screen.utf8 = 1\n)
         . qq(log4perl.appender.Screen.layout = PatternLayout\n)
         . q(log4perl.appender.Screen.layout.ConversionPattern )
@@ -140,7 +143,7 @@ use App::idgasmDBTools::Config;
         #. qq(= %d{HH.mm.ss} %p -> %m%n\n);
 
     # create a logger object, and prime the logfile for this session
-    Log::Log4perl::init( \$log_conf );
+    Log::Log4perl::init( \$log4perl_conf );
     my $log = get_logger("");
 
     # check input file before doing any processing
@@ -154,10 +157,20 @@ use App::idgasmDBTools::Config;
     $log->info(qq(My PID is $$));
 
     if ( $cfg->defined(q(create-db)) ) {
-        my $db_cfg;
+        my $db_schema;
         if ( -r $cfg->get(q(input)) ) {
-            read_config($cfg->get(q(input) => $db_cfg);
-            print Dumper %config;
+            read_config($cfg->get(q(input)) => $db_schema);
+            $log->debug(qq(Database schema dump...\n)
+                . qq(==== Database Schema Dump Begins ====\n)
+                . Dumper($db_schema)
+                . q(==== Database Schema Dump Ends ====));
+            my @transactions = keys(%{$db_schema});
+            print qq(Database transaction keys are:\n)
+                . join(qq(\n), @transactions)
+                . qq(\n);
+        } else {
+            $log->logdie(q(Can't read INI file ')
+                . $cfg->get(q(input)) . q('));
         }
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {

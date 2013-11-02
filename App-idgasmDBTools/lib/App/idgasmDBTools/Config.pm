@@ -12,6 +12,7 @@ Configure/manage script options using L<Getopt::Long>.
 use strict;
 use warnings;
 use English qw( -no_match_vars );
+use Getopt::Long;
 use Mouse;
 
 =head2 Attributes

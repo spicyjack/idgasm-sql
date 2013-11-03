@@ -102,6 +102,7 @@ $Data::Dumper::Terse = 1;
 
 # local packages
 use App::idgasmDBTools::Config;
+use App::idgasmDBTools::INIFile;
 
     binmode(STDOUT, ":utf8");
     # create a logger object
@@ -158,24 +159,18 @@ use App::idgasmDBTools::Config;
     $log->info(qq(Starting db_bootstrap.pl, version $VERSION));
     $log->info(qq(My PID is $$));
 
+    my $db_config;
     if ( $cfg->defined(q(create-db)) ) {
-        my $db_schema;
-        if ( -r $cfg->get(q(input)) ) {
-            read_config($cfg->get(q(input)) => $db_schema);
-            $log->debug(qq(Database schema dump...\n)
-                . qq(==== Database Schema Dump Begins ====\n)
-                . Dumper($db_schema)
-                . q(==== Database Schema Dump Ends ====));
-            my @transactions = keys(%{$db_schema});
-            print qq(Database transaction keys are:\n)
-                . join(qq(\n), @transactions)
-                . qq(\n);
+        if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
+            my $parser = App::idgasmDBTools::INIFile->new()
+            $db_config = $parser->read_config(filename => $cfg->get(q(input)));
         } else {
-            $log->logdie(q(Can't read INI file ')
-                . $cfg->get(q(input)) . q('));
+            $log->logdie(q(Don't know how to process file )
+                . $cfg->get(q(input)));
         }
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
+    } elsif ( $cfg->defined(q(checksum)) ) {
     } else {
         $log->logerror(q(Please specify what type of output file to create));
         pod2usage(-exitstatus => 1);

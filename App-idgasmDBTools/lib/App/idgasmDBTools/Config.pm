@@ -9,8 +9,6 @@ Configure/manage script options using L<Getopt::Long>.
 
 =cut
 
-use strict;
-use warnings;
 use English qw( -no_match_vars );
 use Getopt::Long;
 use Mouse;

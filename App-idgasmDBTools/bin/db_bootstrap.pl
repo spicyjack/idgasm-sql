@@ -171,6 +171,13 @@ use App::idgasmDBTools::INIFile;
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
+        if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
+            my $parser = App::idgasmDBTools::INIFile->new()
+            $db_config = $parser->checksum(filename => $cfg->get(q(input)));
+        } else {
+            $log->logdie(q(Don't know how to process file )
+                . $cfg->get(q(input)));
+        }
     } else {
         $log->logerror(q(Please specify what type of output file to create));
         pod2usage(-exitstatus => 1);

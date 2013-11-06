@@ -17,7 +17,7 @@ use Mouse;
 
 =over
 
-=item optoions
+=item options
 
 An C<ArrayRef> to an array containing script options, in L<Getopt::Long> format.
 

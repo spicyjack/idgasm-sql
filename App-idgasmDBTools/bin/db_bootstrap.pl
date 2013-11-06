@@ -31,7 +31,7 @@ our $VERSION = '0.01';
  Other script options:
  -i|--input         The input file to read information from
  -o|--output        The output file to write information to
- -c|--checksum      Read the --input file, generate checksums in --output
+ -s|--checksum      Read the --input file, copy with checksums to --output
  --create-db        Create a database file using the given INI file
  --create-ini       Create an INI file using schema info in database
  --create-yaml      Create a YAML file using schema info in database
@@ -83,8 +83,8 @@ package main;
 
 # pragmas
 use 5.010;
-use strict;
-use warnings;
+# https://metacpan.org/pod/strictures
+use strictures 1;
 use utf8;
 
 # system packages
@@ -162,7 +162,7 @@ use App::idgasmDBTools::INIFile;
     my $db_config;
     if ( $cfg->defined(q(create-db)) ) {
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            my $parser = App::idgasmDBTools::INIFile->new()
+            my $parser = App::idgasmDBTools::INIFile->new();
             $db_config = $parser->read_config(filename => $cfg->get(q(input)));
         } else {
             $log->logdie(q(Don't know how to process file )
@@ -172,8 +172,10 @@ use App::idgasmDBTools::INIFile;
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            my $parser = App::idgasmDBTools::INIFile->new()
-            $db_config = $parser->checksum(filename => $cfg->get(q(input)));
+            my $parser = App::idgasmDBTools::INIFile->new(
+                filename => $cfg->get(q(input)));
+            # MD5 checksums, for now
+            $db_config = $parser->md5_checksum(filename => $cfg->get(q(input)));
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));

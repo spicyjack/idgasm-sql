@@ -161,6 +161,7 @@ use App::idgasmDBTools::INIFile;
 
     my $db_config;
     if ( $cfg->defined(q(create-db)) ) {
+        $log->debug(q(--create-db called));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             my $parser = App::idgasmDBTools::INIFile->new();
             $db_config = $parser->read_config(filename => $cfg->get(q(input)));
@@ -171,6 +172,7 @@ use App::idgasmDBTools::INIFile;
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
+        $log->debug(q(--checksum called));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             my $parser = App::idgasmDBTools::INIFile->new(
                 filename => $cfg->get(q(input)));

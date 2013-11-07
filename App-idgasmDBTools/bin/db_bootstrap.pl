@@ -32,6 +32,7 @@ our $VERSION = '0.01';
  -i|--input         The input file to read information from
  -o|--output        The output file to write information to
  -s|--checksum      Read the --input file, copy with checksums to --output
+ -x|--overwrite     Overwrite file specified as --output
  --create-db        Create a database file using the given INI file
  --create-ini       Create an INI file using schema info in database
  --create-yaml      Create a YAML file using schema info in database
@@ -56,6 +57,7 @@ our @options = (
 
     q(output|o=s),
     q(input|i=s),
+    q(overwrite|x),
     q(checksum|s),
     q(create-db),
     q(create-ini),

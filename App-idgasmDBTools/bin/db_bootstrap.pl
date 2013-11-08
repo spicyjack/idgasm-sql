@@ -161,12 +161,13 @@ use App::idgasmDBTools::INIFile;
     $log->info(qq(Starting db_bootstrap.pl, version $VERSION));
     $log->info(qq(My PID is $$));
 
-    my $db_config;
+    my $db_schema;
+    my $parser = App::idgasmDBTools::INIFile->new(
+        filename => $cfg->get(q(input)));
     if ( $cfg->defined(q(create-db)) ) {
-        $log->debug(q(--create-db called));
+        $log->debug(q(Running as: --create-db));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            my $parser = App::idgasmDBTools::INIFile->new();
-            $db_config = $parser->read_config(filename => $cfg->get(q(input)));
+            $db_schema = $parser->read_ini_config();
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));
@@ -174,12 +175,16 @@ use App::idgasmDBTools::INIFile;
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
-        $log->debug(q(--checksum called));
+        $log->debug(q(Running as: --checksum));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            my $parser = App::idgasmDBTools::INIFile->new(
-                filename => $cfg->get(q(input)));
             # MD5 checksums, for now
-            $db_config = $parser->md5_checksum(filename => $cfg->get(q(input)));
+            $db_schema = $parser->read_ini_config();
+            $db_schema = $parser->md5_checksum(db_schema => $db_schema);
+            $parser->dump_schema(
+                db_schema  => $db_schema,
+                extra_text => q(Post-MD5 checksum),
+            );
+            $parser->write_ini_config(db_schema => $db_schema);
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));

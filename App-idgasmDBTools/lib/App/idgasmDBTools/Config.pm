@@ -11,7 +11,7 @@ Configure/manage script options using L<Getopt::Long>.
 
 use English qw( -no_match_vars );
 use Getopt::Long;
-use Mouse;
+use Moo;
 
 =head2 Attributes
 
@@ -24,8 +24,12 @@ An C<ArrayRef> to an array containing script options, in L<Getopt::Long> format.
 =cut
 
 has q(options) => (
-    is      => q(rw),
-    isa     => q(ArrayRef[Str]),
+    is  => q(rw),
+    isa => sub {
+                my $self = shift;
+                die q(Argument 'options' is not an ARRAY reference)
+                    unless ( ref($self) eq q(ARRAY) );
+            },
 );
 
 =back

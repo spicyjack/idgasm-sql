@@ -168,6 +168,11 @@ use App::idgasmDBTools::INIFile;
         $log->debug(q(Running as: --create-db));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             $db_schema = $parser->read_ini_config();
+            $parser->dump_schema(
+                db_schema  => $db_schema,
+                extra_text => q(--create-db dump),
+            );
+
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));

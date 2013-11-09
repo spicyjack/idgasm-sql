@@ -3,6 +3,7 @@
 #######################################
 package App::idgasmDBTools::INIFile;
 use Config::Std;
+use Date::Format;
 use Digest::MD5;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
@@ -88,9 +89,18 @@ sub md5_checksum {
     # the combined fields
     my $digest = Digest::MD5->new();
     my $data;
-    foreach my $block_id ( sort(keys(%{$db_schema})) ) {
-        $log->debug(qq(Parsing schema block: $block_id));
+    BLOCK: foreach my $block_id ( sort(keys(%{$db_schema})) ) {
         my %block = %{$db_schema->{$block_id}};
+        if ( length($block_id) == 0 ) {
+            $log->debug(q(Setting new timestamp in 'default' block));
+            $block{schema_date} = time2str(q(%C), time);
+            # reassign the default block back to the config object/hash
+            $db_schema->{$block_id} = \%block;
+            $log->debug(q(Done with 'default' block, skipping to next block));
+            next BLOCK;
+        } else {
+            $log->debug(qq(Parsing schema block: $block_id));
+        }
         foreach my $block_key ( qw( description notes sql ) ){
             #$log->debug(qq(  $block_key: ) . $block{$block_key});
             $data .= $block{$block_key};

@@ -92,8 +92,10 @@ sub md5_checksum {
     BLOCK: foreach my $block_id ( sort(keys(%{$db_schema})) ) {
         my %block = %{$db_schema->{$block_id}};
         if ( length($block_id) == 0 ) {
+            my $epoch_time = time();
             $log->debug(q(Setting new timestamp in 'default' block));
-            $block{schema_date} = time2str(q(%C), time);
+            $block{schema_date} = time2str(q(%C), $epoch_time);
+            $block{schema_epoch} = $epoch_time;
             # reassign the default block back to the config object/hash
             $db_schema->{$block_id} = \%block;
             $log->debug(q(Done with 'default' block, skipping to next block));
@@ -179,7 +181,7 @@ sub write_ini_config {
         unless(defined($args{db_schema}));
     my $db_schema = $args{db_schema};
     #$self->dump_schema(
-    #    db_schema => $db_schema
+    #    db_schema => $db_schema,
     #    extra_text => q(write_ini_config),
     #);
 

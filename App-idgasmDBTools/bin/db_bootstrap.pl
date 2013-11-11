@@ -3,7 +3,7 @@
 # Copyright (c) 2013 by Brian Manning <brian at xaoc dot org>
 
 # For support with this file, please file an issue on the GitHub issue tracker
-# for this project: https://github.com/spicyjack/idgasm-sql/issues
+# for this project: https://github.com/spicyjack/idgasm-tools/issues
 
 =head1 NAME
 

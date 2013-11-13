@@ -34,6 +34,7 @@ our $VERSION = '0.01';
  Misc. script options:
  -c|--colorize      Always colorize script output
  --no-random-wait   Don't use random pauses between GET requests
+ --random-wait-time Seed for random wait timer; default = 5, 0-5 seconds
  --debug-noexit     Don't exit script when --debug is used
  --no-die-on-error  Don't exit when too many HTTP errors are generated
 
@@ -50,8 +51,6 @@ idgames_file_map.pl>.
 our @options = (
     # script options
     q(debug|d),
-    q(debug-noexit),
-    q(die-on-error!),
     q(verbose|v),
     q(help|h),
     q(colorize|c), # always colorize output
@@ -60,6 +59,10 @@ our @options = (
     q(output|o=s),
     q(overwrite|x),
     q(random-wait!),
+    q(random-wait-time=i),
+    q(debug-noexit),
+    q(die-on-error!),
+
 );
 
 =head1 DESCRIPTION
@@ -162,6 +165,10 @@ use App::idgasmDBTools::Config;
     # Note: file ID '0' is invalid
     my $file_id = 1;
     my $request_errors = 0;
+    my $random_wait_time = 5;
+    if ( $cfg->defined(q(random-wait-time)) ) {
+        $random_wait_time = $cfg->get(q(random-wait-time));
+    }
     my %file_map;
     my $ua = LWP::UserAgent->new(agent => qq(idgames_file_map.pl $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
@@ -169,6 +176,7 @@ use App::idgasmDBTools::Config;
     $idgames_url .= q(out=json&);
     # See https://metacpan.org/pod/LWP#An-Example for a POST example
     GET_JSON: while (1) {
+        my $random_wait = int(rand($random_wait_time));
         my $fetch_url =  $idgames_url . qq(id=$file_id);
         $log->debug(qq(Fetching $fetch_url));
         my $req = HTTP::Request->new(GET => $fetch_url);
@@ -191,7 +199,7 @@ use App::idgasmDBTools::Config;
                 $request_errors++;
             }
         } else {
-            $log->info($resp->status_line);
+            $log->logdie($resp->status_line);
         }
         $file_id++;
         if ( $log->is_debug ) {
@@ -209,6 +217,8 @@ use App::idgasmDBTools::Config;
                 $log->logdie(q|(Use --no-die-on-error to suppress)|);
             }
         }
+        $log->debug(qq(Sleeping for $random_wait seconds...));
+        sleep $random_wait;
     }
 
 =cut

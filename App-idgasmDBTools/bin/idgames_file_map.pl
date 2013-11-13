@@ -147,14 +147,12 @@ use App::idgasmDBTools::Config;
     Log::Log4perl::init( \$log4perl_conf );
     my $log = get_logger("");
 
-    # check output file before doing any processing
-    $log->logdie(qq(Missing '--output' file argument))
-        unless ( $cfg->defined(q(output)) );
-#    $log->logdie(qq(Can't write output file ) . $cfg->get(q(output)) )
-#        unless ( -w $cfg->get(q(output)) );
-    $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
-        . q( without '­-overwrite' option))
-        if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
+    # check that we're not overwriting files if --output is used
+    if ( $cfg->defined(q(output)) ) {
+        $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
+            . q( without '­-overwrite' option))
+            if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
+    }
 
     # print a nice banner
     $log->info(qq(Starting idgames_file_map.pl, version $VERSION));
@@ -219,6 +217,20 @@ use App::idgasmDBTools::Config;
         }
         $log->debug(qq(Sleeping for $random_wait seconds...));
         sleep $random_wait;
+    }
+
+    my $OUTPUT;
+    if ( $cfg->defined(q(output)) ) {
+        $OUTPUT = open(q(>) . $cfg->get(q(output)));
+    } else {
+        $OUTPUT = *STDOUT;
+    }
+    foreach my $key ( sort(keys(%file_map)) ) {
+        say $OUTPUT $key . q(:) . $file_map{$key};
+    }
+
+    if ( $cfg->defined(q(output)) ) {
+        close($OUTPUT);
     }
 
 =cut

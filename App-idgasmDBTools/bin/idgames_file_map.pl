@@ -25,6 +25,7 @@ our $VERSION = '0.01';
  Script options:
  -h|--help          Shows this help text
  -d|--debug         Debug script execution
+ --debug-noexit     Don't exit script when --debug is used
  -v|--verbose       Verbose script execution
  -c|--colorize      Always colorize script output
 
@@ -46,6 +47,7 @@ idgames_file_map.pl>.
 our @options = (
     # script options
     q(debug|d),
+    q(debug-noexit),
     q(verbose|v),
     q(help|h),
     q(colorize|c), # always colorize output
@@ -174,7 +176,7 @@ use App::idgasmDBTools::Config;
                 my $content = $msg->{content};
                 my $full_path = $content->{dir} . $content->{filename};
                 $log->info(status_message($resp->code)
-                    . qq(ID: $file_id; )
+                    . qq( ID: $file_id; )
                     . qq( path: $full_path));
             } elsif ( exists $msg->{error} ) {
                 $log->logerr(qq(ID: $file_id; Received error response));
@@ -185,7 +187,7 @@ use App::idgasmDBTools::Config;
         }
         $file_id++;
         if ( $log->is_debug ) {
-            if ( $file_id >= 10 ) {
+            if ( ! $cfg->defined(q(debug-noexit)) && $file_id > 20 ) {
                 last GET_JSON;
             }
         }

@@ -176,8 +176,8 @@ use App::idgasmDBTools::Config;
                 my $content = $msg->{content};
                 my $full_path = $content->{dir} . $content->{filename};
                 $log->info(status_message($resp->code)
-                    . qq( ID: $file_id; )
-                    . qq( path: $full_path));
+                    . sprintf(q( ID: %5u; ), $file_id)
+                    . qq(path: $full_path));
             } elsif ( exists $msg->{error} ) {
                 $log->logerr(qq(ID: $file_id; Received error response));
                 $log->logerr(Dumper($msg));

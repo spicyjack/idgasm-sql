@@ -25,14 +25,17 @@ our $VERSION = '0.01';
  Script options:
  -h|--help          Shows this help text
  -d|--debug         Debug script execution
- --debug-noexit     Don't exit script when --debug is used
  -v|--verbose       Verbose script execution
- -c|--colorize      Always colorize script output
 
  Other script options:
- -o|--output        The output file to write information to
- -x|--overwrite     Overwrite any existing files used as --output
+ -o|--output        Output file to write to; default is STDOUT
+ -x|--overwrite     Overwrite a file that is used as --output
+
+ Misc. script options:
+ -c|--colorize      Always colorize script output
  --no-random-wait   Don't use random pauses between GET requests
+ --debug-noexit     Don't exit script when --debug is used
+ --no-die-on-error  Don't exit when too many HTTP errors are generated
 
  Example usage:
 
@@ -48,11 +51,12 @@ our @options = (
     # script options
     q(debug|d),
     q(debug-noexit),
+    q(die-on-error!),
     q(verbose|v),
     q(help|h),
     q(colorize|c), # always colorize output
-    # other options
 
+    # other options
     q(output|o=s),
     q(overwrite|x),
     q(random-wait!),
@@ -157,6 +161,7 @@ use App::idgasmDBTools::Config;
     # of a "content" response in the JSON
     # Note: file ID '0' is invalid
     my $file_id = 1;
+    my $request_errors = 0;
     my %file_map;
     my $ua = LWP::UserAgent->new(agent => qq(idgames_file_map.pl $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
@@ -181,8 +186,9 @@ use App::idgasmDBTools::Config;
                     . qq(path: $full_path));
                 $file_map{$file_id} = $full_path;
             } elsif ( exists $msg->{error} ) {
-                $log->logerr(qq(ID: $file_id; Received error response));
-                $log->logerr(Dumper($msg));
+                $log->error(qq(ID: $file_id; Received error response));
+                $log->error(Dumper($msg));
+                $request_errors++;
             }
         } else {
             $log->info($resp->status_line);
@@ -191,6 +197,16 @@ use App::idgasmDBTools::Config;
         if ( $log->is_debug ) {
             if ( ! $cfg->defined(q(debug-noexit)) && $file_id > 20 ) {
                 last GET_JSON;
+            }
+        }
+        # if die-on-error is defined, or die-on-error is set to 1
+        # --no-die-on-error will set die-on-error to 0
+        # if --no-die-on-error is not used, die-on-error will be 'undef'
+        if (! $cfg->defined(q(die-on-error))
+            || $cfg->get(q(die-on-error)) == 1){
+            if ( $request_errors > 5 ) {
+                $log->error(qq(Too many HTTP request errors!));
+                $log->logdie(q|(Use --no-die-on-error to suppress)|);
             }
         }
     }

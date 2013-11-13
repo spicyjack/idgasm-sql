@@ -157,6 +157,7 @@ use App::idgasmDBTools::Config;
     # of a "content" response in the JSON
     # Note: file ID '0' is invalid
     my $file_id = 1;
+    my %file_map;
     my $ua = LWP::UserAgent->new(agent => qq(idgames_file_map.pl $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
     $idgames_url .= q(action=get&);
@@ -178,6 +179,7 @@ use App::idgasmDBTools::Config;
                 $log->info(status_message($resp->code)
                     . sprintf(q( ID: %5u; ), $file_id)
                     . qq(path: $full_path));
+                $file_map{$file_id} = $full_path;
             } elsif ( exists $msg->{error} ) {
                 $log->logerr(qq(ID: $file_id; Received error response));
                 $log->logerr(Dumper($msg));

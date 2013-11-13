@@ -77,6 +77,8 @@ use utf8;
 # system packages
 use Carp;
 use Config::Std;
+use JSON::XS;
+use HTTP::Status;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
 use LWP::UserAgent;
@@ -164,11 +166,29 @@ use App::idgasmDBTools::Config;
         my $req = HTTP::Request->new(GET => $fetch_url);
         my $resp = $ua->request($req);
         if ( $resp->is_success ) {
-            $log->info($resp->content);
+            #$log->info($resp->content);
+            #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
+            my $json = JSON::XS->new->utf8->pretty;
+            my $msg = $json->decode($resp->content);
+            if ( exists $msg->{content} ) {
+                my $content = $msg->{content};
+                my $full_path = $content->{dir} . $content->{filename};
+                $log->info(status_message($resp->code)
+                    . qq(ID: $file_id; )
+                    . qq( path: $full_path));
+            } elsif ( exists $msg->{error} ) {
+                $log->logerr(qq(ID: $file_id; Received error response));
+                $log->logerr(Dumper($msg));
+            }
         } else {
             $log->info($resp->status_line);
         }
-        last GET_JSON;
+        $file_id++;
+        if ( $log->is_debug ) {
+            if ( $file_id >= 10 ) {
+                last GET_JSON;
+            }
+        }
     }
 
 =cut
@@ -201,5 +221,5 @@ under the same terms as Perl itself.
 
 =cut
 
-# fin!
+# конец!
 # vim: set shiftwidth=4 tabstop=4

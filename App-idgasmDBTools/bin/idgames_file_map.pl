@@ -36,6 +36,7 @@ our $VERSION = '0.01';
  --no-random-wait   Don't use random pauses between GET requests
  --random-wait-time Seed for random wait timer; default = 5, 0-5 seconds
  --debug-noexit     Don't exit script when --debug is used
+ --debug-requests   Exit after this many requests when --debug is used
  --no-die-on-error  Don't exit when too many HTTP errors are generated
 
  Example usage:
@@ -61,6 +62,7 @@ our @options = (
     q(random-wait!),
     q(random-wait-time=i),
     q(debug-noexit),
+    q(debug-requests=i),
     q(die-on-error!),
 
 );
@@ -182,7 +184,7 @@ use App::idgasmDBTools::Config;
         if ( $resp->is_success ) {
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $json = JSON::XS->new->utf8->pretty;
+            my $json = JSON::XS->new->utf8->pretty->allow_unknown;
             my $msg = $json->decode($resp->content);
             if ( exists $msg->{content} ) {
                 my $content = $msg->{content};
@@ -201,7 +203,12 @@ use App::idgasmDBTools::Config;
         }
         $file_id++;
         if ( $log->is_debug ) {
-            if ( ! $cfg->defined(q(debug-noexit)) && $file_id > 20 ) {
+            my $debug_requests = 100;
+            if ( $cfg->defined(q(debug-requests)) ) {
+                $debug_requests = $cfg->get(q(debug-requests));
+            }
+            if ( ! $cfg->defined(q(debug-noexit))
+                && $file_id > $debug_requests ) {
                 last GET_JSON;
             }
         }

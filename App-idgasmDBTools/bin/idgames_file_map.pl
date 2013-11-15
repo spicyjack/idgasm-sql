@@ -232,7 +232,14 @@ use App::idgasmDBTools::Config;
     } else {
         $OUTPUT = *STDOUT;
     }
-    foreach my $key ( sort(keys(%file_map)) ) {
+    #foreach my $key ( sort(keys(%file_map)) ) {
+    foreach my $key (
+        # Schwartzian Transform on the file ID numbers
+        map  { $_->[0] }
+        sort { $a->[1] <=> $b->[1] } # use numeric comparison
+        map  { [$_, length($_)] } # sort keys by length
+        keys(%file_map)
+        ) {
         say $OUTPUT $key . q(:) . $file_map{$key};
     }
 

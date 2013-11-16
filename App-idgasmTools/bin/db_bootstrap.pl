@@ -70,7 +70,7 @@ Creates databases using config specified in INI file.
 
 =head1 OBJECTS
 
-=head2 App::idgasmDBTools::Config
+=head2 App::idgasmTools::Config
 
 An object used for storing configuration data.
 
@@ -103,12 +103,12 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local packages
-use App::idgasmDBTools::Config;
-use App::idgasmDBTools::INIFile;
+use App::idgasmTools::Config;
+use App::idgasmTools::INIFile;
 
     binmode(STDOUT, ":utf8");
     # create a logger object
-    my $cfg = App::idgasmDBTools::Config->new(options => \@options);
+    my $cfg = App::idgasmTools::Config->new(options => \@options);
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
@@ -162,7 +162,7 @@ use App::idgasmDBTools::INIFile;
     $log->info(qq(My PID is $$));
 
     my $db_schema;
-    my $parser = App::idgasmDBTools::INIFile->new(
+    my $parser = App::idgasmTools::INIFile->new(
         filename => $cfg->get(q(input)));
     if ( $cfg->defined(q(create-db)) ) {
         $log->debug(q(Running as: --create-db));

@@ -2,11 +2,11 @@ use strict;
 use warnings;
 
 ######################
-# App::idgasmDBTools #
+# App::idgasmTools #
 ######################
-package App::idgasmDBTools;
+package App::idgasmTools;
 
-=head1 App::idgasmDBTools;
+=head1 App::idgasmTools;
 
 Tools to work with C<idgasm> databases or database metadata files.
 

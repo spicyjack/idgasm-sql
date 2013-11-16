@@ -3,7 +3,7 @@
 use Test::More tests => 1;
 
 BEGIN {
-use_ok( 'App::idgasmDBTools' );
+use_ok( 'App::idgasmTools' );
 }
 
 diag( "Testing, Perl $], $^X" );

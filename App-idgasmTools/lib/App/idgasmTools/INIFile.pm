@@ -1,7 +1,7 @@
 #######################################
-# package App::idgasmDBTools::INIFile #
+# package App::idgasmTools::INIFile #
 #######################################
-package App::idgasmDBTools::INIFile;
+package App::idgasmTools::INIFile;
 use Config::Std;
 use Date::Format;
 use Digest::MD5;
@@ -12,7 +12,7 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-=head1 App::idgasmDBTools::INIFile
+=head1 App::idgasmTools::INIFile
 
 INIFileure/manage script options using L<Getopt::Long>.
 
@@ -44,7 +44,7 @@ has filename => (
 
 =item new()
 
-Creates the L<App::idgasmDBTools::INIFile> object.  Method is automatically
+Creates the L<App::idgasmTools::INIFile> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
 Required arguments:

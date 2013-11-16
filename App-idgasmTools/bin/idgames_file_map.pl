@@ -102,11 +102,11 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local packages
-use App::idgasmDBTools::Config;
+use App::idgasmTools::Config;
 
     binmode(STDOUT, ":utf8");
     # create a logger object
-    my $cfg = App::idgasmDBTools::Config->new(options => \@options);
+    my $cfg = App::idgasmTools::Config->new(options => \@options);
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }

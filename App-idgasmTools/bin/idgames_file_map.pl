@@ -12,11 +12,11 @@ files stored in C<idGames Archive>.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.002
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.002';
 
 =head1 SYNOPSIS
 

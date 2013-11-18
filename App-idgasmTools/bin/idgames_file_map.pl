@@ -29,7 +29,9 @@ our $VERSION = '0.002';
 
  Other script options:
  -o|--output        Output file to write to; default is STDOUT
- -x|--overwrite     Overwrite a file that is used as --output
+ -x|--xml           Request XML data from idGames API (default)
+ -j|--json          Request JSON data from idGames API
+ -w|--overwrite     Overwrite a file that is used as --output
 
  Misc. script options:
  -c|--colorize      Always colorize script output
@@ -58,13 +60,14 @@ our @options = (
 
     # other options
     q(output|o=s),
-    q(overwrite|x),
+    q(json|j),
+    q(xml|x),
+    q(overwrite|w),
     q(random-wait!),
     q(random-wait-time=i),
     q(debug-noexit),
     q(debug-requests=i),
     q(die-on-error!),
-
 );
 
 =head1 DESCRIPTION

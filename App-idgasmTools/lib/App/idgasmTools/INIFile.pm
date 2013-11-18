@@ -1,6 +1,6 @@
-#######################################
+#####################################
 # package App::idgasmTools::INIFile #
-#######################################
+#####################################
 package App::idgasmTools::INIFile;
 use Config::Std;
 use Date::Format;

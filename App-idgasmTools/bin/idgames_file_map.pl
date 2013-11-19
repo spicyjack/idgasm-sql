@@ -40,6 +40,7 @@ our $VERSION = '0.002';
  --debug-noexit     Don't exit script when --debug is used
  --debug-requests   Exit after this many requests when --debug is used
  --no-die-on-error  Don't exit when too many HTTP errors are generated
+ --start-at         Start at this file ID, instead of file ID '1'
 
  Example usage:
 
@@ -68,6 +69,7 @@ our @options = (
     q(debug-noexit),
     q(debug-requests=i),
     q(die-on-error!),
+    q(start-at=i),
 );
 
 =head1 DESCRIPTION
@@ -168,6 +170,10 @@ use App::idgasmTools::XMLParser;
     # of a "content" response in the JSON
     # Note: file ID '0' is invalid
     my $file_id = 1;
+    # unless '--start-at' is used, then start at that file ID
+    if ( $cfg->defined(q(start-at)) ) {
+        $file_id = $cfg->get(q(start-at));
+    }
     my $request_errors = 0;
     my $random_wait_time = 5;
     if ( $cfg->defined(q(random-wait-time)) ) {

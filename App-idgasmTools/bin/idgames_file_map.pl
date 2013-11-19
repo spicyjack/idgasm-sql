@@ -206,6 +206,10 @@ use App::idgasmTools::XMLParser;
             }
             #my $msg = $json->decode($resp->content);
             my $msg = $parser->parse(data => $resp->content);
+            if ( ref($msg) eq q(App::idgasmTools::Error) ) {
+                $log->error(q(Error parsing downloaded data!));
+                $log->error(q(Error message: ) . $msg->error_msg);
+            }
             if ( exists $msg->{content} ) {
                 my $content = $msg->{content};
                 my $full_path = $content->{dir} . $content->{filename};

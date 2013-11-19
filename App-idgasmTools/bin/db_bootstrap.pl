@@ -164,6 +164,9 @@ use App::idgasmTools::INIFile;
     my $db_schema;
     my $parser = App::idgasmTools::INIFile->new(
         filename => $cfg->get(q(input)));
+    if ( ref($parser) eq q(App::idgasmTools::Error) ) {
+        $log->logdie(q(Error opening INI file ') . $cfg->get(q(input)) . q('));
+    }
     if ( $cfg->defined(q(create-db)) ) {
         $log->debug(q(Running as: --create-db));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
@@ -189,7 +192,14 @@ use App::idgasmTools::INIFile;
                 db_schema  => $db_schema,
                 extra_text => q(Post-MD5 checksum),
             );
-            $parser->write_ini_config(db_schema => $db_schema);
+            my $filesize = $parser->write_ini_config(db_schema => $db_schema);
+            if ( ref($filesize) eq q(App::idgasmTools::Error) ) {
+                $log->error(q(Writing config file returned an error!));
+                $log->logdie(q(Error message: ) . $filesize->error_msg);
+            } else {
+                $log->info(q(Wrote file ) . $parser->filename);
+                $log->info(q(File size: ) . $filesize . q| byte(s)|);
+            }
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));

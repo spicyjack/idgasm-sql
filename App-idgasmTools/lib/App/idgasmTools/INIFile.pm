@@ -2,6 +2,8 @@
 # package App::idgasmTools::INIFile #
 #####################################
 package App::idgasmTools::INIFile;
+
+# system modules
 use Config::Std;
 use Date::Format;
 use Digest::MD5;
@@ -11,6 +13,9 @@ use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
+
+# local modules
+use App::idgasmTools::Error;
 
 =head1 App::idgasmTools::INIFile
 
@@ -121,7 +126,8 @@ sub md5_checksum {
 =item read_ini_config()
 
 Reads the INI file specified by the C<filename> attribute, and returns a
-reference to the hash data structure set up by C<Config::Std>.
+reference to the hash data structure set up by C<Config::Std>, or an
+L<App::idgasmTools::Error> object if there was a problem reading the INI file.
 
 =cut
 
@@ -139,14 +145,17 @@ sub read_ini_config {
         #$self->db_schema($db_schema);
         return $db_schema;
     } else {
-        $log->logdie(q(Can't read INI file!));
+        my $error = App::idgasmTools::Error->new();
+        $error->error_msg(qq(Can't read INI file!));
     }
 }
 
 =item write_ini_config()
 
 Writes the C<INI> file, to the same filename that was used when this object
-was created, unless optional argument C<filename> below is used.
+was created, unless optional argument C<filename> below is used.  Returns the
+size of the file that was written, or an L<App::idgasmTools::Error> object if
+there was a problem writing the file.
 
 Required arguments:
 
@@ -191,14 +200,21 @@ sub write_ini_config {
     }
 
     $log->debug(q(Writing INI file ) . $write_filename);
+    my $filesize = 0;
     if ( -w $write_filename ) {
         eval { write_config($db_schema => $write_filename); };
         if ( $@ ) {
-            $log->logdie(qq(Error writing INI file: $@));
+            my $error = App::idgasmTools::Error->new(error_msg => $@);
+            return $error;
         }
+        $filesize = (-s $write_filename);
     } else {
-        $log->logdie(q(Can't write INI file!));
+        my $error = App::idgasmTools::Error->new(
+            error_msg => q(Can't write INI file!)
+        );
+        return $error;
     }
+    return $filesize;
 }
 
 =item dump_schema()

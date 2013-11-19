@@ -91,7 +91,6 @@ use utf8;
 # system packages
 use Carp;
 use Config::Std;
-use JSON::XS;
 use HTTP::Status;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
@@ -106,6 +105,8 @@ $Data::Dumper::Terse = 1;
 
 # local packages
 use App::idgasmTools::Config;
+use App::idgasmTools::JSONParser;
+use App::idgasmTools::XMLParser;
 
     binmode(STDOUT, ":utf8");
     # create a logger object
@@ -176,9 +177,13 @@ use App::idgasmTools::Config;
     my $ua = LWP::UserAgent->new(agent => qq(idgames_file_map.pl $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
     $idgames_url .= q(action=get&);
-    $idgames_url .= q(out=json&);
+    # don't append 'out=json' unless --json was used
+    if ( $cfg->defined(q(json)) ) {
+        $idgames_url .= q(out=json&);
+    }
+
     # See https://metacpan.org/pod/LWP#An-Example for a POST example
-    GET_JSON: while (1) {
+    HTTP_REQUEST: while (1) {
         my $random_wait = int(rand($random_wait_time));
         my $fetch_url =  $idgames_url . qq(id=$file_id);
         $log->debug(qq(Fetching $fetch_url));
@@ -187,8 +192,14 @@ use App::idgasmTools::Config;
         if ( $resp->is_success ) {
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $json = JSON::XS->new->utf8->pretty->allow_unknown;
-            my $msg = $json->decode($resp->content);
+            my $parser;
+            if ( $cfg->defined(q(json)) ) {
+                $parser = App::idgasmTools::JSONParser->new();
+            } else {
+                $parser = App::idgasmTools::XMLParser->new();
+            }
+            #my $msg = $json->decode($resp->content);
+            my $msg = $parser->parse(data => $resp->content);
             if ( exists $msg->{content} ) {
                 my $content = $msg->{content};
                 my $full_path = $content->{dir} . $content->{filename};
@@ -212,7 +223,7 @@ use App::idgasmTools::Config;
             }
             if ( ! $cfg->defined(q(debug-noexit))
                 && $file_id > $debug_requests ) {
-                last GET_JSON;
+                last HTTP_REQUEST;
             }
         }
         # if die-on-error is defined, or die-on-error is set to 1

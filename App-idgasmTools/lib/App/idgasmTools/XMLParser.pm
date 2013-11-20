@@ -10,9 +10,16 @@ Parse XML text downloaded via HTTP request to C<idGames Archive API>.
 =cut
 
 # system modules
-#use XML;
+#use XML::Twig;
+#use XML::LibXML;
+use XML::Parser;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
+
+use Data::Dumper;
+$Data::Dumper::Indent = 1;
+$Data::Dumper::Sortkeys = 1;
+$Data::Dumper::Terse = 1;
 
 # local modules
 use App::idgasmTools::Error;
@@ -40,14 +47,22 @@ sub parse {
         unless (exists $args{data});
 
     my $data = $args{data};
-    #my $json = XML::XS->new->utf8->pretty->allow_unknown;
-    my $json;
-    my $data_struct = eval{$json->decode($data);};
+    # XML::Twig
+    #my $document = eval{$xml->parse($data);};
+    #my $xml = XML::LibXML->new();
+    # XML::LibXML
+    #my $xml = XML::LibXML->new();
+    #my $document = eval{$xml->load_xml(string => \$data);};
+    #my $root = $document->getDocumentElement();
+    # XML::Parser
+    my $xml = XML::Parser->new( Style => q(Tree) );
+    my $document = eval{$xml->parse($data);};
+    $log->debug(qq(Dumping:\n) . Dumper $document);
     if ( $@ ) {
         my $error = App::idgasmTools::Error->new(error_msg => $@);
         return $error;
     } else {
-        return $data_struct;
+        return $document;
     }
 }
 

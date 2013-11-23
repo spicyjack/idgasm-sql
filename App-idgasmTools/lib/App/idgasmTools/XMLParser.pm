@@ -10,9 +10,7 @@ Parse XML text downloaded via HTTP request to C<idGames Archive API>.
 =cut
 
 # system modules
-#use XML::Twig;
-#use XML::LibXML;
-use XML::Parser;
+use XML::Fast;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
 
@@ -47,16 +45,11 @@ sub parse {
         unless (exists $args{data});
 
     my $data = $args{data};
-    # XML::Twig
-    #my $document = eval{$xml->parse($data);};
-    #my $xml = XML::LibXML->new();
-    # XML::LibXML
-    #my $xml = XML::LibXML->new();
-    #my $document = eval{$xml->load_xml(string => \$data);};
-    #my $root = $document->getDocumentElement();
-    # XML::Parser
-    my $xml = XML::Parser->new( Style => q(Tree) );
-    my $document = eval{$xml->parse($data);};
+    my ($xml, $document);
+
+    # XML::Fast::xml2hash will die if there are parsing errors; wrap parsing
+    # with an eval to handle dying gracefully
+    my $document = eval{XML::Fast::xml2hash($data);};
     $log->debug(qq(Dumping:\n) . Dumper $document);
     if ( $@ ) {
         my $error = App::idgasmTools::Error->new(error_msg => $@);

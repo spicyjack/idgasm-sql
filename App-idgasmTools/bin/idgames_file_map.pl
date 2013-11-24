@@ -188,22 +188,26 @@ use App::idgasmTools::XMLParser;
         $idgames_url .= q(out=json&);
     }
 
-    # See https://metacpan.org/pod/LWP#An-Example for a POST example
+    # set up the parser
+    my $parser;
+    if ( $cfg->defined(q(json)) ) {
+        $parser = App::idgasmTools::JSONParser->new();
+    } else {
+        $parser = App::idgasmTools::XMLParser->new();
+    }
+
+    # Loop across all of the file IDs, until a request for a file ID returns
+    # an error of some kind
     HTTP_REQUEST: while (1) {
         my $random_wait = int(rand($random_wait_time));
         my $fetch_url =  $idgames_url . qq(id=$file_id);
         $log->debug(qq(Fetching $fetch_url));
+        # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
         my $req = HTTP::Request->new(GET => $fetch_url);
         my $resp = $ua->request($req);
         if ( $resp->is_success ) {
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $parser;
-            if ( $cfg->defined(q(json)) ) {
-                $parser = App::idgasmTools::JSONParser->new();
-            } else {
-                $parser = App::idgasmTools::XMLParser->new();
-            }
             my $msg = $parser->parse(data => $resp->content);
             if ( ref($msg) eq q(App::idgasmTools::Error) ) {
                 $log->error(q(Error parsing downloaded data!));

@@ -114,6 +114,14 @@ use App::idgasmTools::XMLParser;
     # create a logger object
     my $cfg = App::idgasmTools::Config->new(options => \@options);
 
+    # What kind of data are we requesting and parsing? JSON or XML?
+    my $parse_type;
+    if ( $cfg->defined(q(json)) ) {
+        $parse_type = q(json);
+    } else {
+        $parse_type = q(xml);
+    }
+
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
 
@@ -184,13 +192,13 @@ use App::idgasmTools::XMLParser;
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
     $idgames_url .= q(action=get&);
     # don't append 'out=json' unless --json was used
-    if ( $cfg->defined(q(json)) ) {
+    if ( $parse_type eq q(json) ) {
         $idgames_url .= q(out=json&);
     }
 
     # set up the parser
     my $parser;
-    if ( $cfg->defined(q(json)) ) {
+    if ( $parse_type q(json) ) {
         $parser = App::idgasmTools::JSONParser->new();
     } else {
         $parser = App::idgasmTools::XMLParser->new();
@@ -208,13 +216,22 @@ use App::idgasmTools::XMLParser;
         if ( $resp->is_success ) {
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $msg = $parser->parse(data => $resp->content);
-            if ( ref($msg) eq q(App::idgasmTools::Error) ) {
-                $log->error(q(Error parsing downloaded data!));
-                $log->error(q(Error message: ) . $msg->error_msg);
+            my $idgasm_file = App::idgasmTools::File->new();
+            my $parse_type;
+            my $data = $parser->parse(data => $resp->content);
+            if ( ref($data) eq q(App::idgasmTools::Error) ) {
+                $log->error(q(Error parsing downloaded ')
+                    . uc($parse_type) . q(' data!));
+                $log->error(q(Error message: ) . $data->error_msg);
+                next HTTP_REQUEST;
             }
+            my $populate_status = $idgasm_file->populate(
+                parse_type => $parse_type,
+                data => $data,
+            );
             # check to see if the "content" hash was found
-            if ( exists $msg->{content} ) {
+            if ( ref($populate_status) eq q(App::idgasmTools::Error) ) {
+            #if ( exists $msg->{content} ) {
                 my $content = $msg->{content};
                 my $full_path = $content->{dir} . $content->{filename};
                 $log->info(status_message($resp->code)

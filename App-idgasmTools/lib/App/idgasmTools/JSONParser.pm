@@ -41,12 +41,13 @@ sub parse {
 
     my $data = $args{data};
     my $json = JSON::XS->new->utf8->pretty->allow_unknown;
-    my $data_struct = eval{$json->decode($data);};
+    # wrap decode() in an eval to handle parsing errors
+    my $document = eval{$json->decode($data);};
     if ( $@ ) {
         my $error = App::idgasmTools::Error->new(error_msg => $@);
         return $error;
     } else {
-        return $data_struct;
+        return $document;
     }
 }
 

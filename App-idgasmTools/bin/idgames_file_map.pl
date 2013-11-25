@@ -44,8 +44,11 @@ our $VERSION = '0.002';
 
  Example usage:
 
- # build a database file using the given INI file
- idgames_file_map.pl --output /path/to/output.txt
+ # build a mapping of file IDs to file paths from idGames API
+ idgames_file_map --output /path/to/output.txt
+
+ # Debug, start at request ID 1242, make only 5 requests
+ idgames_file_map --debug --start-at 1242 --debug-requests 5
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
 idgames_file_map.pl>.
@@ -93,6 +96,7 @@ use utf8;
 # system packages
 use Carp;
 use Config::Std;
+use File::Basename;
 use HTTP::Status;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
@@ -107,13 +111,23 @@ $Data::Dumper::Terse = 1;
 
 # local packages
 use App::idgasmTools::Config;
+use App::idgasmTools::File;
 use App::idgasmTools::JSONParser;
 use App::idgasmTools::XMLParser;
 
+# script constants
+use constant {
+    DELAY_TIME => 5,
+    DEBUG_REQUESTS => 100,
+};
+
+    # total number of API requests
+    my $my_name = basename($0);
+    my $total_requests = 0;
     binmode(STDOUT, ":utf8");
+
     # create a logger object
     my $cfg = App::idgasmTools::Config->new(options => \@options);
-
     # What kind of data are we requesting and parsing? JSON or XML?
     my $parse_type;
     if ( $cfg->defined(q(json)) ) {
@@ -163,6 +177,12 @@ use App::idgasmTools::XMLParser;
     Log::Log4perl::init( \$log4perl_conf );
     my $log = get_logger("");
 
+    my $debug_requests = DEBUG_REQUESTS;
+    if ( $log->is_debug && $cfg->defined(q(debug-requests)) ) {
+        $debug_requests = $cfg->get(q(debug-requests));
+        $log->debug(qq(Setting number of API requests to $debug_requests));
+    }
+
     # check that we're not overwriting files if --output is used
     if ( $cfg->defined(q(output)) ) {
         $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
@@ -171,7 +191,7 @@ use App::idgasmTools::XMLParser;
     }
 
     # print a nice banner
-    $log->info(qq(Starting idgames_file_map.pl, version $VERSION));
+    $log->info(qq(Starting $my_name, version $VERSION));
     $log->info(qq(My PID is $$));
 
     # start at file ID 1, keep going until you get a "error" response instead
@@ -181,79 +201,81 @@ use App::idgasmTools::XMLParser;
     # unless '--start-at' is used, then start at that file ID
     if ( $cfg->defined(q(start-at)) ) {
         $file_id = $cfg->get(q(start-at));
+        $log->debug(qq(Starting at file ID $file_id));
     }
     my $request_errors = 0;
-    my $random_wait_time = 5;
+    my $random_wait_delay = DELAY_TIME;
     if ( $cfg->defined(q(random-wait-time)) ) {
-        $random_wait_time = $cfg->get(q(random-wait-time));
+        $random_wait_delay = $cfg->get(q(random-wait-time));
+        $log->debug(qq(Using $random_wait_delay for ѕeed for random delay));
     }
     my %file_map;
-    my $ua = LWP::UserAgent->new(agent => qq(idgames_file_map.pl $VERSION));
+    my $ua = LWP::UserAgent->new(agent => qq($my_name $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
     $idgames_url .= q(action=get&);
-    # don't append 'out=json' unless --json was used
-    if ( $parse_type eq q(json) ) {
-        $idgames_url .= q(out=json&);
-    }
 
     # set up the parser
     my $parser;
-    if ( $parse_type q(json) ) {
+    if ( $parse_type eq q(json) ) {
+        # don't append 'out=json' to URL unless --json was used
+        $idgames_url .= q(out=json&);
         $parser = App::idgasmTools::JSONParser->new();
+        $log->debug(qq(Using JSON API calls to idGames Archive API));
     } else {
         $parser = App::idgasmTools::XMLParser->new();
+        $log->debug(qq(Using XML API calls to idGames Archive API));
     }
 
     # Loop across all of the file IDs, until a request for a file ID returns
     # an error of some kind
     HTTP_REQUEST: while (1) {
-        my $random_wait = int(rand($random_wait_time));
+        my $random_wait = int(rand($random_wait_delay));
         my $fetch_url =  $idgames_url . qq(id=$file_id);
         $log->debug(qq(Fetching $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
         my $req = HTTP::Request->new(GET => $fetch_url);
         my $resp = $ua->request($req);
+        $total_requests++;
+        # Handle HTTP status messages
         if ( $resp->is_success ) {
+            $log->debug(qq(HTTP API request is successful for $file_id));
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $idgasm_file = App::idgasmTools::File->new();
+            my $file = App::idgasmTools::File->new();
             my $parse_type;
             my $data = $parser->parse(data => $resp->content);
+            # Check for parsing errors
             if ( ref($data) eq q(App::idgasmTools::Error) ) {
                 $log->error(q(Error parsing downloaded ')
                     . uc($parse_type) . q(' data!));
                 $log->error(q(Error message: ) . $data->error_msg);
                 next HTTP_REQUEST;
             }
-            my $populate_status = $idgasm_file->populate(
-                parse_type => $parse_type,
+            my $populate_status = $file->populate(
+                parse_module => $parser->parsing_module,
                 data => $data,
             );
-            # check to see if the "content" hash was found
+            # Check for idGames API request error
             if ( ref($populate_status) eq q(App::idgasmTools::Error) ) {
-            #if ( exists $msg->{content} ) {
-                my $content = $msg->{content};
-                my $full_path = $content->{dir} . $content->{filename};
+                $log->error(qq(ID: $file_id; Could not populate File object;));
+                $log->error($populate_status->error_msg);
+                $request_errors++;
+            } else {
+                my $full_path = $file->dir . $file->filename;
                 $log->info(status_message($resp->code)
                     . sprintf(q( ID: %5u; ), $file_id)
                     . qq(path: $full_path));
                 $file_map{$file_id} = $full_path;
-            } elsif ( exists $msg->{error} ) {
-                $log->error(qq(ID: $file_id; Received error response));
-                $log->error(Dumper($msg));
-                $request_errors++;
             }
         } else {
+            # HTTP error
             $log->logdie($resp->status_line);
         }
+        $log->debug(qq(Finished parsing of ID $file_id));
         $file_id++;
         if ( $log->is_debug ) {
-            my $debug_requests = 100;
-            if ( $cfg->defined(q(debug-requests)) ) {
-                $debug_requests = $cfg->get(q(debug-requests));
-            }
             if ( ! $cfg->defined(q(debug-noexit))
-                && $file_id > $debug_requests ) {
+                && $total_requests > $debug_requests ) {
                 last HTTP_REQUEST;
             }
         }

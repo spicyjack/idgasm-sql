@@ -29,6 +29,17 @@ has q(error_msg) => (
     is  => q(rw),
 );
 
+=item content_block
+
+The raw content block received from the C<idGames API Server> that caused the
+error.
+
+=cut
+
+has q(content_block) => (
+    is => q(rw),
+);
+
 =back
 
 =head2 Methods
@@ -37,8 +48,9 @@ has q(error_msg) => (
 
 =item BUILD() (aka 'new')
 
-Creates the L<App::idgasmTools::Error> object, optionally with an error
-message.
+Creates the L<App::idgasmTools::Error> object, pass with C<error_msg> and
+C<content_block> in order to populate those attributes, or populate those
+attributes once the C<Error> object has been created.
 
 =cut
 

@@ -21,6 +21,21 @@ use App::idgasmTools::Error;
 
 =over
 
+=item parsing_module
+
+The Perl module that was used to parse the XML data.
+
+=cut
+
+has q(parsing_module) => (
+    is      => q(ro),
+    default => q(JSON),
+);
+
+=head2 Methods
+
+=over
+
 =item parse(data => $response->content)
 
 Parses the content inside of the HTTP response message sent from the server in
@@ -42,12 +57,14 @@ sub parse {
     my $data = $args{data};
     my $json = JSON::XS->new->utf8->pretty->allow_unknown;
     # wrap decode() in an eval to handle parsing errors
-    my $document = eval{$json->decode($data);};
+    my $parsed_data = eval{$json->decode($data);};
+    $log->debug(q(Dumping ) . $self->parse_module . qq( output:\n)
+        . Dumper $parsed_data);
     if ( $@ ) {
         my $error = App::idgasmTools::Error->new(error_msg => $@);
         return $error;
     } else {
-        return $document;
+        return $parsed_data;
     }
 }
 

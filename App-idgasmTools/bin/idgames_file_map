@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-# Copyright (c) 2013 by Brian Manning <brian at xaoc dot org>
-
 # For support with this file, please file an issue on the GitHub issue tracker
 # for this project: https://github.com/spicyjack/idgasm-tools/issues
 
@@ -17,6 +15,8 @@ Version 0.002
 =cut
 
 our $VERSION = '0.002';
+our $copyright =
+    q|Copyright (c)2013 Brian Manning/brian at xaoc dot org|;
 
 =head1 SYNOPSIS
 
@@ -177,6 +177,11 @@ use constant {
     Log::Log4perl::init( \$log4perl_conf );
     my $log = get_logger("");
 
+    # print a nice banner
+    $log->info(qq(Starting $my_name, version $VERSION));
+    $log->info(qq($copyright));
+    $log->info(qq(My PID is: $$));
+
     my $debug_requests = DEBUG_REQUESTS;
     if ( $log->is_debug && $cfg->defined(q(debug-requests)) ) {
         $debug_requests = $cfg->get(q(debug-requests));
@@ -189,10 +194,6 @@ use constant {
             . q( without '­-overwrite' option))
             if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
     }
-
-    # print a nice banner
-    $log->info(qq(Starting $my_name, version $VERSION));
-    $log->info(qq(My PID is $$));
 
     # start at file ID 1, keep going until you get a "error" response instead
     # of a "content" response in the JSON
@@ -231,7 +232,7 @@ use constant {
     HTTP_REQUEST: while (1) {
         my $random_wait = int(rand($random_wait_delay));
         my $fetch_url =  $idgames_url . qq(id=$file_id);
-        $log->debug(qq(Fetching $fetch_url));
+        $log->debug(qq(Fetching: $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
         my $req = HTTP::Request->new(GET => $fetch_url);
         my $resp = $ua->request($req);
@@ -241,25 +242,15 @@ use constant {
             $log->debug(qq(HTTP API request is successful for $file_id));
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $file = App::idgasmTools::File->new();
             my $parse_type;
-            my $data = $parser->parse(data => $resp->content);
+            my $file = $parser->parse(data => $resp->content);
             # Check for parsing errors
-            if ( ref($data) eq q(App::idgasmTools::Error) ) {
+            if ( ref($file) eq q(App::idgasmTools::Error) ) {
                 $log->error(q(Error parsing downloaded ')
                     . uc($parse_type) . q(' data!));
-                $log->error(q(Error message: ) . $data->error_msg);
-                next HTTP_REQUEST;
-            }
-            my $populate_status = $file->populate(
-                parse_module => $parser->parsing_module,
-                data => $data,
-            );
-            # Check for idGames API request error
-            if ( ref($populate_status) eq q(App::idgasmTools::Error) ) {
-                $log->error(qq(ID: $file_id; Could not populate File object;));
-                $log->error($populate_status->error_msg);
+                $log->error(q(Error message: ) . $file->error_msg);
                 $request_errors++;
+                next HTTP_REQUEST;
             } else {
                 my $full_path = $file->dir . $file->filename;
                 $log->info(status_message($resp->code)
@@ -307,10 +298,6 @@ use constant {
     if ( $cfg->defined(q(output)) ) {
         close($OUTPUT);
     }
-
-=cut
-
-=back
 
 =head1 AUTHOR
 

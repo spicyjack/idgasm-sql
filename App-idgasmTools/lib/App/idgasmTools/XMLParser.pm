@@ -26,6 +26,21 @@ use App::idgasmTools::Error;
 
 =over
 
+=item parsing_module
+
+The Perl module that was used to parse the XML data.
+
+=cut
+
+has q(parsing_module) => (
+    is      => q(ro),
+    default => q(XML::Fast),
+);
+
+=head2 Methods
+
+=over
+
 =item parse(data => $response->content)
 
 Parses the content inside of the HTTP response message sent from the server in
@@ -45,17 +60,17 @@ sub parse {
         unless (exists $args{data});
 
     my $data = $args{data};
-    my ($xml, $document);
 
     # XML::Fast::xml2hash will die if there are parsing errors; wrap parsing
     # with an eval to handle dying gracefully
-    my $document = eval{XML::Fast::xml2hash($data);};
-    $log->debug(qq(Dumping:\n) . Dumper $document);
+    my $parsed_data = eval{XML::Fast::xml2hash($data);};
+    #$log->debug(q(Dumping ) . $self->parsing_module . qq( output:\n)
+    #    . Dumper $parsed_data);
     if ( $@ ) {
         my $error = App::idgasmTools::Error->new(error_msg => $@);
         return $error;
     } else {
-        return $document;
+        return $parsed_data;
     }
 }
 

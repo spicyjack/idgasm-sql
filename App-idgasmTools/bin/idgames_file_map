@@ -148,22 +148,14 @@ use constant {
     # create a logger object
     my $cfg = App::idgasmTools::Config->new(options => \@options);
 
+    # dump and bail if we get called with --help
+    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+
     # show morehelp?
     if ( $cfg->defined(q(morehelp)) ) {
         print STDERR $morehelp;
         exit 1;
     }
-
-    # What kind of data are we requesting and parsing? JSON or XML?
-    my $parse_type;
-    if ( $cfg->defined(q(json)) ) {
-        $parse_type = q(json);
-    } else {
-        $parse_type = q(xml);
-    }
-
-    # dump and bail if we get called with --help
-    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
 
     # Start setting up the Log::Log4perl object
     my $log4perl_conf = qq(log4perl.rootLogger = WARN, Screen\n);
@@ -203,6 +195,13 @@ use constant {
     Log::Log4perl::init( \$log4perl_conf );
     my $log = get_logger("");
 
+    # check that we're not overwriting files if --output was used
+    if ( $cfg->defined(q(output)) ) {
+        $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
+            . q( without '­-overwrite' option))
+            if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
+    }
+
     # print a nice banner
     $log->info(qq(Starting $my_name, version $VERSION));
     $log->info(qq($copyright));
@@ -212,13 +211,6 @@ use constant {
     if ( $log->is_debug && $cfg->defined(q(debug-requests)) ) {
         $debug_requests = $cfg->get(q(debug-requests));
         $log->debug(qq(Setting number of API requests to $debug_requests));
-    }
-
-    # check that we're not overwriting files if --output is used
-    if ( $cfg->defined(q(output)) ) {
-        $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
-            . q( without '­-overwrite' option))
-            if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
     }
 
     # start at file ID 1, keep going until you get a "error" response instead
@@ -240,15 +232,16 @@ use constant {
     my $ua = LWP::UserAgent->new(agent => qq($my_name $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
     $idgames_url .= q(action=get&);
-
-    # set up the parser
-    my $parser;
-    if ( $parse_type eq q(json) ) {
+    # What kind of data are we requesting and parsing? JSON or XML?
+    my ($parse_type, $parser);
+    if ( $cfg->defined(q(json)) ) {
+        $parse_type = q(json);
         # don't append 'out=json' to URL unless --json was used
         $idgames_url .= q(out=json&);
         $parser = App::idgasmTools::JSONParser->new();
         $log->debug(qq(Using JSON API calls to idGames Archive API));
     } else {
+        $parse_type = q(xml);
         $parser = App::idgasmTools::XMLParser->new();
         $log->debug(qq(Using XML API calls to idGames Archive API));
     }

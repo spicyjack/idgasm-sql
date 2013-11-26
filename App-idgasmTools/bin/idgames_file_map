@@ -29,6 +29,7 @@ our $copyright =
 
  Other script options:
  -o|--output        Output file to write to; default is STDOUT
+ -b|--database      Write info retrieved via API to this SQLite file
  -x|--xml           Request XML data from idGames API (default)
  -j|--json          Request JSON data from idGames API
  -w|--overwrite     Overwrite a file that is used as --output
@@ -83,6 +84,7 @@ our @options = (
     q(json|j),
     q(xml|x),
     q(overwrite|w),
+    q(database|db|b=s),
 
     # misc options
     q(random-wait!),
@@ -200,6 +202,12 @@ use constant {
         $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
             . q( without '­-overwrite' option))
             if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
+    }
+
+    # check for the database file if --database was used
+    if ( $cfg->defined(q(database)) ) {
+        $log->logdie(qq(Can't find database file) . $cfg->get(q(database)))
+            if ( -e $cfg->get(q(database)) );
     }
 
     # print a nice banner

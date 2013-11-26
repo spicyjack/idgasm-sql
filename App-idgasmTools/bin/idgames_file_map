@@ -32,9 +32,31 @@ our $copyright =
  -x|--xml           Request XML data from idGames API (default)
  -j|--json          Request JSON data from idGames API
  -w|--overwrite     Overwrite a file that is used as --output
-
- Misc. script options:
  -c|--colorize      Always colorize script output
+ -m|--morehelp      Show misc/debugging options, then exit
+
+ Example usage:
+
+ # build a mapping of file IDs to file paths from idGames API,
+ # output to STDOUT
+ idgames_file_map
+
+ # build a mapping, output to a file
+ idgames_file_map --output /path/to/local/file.txt
+
+ # build a mapping, output to a file and database file;
+ # idgames_archive.db would have been created using 'db_bootstrap'
+ idgames_file_map --output /path/to/local/file.txt \
+    --database /path/to/local/idgames_archive.db
+
+You can view the full C<POD> documentation of this file by calling C<perldoc
+idgames_file_map.pl>.
+
+=cut
+
+our $morehelp = <<MOREHELP;
+
+ === Misc/debugging script options ===
  --no-random-wait   Don't use random pauses between GET requests
  --random-wait-time Seed for random wait timer; default = 5, 0-5 seconds
  --debug-noexit     Don't exit script when --debug is used
@@ -44,16 +66,10 @@ our $copyright =
 
  Example usage:
 
- # build a mapping of file IDs to file paths from idGames API
- idgames_file_map --output /path/to/output.txt
-
  # Debug, start at request ID 1242, make only 5 requests
  idgames_file_map --debug --start-at 1242 --debug-requests 5
 
-You can view the full C<POD> documentation of this file by calling C<perldoc
-idgames_file_map.pl>.
-
-=cut
+MOREHELP
 
 our @options = (
     # script options
@@ -67,12 +83,15 @@ our @options = (
     q(json|j),
     q(xml|x),
     q(overwrite|w),
+
+    # misc options
     q(random-wait!),
     q(random-wait-time=i),
     q(debug-noexit),
     q(debug-requests=i),
     q(die-on-error!),
     q(start-at=i),
+    q(morehelp),
 );
 
 =head1 DESCRIPTION
@@ -128,6 +147,13 @@ use constant {
 
     # create a logger object
     my $cfg = App::idgasmTools::Config->new(options => \@options);
+
+    # show morehelp?
+    if ( $cfg->defined(q(morehelp)) ) {
+        print STDERR $morehelp;
+        exit 1;
+    }
+
     # What kind of data are we requesting and parsing? JSON or XML?
     my $parse_type;
     if ( $cfg->defined(q(json)) ) {

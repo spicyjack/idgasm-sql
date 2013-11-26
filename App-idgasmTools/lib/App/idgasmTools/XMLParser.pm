@@ -29,8 +29,8 @@ use App::idgasmTools::File;
 
 =item parse(data => $response->content)
 
-Parses the content inside of the HTTP response message sent from the server in
-response to an C<idGames Archive API> request.  Returns an
+Parses the XML content inside of the HTTP response message sent from the
+server in response to an C<idGames Archive API> request.  Returns an
 L<App::idgasmTools::File> object if parsing was successful, or a
 L<App::idgasmTools::Error> object if parsing was not successful.
 
@@ -38,7 +38,6 @@ L<App::idgasmTools::Error> object if parsing was not successful.
 
 =cut
 
-successful, or a L<App::idgasmTools::Error> object if parsing was not
 sub parse {
     my $self = shift;
     my %args = @_;

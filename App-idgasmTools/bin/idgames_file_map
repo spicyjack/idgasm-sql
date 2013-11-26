@@ -242,7 +242,6 @@ use constant {
             $log->debug(qq(HTTP API request is successful for $file_id));
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $parse_type;
             my $file = $parser->parse(data => $resp->content);
             # Check for parsing errors
             if ( ref($file) eq q(App::idgasmTools::Error) ) {
@@ -250,6 +249,12 @@ use constant {
                     . uc($parse_type) . q(' data!));
                 $log->error(q(Error message: ) . $file->error_msg);
                 $request_errors++;
+                if ( $request_errors > 5 ) {
+                    if (! $cfg->defined(q(die-on-error)) ) {
+                        $log->error(qq(Too many errors parsing ID $file_id!));
+                        $log->logdie(q|(Use --no-die-on-error to suppress)|);
+                    }
+                }
                 next HTTP_REQUEST;
             } else {
                 my $full_path = $file->dir . $file->filename;
@@ -273,14 +278,7 @@ use constant {
         # if die-on-error is defined, or die-on-error is set to 1
         # --no-die-on-error will set die-on-error to 0
         # if --no-die-on-error is not used, die-on-error will be 'undef'
-        if (! $cfg->defined(q(die-on-error))
-            || $cfg->get(q(die-on-error)) == 1){
-            if ( $request_errors > 5 ) {
-                $log->error(qq(Too many HTTP request errors!));
-                $log->logdie(q|(Use --no-die-on-error to suppress)|);
-            }
-        }
-        $log->debug(qq(Sleeping for $random_wait seconds...));
+       $log->debug(qq(Sleeping for $random_wait seconds...));
         sleep $random_wait;
     }
 

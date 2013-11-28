@@ -142,8 +142,9 @@ use constant {
     DEBUG_REQUESTS => 100,
 };
 
-    # total number of API requests
+    # create a variable with the current name of the script
     my $my_name = basename($0);
+    # total number of API requests
     my $total_requests = 0;
     binmode(STDOUT, ":utf8");
 

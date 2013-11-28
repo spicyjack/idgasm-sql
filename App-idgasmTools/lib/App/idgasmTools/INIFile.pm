@@ -38,7 +38,7 @@ has filename => (
     isa => sub {
                 my $self = shift;
                 die "$self is not a valid filename"
-                    unless (-r $self)
+                    unless (-r $self);
             },
 
 );

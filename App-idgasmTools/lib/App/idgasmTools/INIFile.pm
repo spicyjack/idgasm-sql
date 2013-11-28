@@ -242,7 +242,7 @@ sub dump_schema {
         unless(defined($args{db_schema}));
 
     my $db_schema = $args{db_schema};
-    $log->debug(q(Database schema dump...));
+    #$log->debug(q(Database schema dump...));
     if ( defined $args{extra_text} ) {
         $log->debug($args{extra_text});
     }

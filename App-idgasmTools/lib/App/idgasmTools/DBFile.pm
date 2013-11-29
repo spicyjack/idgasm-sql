@@ -144,6 +144,11 @@ sub connect {
     $log->debug(q(Connecting to/reading database file ) . $self->filename);
     if ( ! defined $dbh ) {
         $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
+        # turn on unicode handling
+        $dbh->{sqlite_unicode} = 1;
+        # don't print errors by default, they should be handled by the calling
+        # code
+        $dbh->{PrintError} = 0;
         if ( defined $dbh->err ) {
             $log->error($dbh->errstr);
             return undef;
@@ -163,19 +168,21 @@ sub has_schema {
         ORDER BY date_applied ASC
 SQL
     $log->debug(q(Preparing SQL for querying 'schema' table));
-    my $sth = eval{$dbh->prepare($sql);};
-    if ( ! defined $sth ) {
-        $log->error($DBI::errstr);
+    my $sth = $dbh->prepare($sql);
+    if ( defined $dbh->err ) {
+        $log->error(q(Checking for schema failed: ) . $dbh->errstr);
         return 0;
     }
-    #else {
-    #    return 1;
-    #}
 
     my $schema_rows = 0;
     $log->debug(q(Reading schema entries from 'schema' table));
+    $sth->execute;
+    if ( defined $sth->err ) {
+        $log->error(q(Execution of schema entries read failed));
+        $log->error(q(Error message: ) . $sth->errstr);
+        return 0;
+    }
     while ( my @row = $sth->fetchrow_array ) {
-        $log->debug(q(Database ) . $self->filename . q( has a schema));
         $schema_rows++;
         # "unpack" the row
         my ($row_id, $date_applied) = @row;

@@ -201,8 +201,13 @@ use App::idgasmTools::INIFile;
                 filename => $cfg->get(q(output))
             );
             if ( $db->connect ) {
-                if ( ! $db->has_schema ) {
+                my $schema_entries = $db->has_schema;
+                if ( $schema_entries == 0 ) {
+                    $log->debug(q(DB schema empty, calling 'create_schema'));
                     $db->create_schema(schema => $db_schema);
+                } else {
+                    $log->debug(q(DB schema has already been populated;));
+                    $log->debug(qq(Schema has $schema_entries entries));
                 }
             } else {
                 $log->logdie(q(Unable to connect to database));

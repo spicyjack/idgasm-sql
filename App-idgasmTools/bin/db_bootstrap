@@ -112,6 +112,7 @@ $Data::Dumper::Terse = 1;
 
 # local packages
 use App::idgasmTools::Config;
+use App::idgasmTools::DBFile;
 use App::idgasmTools::INIFile;
 
     # create a variable with the current name of the script
@@ -171,7 +172,7 @@ use App::idgasmTools::INIFile;
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
         $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
-            . q( without '­-overwrite' option))
+            . q( without '--overwrite' option))
             if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
     }
 
@@ -196,6 +197,16 @@ use App::idgasmTools::INIFile;
             $log->debug(q(Parsing schema;));
             $log->debug(q(  Epoch: ) . $db_schema->{q()}->{q(schema_epoch)});
             $log->debug(q(  Date:  ) . $db_schema->{q()}->{q(schema_date)});
+            my $db = App::idgasmTools::DBFile->new(
+                filename => $cfg->get(q(output))
+            );
+            if ( $db->connect ) {
+                if ( ! $db->has_schema ) {
+                    $db->create_schema(schema => $db_schema);
+                }
+            } else {
+                $log->logdie(q(Unable to connect to database));
+            }
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));

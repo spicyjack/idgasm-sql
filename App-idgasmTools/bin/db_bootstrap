@@ -190,10 +190,10 @@ use App::idgasmTools::INIFile;
         $log->debug(q(Running as: --create-db));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             $db_schema = $parser->read_ini_config();
-            $parser->dump_schema(
-                db_schema  => $db_schema,
-                extra_text => q(Dump called from --create-db block),
-            );
+            #$parser->dump_schema(
+            #    db_schema  => $db_schema,
+            #    extra_text => q(Dump called from --create-db block),
+            #);
             $log->debug(q(Parsing schema;));
             $log->debug(q(  Epoch: ) . $db_schema->{q()}->{q(schema_epoch)});
             $log->debug(q(  Date:  ) . $db_schema->{q()}->{q(schema_date)});

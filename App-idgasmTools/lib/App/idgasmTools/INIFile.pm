@@ -108,7 +108,7 @@ sub md5_checksum {
         } else {
             $log->debug(qq(Parsing schema block: $block_id));
         }
-        foreach my $block_key ( qw( description notes sql ) ){
+        foreach my $block_key ( qw( name description notes sql ) ){
             #$log->debug(qq(  $block_key: ) . $block{$block_key});
             $data .= $block{$block_key};
         }

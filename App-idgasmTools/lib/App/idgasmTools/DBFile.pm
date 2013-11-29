@@ -202,6 +202,9 @@ sub create_schema {
     $log->logdie(q(Missing 'schema' parameter))
         unless ( defined $args{schema} );
     my $schema = $args{schema};
+    # prepare the database statement beforehand; use bind_param (below) to set
+    # the values inserted into the database
+    my $sth = $dbh->prepare( q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
     foreach my $key ( sort(keys(%{$schema})) ) {
         next if ( $key =~ /^$/ );
         my $entry = $schema->{$key};
@@ -209,8 +212,6 @@ sub create_schema {
         $log->debug(qq(Creating table for: ) . $entry->{name});
         #my $sth = eval{$dbh->prepare($sql);};
         $dbh->do($entry->{sql});
-        my $sth = $dbh->prepare(
-            q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
         $sth->bind_param(1, $key);
         $sth->bind_param(2, time);
         $sth->bind_param(3, $entry->{name});

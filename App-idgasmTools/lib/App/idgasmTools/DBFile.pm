@@ -151,7 +151,6 @@ sub connect {
             return 1;
         }
     }
-
 }
 
 sub has_schema {
@@ -163,15 +162,18 @@ sub has_schema {
         FROM schema
         ORDER BY date_applied ASC
 SQL
+    $log->debug(q(Preparing SQL for querying 'schema' table));
     my $sth = eval{$dbh->prepare($sql);};
     if ( ! defined $sth ) {
         $log->error($DBI::errstr);
         return 0;
-    } else {
-        return 1;
     }
+    #else {
+    #    return 1;
+    #}
 
     my $schema_rows = 0;
+    $log->debug(q(Reading schema entries from 'schema' table));
     while ( my @row = $sth->fetchrow_array ) {
         $log->debug(q(Database ) . $self->filename . q( has a schema));
         $schema_rows++;
@@ -197,11 +199,24 @@ sub create_schema {
         next if ( $key =~ /^$/ );
         my $entry = $schema->{$key};
         #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
-        my $sql = $entry->{q(sql)};
-        my $description = $entry->{q(description)};
-        $log->debug(qq(Creating table for: $description));
+        $log->debug(qq(Creating table for: ) . $entry->{name});
         #my $sth = eval{$dbh->prepare($sql);};
-        $dbh->do($sql);
+        $dbh->do($entry->{sql});
+        my $sth = $dbh->prepare(
+            q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
+        $sth->bind_param(1, $key);
+        $sth->bind_param(2, time);
+        $sth->bind_param(3, $entry->{name});
+        $sth->bind_param(4, $entry->{description});
+        $sth->bind_param(5, $entry->{notes});
+        $sth->bind_param(6, $entry->{checksum});
+        my $rv = $sth->execute();
+        if ( ! defined $rv ) {
+            $log->error(qq(INSERT for schema ID $key returned an error: )
+                . $sth->errstr);
+        } else {
+            $log->debug(qq(INSERT for schema ID $key changed $rv row));
+        }
     }
 }
 

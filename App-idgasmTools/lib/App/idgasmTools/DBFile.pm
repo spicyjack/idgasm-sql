@@ -5,7 +5,9 @@ package App::idgasmTools::DBFile;
 
 # system modules
 use Date::Format;
+use DBI;
 use Digest::MD5;
+use File::Basename;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
 use Data::Dumper;
@@ -15,6 +17,10 @@ $Data::Dumper::Terse = 1;
 
 # local modules
 use App::idgasmTools::Error;
+
+# local variables
+# store the database handle
+my $dbh;
 
 =head1 App::idgasmTools::DBFile
 
@@ -36,12 +42,11 @@ file will be created.
 
 has filename => (
     is  => q(rw),
-    isa => sub {
-                my $self = shift;
-                die "$self is not a valid filename"
-                    unless (-r $self);
-            },
-
+#    isa => sub {
+#                my $self = shift;
+#                die "$self is not a valid filename"
+#                    unless (-r $self);
+#            },
 );
 
 =head2 Methods
@@ -136,18 +141,67 @@ sub connect {
     my $self = shift;
     my $log = Log::Log4perl->get_logger("");
 
-    my $db_schema;
-    $log->debug(q(Reading INI file ) . $self->filename);
-    if ( -r $self->filename ) {
-        read_config($self->filename => $db_schema);
-        my @transactions = keys(%{$db_schema});
-        $log->debug(qq(Database transaction keys are: ));
-        $log->debug(q(-> ) . join(qq(, ), sort(@transactions)));
-        #$self->db_schema($db_schema);
-        return $db_schema;
+    $log->debug(q(Connecting to/reading database file ) . $self->filename);
+    if ( ! defined $dbh ) {
+        $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
+        if ( defined $dbh->err ) {
+            $log->error($dbh->errstr);
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+}
+
+sub has_schema {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger("");
+
+    my $sql = <<SQL;
+        SELECT id, date_applied
+        FROM schema
+        ORDER BY date_applied ASC
+SQL
+    my $sth = eval{$dbh->prepare($sql);};
+    if ( ! defined $sth ) {
+        $log->error($DBI::errstr);
+        return 0;
     } else {
-        my $error = App::idgasmTools::Error->new();
-        $error->error_msg(qq(Can't read INI file!));
+        return 1;
+    }
+
+    my $schema_rows = 0;
+    while ( my @row = $sth->fetchrow_array ) {
+        $log->debug(q(Database ) . $self->filename . q( has a schema));
+        $schema_rows++;
+        # "unpack" the row
+        my ($row_id, $date_applied) = @row;
+        $log->debug(qq(Row; id: $row_id, date: $date_applied));
+    }
+
+    # return the number of schema rows read from the database; this should
+    # roughly correspond to the schema version of the database
+    return $schema_rows;
+}
+
+sub create_schema {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger("");
+
+    $log->logdie(q(Missing 'schema' parameter))
+        unless ( defined $args{schema} );
+    my $schema = $args{schema};
+    foreach my $key ( sort(keys(%{$schema})) ) {
+        next if ( $key =~ /^$/ );
+        my $entry = $schema->{$key};
+        #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
+        my $sql = $entry->{q(sql)};
+        my $description = $entry->{q(description)};
+        $log->debug(qq(Creating table for: $description));
+        #my $sth = eval{$dbh->prepare($sql);};
+        $dbh->do($sql);
     }
 }
 

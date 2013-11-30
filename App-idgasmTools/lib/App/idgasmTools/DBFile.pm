@@ -204,14 +204,19 @@ sub create_schema {
     my $schema = $args{schema};
     # prepare the database statement beforehand; use bind_param (below) to set
     # the values inserted into the database
-    my $sth = $dbh->prepare( q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
+
     foreach my $key ( sort(keys(%{$schema})) ) {
         next if ( $key =~ /^$/ );
         my $entry = $schema->{$key};
         #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
         $log->debug(qq(Creating table for: ) . $entry->{name});
-        #my $sth = eval{$dbh->prepare($sql);};
+        # create the table table
         $dbh->do($entry->{sql});
+        # add the newly created table to the schema table
+        # this statement handle is only valid *after* the `schema` table has
+        # been created
+        my $sth = $dbh->prepare(
+            q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
         $sth->bind_param(1, $key);
         $sth->bind_param(2, time);
         $sth->bind_param(3, $entry->{name});

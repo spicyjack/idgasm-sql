@@ -62,7 +62,7 @@ sub parse {
             my $file = App::idgasmTools::File->new();
             # go through all of the attributes in the content object, copy
             # them to the same attributes in this File object
-            my @attribs = @{$file->file_attributes};
+            my @attribs = @{$file->attributes};
             $log->debug(q(Populating File attributes...));
             foreach my $key ( @attribs ) {
                 if ( defined $content->{$key} ) {

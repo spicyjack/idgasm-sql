@@ -132,6 +132,7 @@ $Data::Dumper::Terse = 1;
 
 # local packages
 use App::idgasmTools::Config;
+use App::idgasmTools::DBFile;
 use App::idgasmTools::File;
 use App::idgasmTools::JSONParser;
 use App::idgasmTools::XMLParser;
@@ -238,6 +239,21 @@ use constant {
         $log->debug(qq(Using $random_wait_delay for ѕeed for random delay));
     }
     my %file_map;
+    my $db;
+    if ( $cfg->defined(q(database)) && -e $cfg->get(q(database)) ) {
+        $db = App::idgasmTools::DBFile->new(
+            filename => $cfg->get(q(database))
+        );
+        if ( defined $db->connect ) {
+            my $schema_entries = $db->has_schema;
+            if ( $schema_entries == 0 ) {
+                $log->error(q(DB schema empty, need to create database first));
+                $log->logdie(q(Create database with 'db_bootstrap' script));
+            }
+        } else {
+            $log->logdie(q(Unable to connect to database));
+        }
+    }
     my $ua = LWP::UserAgent->new(agent => qq($my_name $VERSION));
     my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
     $idgames_url .= q(action=get&);
@@ -290,6 +306,9 @@ use constant {
                     . sprintf(q( ID: %5u; ), $file_id)
                     . qq(path: $full_path));
                 $file_map{$file_id} = $full_path;
+                if ( defined $db ) {
+                    $db->add_file(file_obj => $file);
+                }
             }
         } else {
             # HTTP error

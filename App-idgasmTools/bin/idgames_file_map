@@ -208,8 +208,8 @@ use constant {
 
     # check for the database file if --database was used
     if ( $cfg->defined(q(database)) ) {
-        $log->logdie(qq(Can't find database file) . $cfg->get(q(database)))
-            if ( -e $cfg->get(q(database)) );
+        $log->logdie(qq(Can't find database file ) . $cfg->get(q(database)))
+            unless ( -e $cfg->get(q(database)) );
     }
 
     # print a nice banner
@@ -249,6 +249,8 @@ use constant {
             if ( $schema_entries == 0 ) {
                 $log->error(q(DB schema empty, need to create database first));
                 $log->logdie(q(Create database with 'db_bootstrap' script));
+            } else {
+                $log->debug(qq(DB schema has $schema_entries entries));
             }
         } else {
             $log->logdie(q(Unable to connect to database));
@@ -283,7 +285,7 @@ use constant {
         $total_requests++;
         # Handle HTTP status messages
         if ( $resp->is_success ) {
-            $log->debug(qq(HTTP API request is successful for $file_id));
+            $log->debug(qq(HTTP API request is successful for ID: $file_id));
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
             my $file = $parser->parse(data => $resp->content);
@@ -331,7 +333,9 @@ use constant {
 
     my $OUTPUT;
     if ( $cfg->defined(q(output)) ) {
-        $OUTPUT = open(q(>) . $cfg->get(q(output)));
+        $log->logdie(q(Can't open output file )
+            . $cfg->get(q(output)) . qq(: $!))
+            unless open($OUTPUT, q(>) . $cfg->get(q(output)));
     } else {
         $OUTPUT = *STDOUT;
     }

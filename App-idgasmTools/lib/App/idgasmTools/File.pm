@@ -269,12 +269,12 @@ C<File> object.  Great for using for enumerating all of the file's attrubtes.
 
 =cut
 
-has q(file_attributes) => (
+has q(attributes) => (
     is  => q(ro),
     default => sub { [qw(
         id title dir filename size age date author email description
-        credits base buildtime editors bugs textfile rating votes url
-        idgamesurl reviews)] },
+        credits base buildtime editors bugs textfile rating votes )]
+        },
 );
 
 =back

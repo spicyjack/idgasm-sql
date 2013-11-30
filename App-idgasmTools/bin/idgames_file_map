@@ -139,8 +139,10 @@ use App::idgasmTools::XMLParser;
 
 # script constants
 use constant {
-    DELAY_TIME => 5,
-    DEBUG_REQUESTS => 100,
+    DELAY_TIME           => 5,
+    DEBUG_REQUESTS       => 100,
+    FILE_REQUEST_ERRORS  => 2,
+    TOTAL_REQUEST_ERRORS => 5,
 };
 
     # create a variable with the current name of the script
@@ -232,7 +234,7 @@ use constant {
         $file_id = $cfg->get(q(start-at));
         $log->debug(qq(Starting at file ID $file_id));
     }
-    my $request_errors = 0;
+    my $total_request_errors = 0;
     my $random_wait_delay = DELAY_TIME;
     if ( $cfg->defined(q(random-wait-time)) ) {
         $random_wait_delay = $cfg->get(q(random-wait-time));
@@ -273,6 +275,7 @@ use constant {
         $log->debug(qq(Using XML API calls to idGames Archive API));
     }
 
+    my $file_request_errors = 0;
     # Loop across all of the file IDs, until a request for a file ID returns
     # an error of some kind
     HTTP_REQUEST: while (1) {
@@ -291,16 +294,26 @@ use constant {
             my $file = $parser->parse(data => $resp->content);
             # Check for parsing errors
             if ( ref($file) eq q(App::idgasmTools::Error) ) {
-                $log->error(q(Error parsing downloaded ')
-                    . uc($parse_type) . q(' data!));
+                $log->error(q(Error parsing downloaded )
+                    . uc($parse_type) . q( data));
                 $log->error(q(Error message: ) . $file->error_msg);
-                $request_errors++;
-                if ( $request_errors > 5 ) {
-                    if (! $cfg->defined(q(die-on-error)) ) {
-                        $log->error(qq(Too many errors parsing ID $file_id!));
-                        $log->logdie(q|(Use --no-die-on-error to suppress)|);
+                $file_request_errors++;
+                if ( $file_request_errors > FILE_REQUEST_ERRORS ) {
+                    $log->error(qq(Too many errors parsing ID $file_id!));
+                    $log->error(qq(Moving to the next file ID in sequence));
+                    # reset the file request error flag
+                    $file_request_errors = 0;
+                    # move to the next file ID
+                    $file_id++;
+                    # increase the total number of request errors
+                    $total_request_errors++;
+                    if ( $total_request_errors > TOTAL_REQUEST_ERRORS ) {
+                        $log->logdie(q(Received too many HTTP request errors));
                     }
                 }
+                $log->debug(qq(Sleeping for $random_wait seconds ...)
+                    . q|(error response block)|);
+                sleep $random_wait;
                 next HTTP_REQUEST;
             } else {
                 my $full_path = $file->dir . $file->filename;
@@ -324,10 +337,7 @@ use constant {
                 last HTTP_REQUEST;
             }
         }
-        # if die-on-error is defined, or die-on-error is set to 1
-        # --no-die-on-error will set die-on-error to 0
-        # if --no-die-on-error is not used, die-on-error will be 'undef'
-       $log->debug(qq(Sleeping for $random_wait seconds...));
+        $log->debug(qq(Sleeping for $random_wait seconds...));
         sleep $random_wait;
     }
 

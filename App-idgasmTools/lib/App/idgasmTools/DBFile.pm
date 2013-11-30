@@ -68,72 +68,12 @@ The filename of the C<INI> file to read from and possibly write to.
 
 =back
 
-=item md5_checksum()
+=item connect()
 
-Generates an C<MD5> checksum for each database transaction in the C<INI> file,
-and appends the checksum to the C<INI> checksum field for that transaction.
-Returns a reference to a L<Config::Std> hash updated with checksums.
-
-Required arguments:
-
-=over
-
-=item db_schema
-
-A scalar reference to the database schema hash read in from the C<INI> file.
-
-=back
-
-=cut
-
-sub md5_checksum {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
-
-    $log->logdie(q(Missing 'db_schema' argument))
-        unless(defined($args{db_schema}));
-
-    my $db_schema = $args{db_schema};
-    # go through each field in each record of the INI file, and build a scalar
-    # that combines all of the fields so a checksum can be generated against
-    # the combined fields
-    my $digest = Digest::MD5->new();
-    my $data;
-    BLOCK: foreach my $block_id ( sort(keys(%{$db_schema})) ) {
-        my %block = %{$db_schema->{$block_id}};
-        if ( length($block_id) == 0 ) {
-            my $epoch_time = time();
-            $log->debug(q(Setting new timestamp in 'default' block));
-            $block{schema_date} = time2str(q(%C), $epoch_time);
-            $block{schema_epoch} = $epoch_time;
-            # reassign the default block back to the config object/hash
-            $db_schema->{$block_id} = \%block;
-            $log->debug(q(Done with 'default' block, skipping to next block));
-            next BLOCK;
-        } else {
-            $log->debug(qq(Parsing schema block: $block_id));
-        }
-        foreach my $block_key ( qw( description notes sql ) ){
-            #$log->debug(qq(  $block_key: ) . $block{$block_key});
-            $data .= $block{$block_key};
-        }
-        $log->debug(q(Combined fields are ) . length($data)
-            . q| byte(s) in size|);
-        $digest->add($data);
-        my $checksum = $digest->b64digest;
-        $log->debug(qq(Checksum: $checksum));
-        $block{checksum} = $checksum;
-        $db_schema->{$block_id} = \%block;
-    }
-    return $db_schema;
-}
-
-=item read_ini_config()
-
-Reads the INI file specified by the C<filename> attribute, and returns a
-reference to the hash data structure set up by C<Config::Std>, or an
-L<App::idgasmTools::Error> object if there was a problem reading the INI file.
+Connects to the database (calls C<DBI-E<gt>connect> using the C<filename>
+attribute), and returns true (C<1>) if the connection did not have any errors,
+or an L<App::idgasmTools::Error> object if there was a problem connecting to
+the database.
 
 =cut
 
@@ -185,8 +125,8 @@ SQL
     while ( my @row = $sth->fetchrow_array ) {
         $schema_rows++;
         # "unpack" the row
-        my ($row_id, $date_applied) = @row;
-        $log->debug(qq(Row; id: $row_id, date: $date_applied));
+        #my ($row_id, $date_applied) = @row;
+        #$log->debug(qq(Row; id: $row_id, date: $date_applied));
     }
 
     # return the number of schema rows read from the database; this should
@@ -212,11 +152,24 @@ sub create_schema {
         $log->debug(qq(Creating table for: ) . $entry->{name});
         # create the table table
         $dbh->do($entry->{sql});
+        if ( defined $dbh->err ) {
+            $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
+            $log->error(q(Error message: ) . $dbh->errstr);
+            my $error = App::idgasmTools::Error->new(error_msg => $dbh->errstr);
+            return $error;
+        }
+
         # add the newly created table to the schema table
         # this statement handle is only valid *after* the `schema` table has
         # been created
         my $sth = $dbh->prepare(
             q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
+        if ( defined $dbh->err ) {
+            $log->error(q('prepare' call to INSERT into 'schema' failed));
+            $log->error(q(Error message: ) . $dbh->errstr);
+            my $error = App::idgasmTools::Error->new(error_msg => $dbh->errstr);
+            return $error;
+        }
         $sth->bind_param(1, $key);
         $sth->bind_param(2, time);
         $sth->bind_param(3, $entry->{name});
@@ -227,114 +180,75 @@ sub create_schema {
         if ( ! defined $rv ) {
             $log->error(qq(INSERT for schema ID $key returned an error: )
                 . $sth->errstr);
+            return undef;
         } else {
             $log->debug(qq(INSERT for schema ID $key changed $rv row));
         }
     }
 }
 
-=item write_ini_config()
+=item add_file()
 
-Writes the C<INI> file, to the same filename that was used when this object
-was created, unless optional argument C<filename> below is used.  Returns the
-size of the file that was written, or an L<App::idgasmTools::Error> object if
-there was a problem writing the file.
+Add an L<App::idgasmTools::File> object to the database.
 
 Required arguments:
 
 =over
 
-=item db_schema
+=item file_obj
 
-The database schema hash object created by L<Config::Std> to write out to
-disk.
-
-=back
-
-Optional arguments:
-
-=over
-
-=item filename
-
-If a C<filename> argument is passed in, write C<INI> config to that filename
-(if possible).
+The L<App::idgasmTools::File> object to add to the database.
 
 =back
 
 =cut
 
-sub write_ini_config {
+sub add_file {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger("");
 
-    $log->logdie(q(Missing 'db_schema' argument))
-        unless(defined($args{db_schema}));
-    my $db_schema = $args{db_schema};
-    #$self->dump_schema(
-    #    db_schema => $db_schema,
-    #    extra_text => q(write_ini_config),
-    #);
+    $log->logdie(q(Missing 'file_obj' argument))
+        unless(defined($args{file_obj}));
+    my $file = $args{file_obj};
+    $log->debug(q(Received file object; id: ) . $file->id
+        . q(, filename: ) . $file->filename);
 
-    my $write_filename = $self->filename;
-    if ( defined $args{filename} ) {
-        $write_filename = $args{filename};
-    }
-
-    $log->debug(q(Writing INI file ) . $write_filename);
-    my $filesize = 0;
-    if ( -w $write_filename ) {
-        eval { write_config($db_schema => $write_filename); };
-        if ( $@ ) {
-            my $error = App::idgasmTools::Error->new(error_msg => $@);
-            return $error;
-        }
-        $filesize = (-s $write_filename);
-    } else {
-        my $error = App::idgasmTools::Error->new(
-            error_msg => q(Can't write INI file!)
-        );
+    my $filesql = <<'FILESQL';
+        INSERT INTO files VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?)
+FILESQL
+    my $sth = $dbh->prepare($filesql);
+    if ( defined $dbh->err ) {
+        $log->error(q('prepare' call to INSERT into 'files' failed));
+        $log->error(q(Error message: ) . $dbh->errstr);
+        my $error = App::idgasmTools::Error->new(error_msg => $dbh->errstr);
         return $error;
     }
-    return $filesize;
-}
 
-=item dump_schema()
-
-Dumps the database schema hash passed in by the caller to C<$log-E<gt>debug>.
-
-Optional arguments:
-
-=over
-
-=item extra_text
-
-Extra text that will be printed along with the database schema dump
-
-=back
-
-=cut
-
-sub dump_schema {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
-
-    $log->logdie(q(Missing 'db_schema' argument))
-        unless(defined($args{db_schema}));
-
-    my $db_schema = $args{db_schema};
-    #$log->debug(q(Database schema dump...));
-    if ( defined $args{extra_text} ) {
-        $log->debug($args{extra_text});
+    my $bind_counter = 1;
+    foreach my $key ( @{$file->attributes} ) {
+        # catches 'url', 'idgamesurl' and 'reviews'
+        next if ( $key =~ /url|reviews/ );
+        #$log->debug(qq(Binding $key -> ) . $file->$key));
+        $sth->bind_param($bind_counter, $file->$key);
+        $bind_counter++;
     }
-
-    $log->debug(
-        qq(==== Database Schema Dump Begins ====\n)
-        . Dumper($db_schema)
-        . q(==== Database Schema Dump Ends ====)
-    );
+    $log->debug(q(Calling 'execute' for file ID ) . $file->id);
+    my $rv = $sth->execute();
+    if ( ! defined $rv ) {
+        $log->error(q(INSERT for file ID ) . $file->id
+            . q( returned an error: ) . $sth->errstr);
+        my $error = App::idgasmTools::Error->new(error_msg => $sth->errstr);
+        return $error;
+    } else {
+        $log->debug(qq(INSERT for file ID ) . $file->id . qq( successful));
+    }
+    # FIXME what to return?  An error object if there's an error, what to
+    # return for success?
 }
 
 =back

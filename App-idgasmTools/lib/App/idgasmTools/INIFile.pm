@@ -93,7 +93,6 @@ sub md5_checksum {
     # that combines all of the fields so a checksum can be generated against
     # the combined fields
     my $digest = Digest::MD5->new();
-    my $data;
     BLOCK: foreach my $block_id ( sort(keys(%{$db_schema})) ) {
         my %block = %{$db_schema->{$block_id}};
         if ( length($block_id) == 0 ) {
@@ -108,6 +107,8 @@ sub md5_checksum {
         } else {
             $log->debug(qq(Parsing schema block: $block_id));
         }
+        # placeholder for content to be checksummed
+        my $data;
         foreach my $block_key ( qw( name description notes sql ) ){
             #$log->debug(qq(  $block_key: ) . $block{$block_key});
             $data .= $block{$block_key};

@@ -59,15 +59,16 @@ sub parse {
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content} ) {
         my $content = $parsed_data->{q(idgames-response)}->{content};
         #$log->warn(qq(Dumping content:\n) . Dumper($content));
+        $log->debug(q(Successfully parsed XML content block));
         my $file = App::idgasmTools::File->new();
         # go through all of the attributes in the content object, copy
         # them to the same attributes in this File object
-        my @attribs = @{$file->file_attributes};
+        my @attribs = @{$file->attributes};
         $log->debug(q(Populating File attributes...));
         foreach my $key ( @attribs ) {
             $file->{$key} = $content->{$key};
             next if ( $key eq q(textfile) );
-            $log->debug(qq(  $key: >) . $file->$key . q(<));
+            #$log->debug(qq(  $key: >) . $file->$key . q(<));
         }
         return $file
     } elsif ( exists $parsed_data->{q(idgames-response)}->{error} ) {

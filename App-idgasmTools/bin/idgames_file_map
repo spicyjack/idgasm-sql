@@ -147,7 +147,7 @@ use constant {
     DELAY_TIME           => 5,
     DEBUG_REQUESTS       => 100,
     FILE_REQUEST_ERRORS  => 2,
-    TOTAL_REQUEST_ERRORS => 5,
+    MAX_REQUEST_ERRORS => 5,
 };
 
     # create a variable with the current name of the script
@@ -239,7 +239,7 @@ use constant {
         $file_id = $cfg->get(q(start-at));
         $log->debug(qq(Starting at file ID $file_id));
     }
-    my $total_request_errors = 0;
+
     my $random_wait_delay = DELAY_TIME;
     if ( $cfg->defined(q(random-wait-time)) ) {
         $random_wait_delay = $cfg->get(q(random-wait-time));
@@ -281,6 +281,8 @@ use constant {
     }
 
     my $file_request_errors = 0;
+    my $total_request_errors = 0;
+    my $sequential_request_errors = 0;
     # Loop across all of the file IDs, until a request for a file ID returns
     # an error of some kind
     HTTP_REQUEST: while (1) {
@@ -311,9 +313,13 @@ use constant {
                     # move to the next file ID
                     $file_id++;
                     # increase the total number of request errors
+                    $log->debug(q(Bumping up error counters));
                     $total_request_errors++;
-                    if ( $total_request_errors > TOTAL_REQUEST_ERRORS ) {
-                        $log->logdie(q(Received too many HTTP request errors));
+                    $sequential_request_errors++;
+                    if ( $sequential_request_errors > MAX_REQUEST_ERRORS ) {
+                        $log->logdie(q|Received too many API errors (|
+                            . MAX_REQUEST_ERRORS
+                            . q|) in too short a period of time|);
                     }
                 }
                 $log->debug(qq(Sleeping for $random_wait seconds ...)
@@ -328,6 +334,10 @@ use constant {
                 $file_map{$file_id} = $full_path;
                 if ( defined $db ) {
                     $db->add_file(file_obj => $file);
+                }
+                if ( $sequential_request_errors > 0 ) {
+                    $log->debug(q(Decreasing sequential error counter...));
+                    $sequential_request_errors--;
                 }
             }
         } else {

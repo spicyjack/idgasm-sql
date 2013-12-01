@@ -42,12 +42,17 @@ our $VERSION = '0.002';
  Example usage:
 
  # build a database file using the given INI file
- db_bootstrap.pl --input /path/to/db.ini \
+ db_bootstrap --input /path/to/db.ini \
     --output sample.db --create-db
 
  # update the checksums in an existing INI file
- db_bootstrap.pl --input /path/to/db.ini \
+ db_bootstrap --input /path/to/db.ini \
     --output /path/to/db.ini --checksum --overwrite
+
+ # create a database, debug mode, with colorization
+ db_bootstrap --input /path/to/db.ini \
+   --output idgames_file_map.db \
+   --create-db --debug --colorize --overwrite
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
 db_bootstrap.pl>.

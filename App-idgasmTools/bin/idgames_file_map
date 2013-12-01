@@ -50,6 +50,11 @@ our $copyright =
  idgames_file_map --output /path/to/local/file.txt \
     --database /path/to/local/idgames_archive.db
 
+ # debug with colorized debug messages, overwrite existing file map
+ idgames_file_map --output /path/to/key_value_file.txt \
+    --database /path/to/idgames_file_map.db \
+    --debug --colorize --overwrite
+
 You can view the full C<POD> documentation of this file by calling C<perldoc
 idgames_file_map.pl>.
 

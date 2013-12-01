@@ -147,7 +147,7 @@ use constant {
     DELAY_TIME           => 5,
     DEBUG_REQUESTS       => 100,
     FILE_REQUEST_ERRORS  => 2,
-    MAX_REQUEST_ERRORS => 5,
+    MAX_REQUEST_ERRORS => 10,
 };
 
     # create a variable with the current name of the script

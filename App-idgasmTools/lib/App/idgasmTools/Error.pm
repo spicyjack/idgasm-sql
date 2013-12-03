@@ -10,6 +10,7 @@ call.
 
 =cut
 
+our $VERSION = 0.002;
 use Moo;
 
 =head2 Attributes

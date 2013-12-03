@@ -9,6 +9,8 @@ Parse XML text downloaded via HTTP request to C<idGames Archive API>.
 
 =cut
 
+our $VERSION = 0.002;
+
 # system modules
 use XML::Fast;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);

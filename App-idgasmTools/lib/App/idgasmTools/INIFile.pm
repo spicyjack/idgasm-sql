@@ -17,6 +17,8 @@ $Data::Dumper::Terse = 1;
 # local modules
 use App::idgasmTools::Error;
 
+our $VERSION = 0.002;
+
 =head1 App::idgasmTools::INIFile
 
 INIFileure/manage script options using L<Getopt::Long>.

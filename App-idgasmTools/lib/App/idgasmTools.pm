@@ -12,5 +12,6 @@ Tools to work with C<idgasm> databases or database metadata files.
 
 =cut
 
+our $VERSION = 0.002;
 
 1;

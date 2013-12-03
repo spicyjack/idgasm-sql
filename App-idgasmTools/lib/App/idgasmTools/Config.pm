@@ -9,8 +9,6 @@ Configure/manage script options using L<Getopt::Long>.
 
 =cut
 
-our $VERSION = 0.002;
-
 use English qw( -no_match_vars );
 use Getopt::Long;
 use Moo;

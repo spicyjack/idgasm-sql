@@ -22,8 +22,6 @@ use App::idgasmTools::Error;
 # store the database handle
 my $dbh;
 
-our $VERSION = 0.002;
-
 =head1 App::idgasmTools::DBFile
 
 Create/read/update/delete an C<idgasm> database file, or records in an

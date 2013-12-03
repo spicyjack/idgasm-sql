@@ -8,13 +8,8 @@
 B<idgames_file_map.pl> - Build a mapping of filenames to file ID's from the
 files stored in C<idGames Archive>.
 
-=head1 VERSION
-
-Version 0.002
-
 =cut
 
-our $VERSION = '0.002';
 our $copyright =
     q|Copyright (c)2013 Brian Manning/brian at xaoc dot org|;
 

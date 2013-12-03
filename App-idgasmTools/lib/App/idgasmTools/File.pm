@@ -12,8 +12,6 @@ was parsed incorrectly or was not parseable.
 
 =cut
 
-our $VERSION = 0.002;
-
 # system modules
 use Moo;
 use Data::Dumper;

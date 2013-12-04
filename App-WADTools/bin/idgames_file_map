@@ -5,7 +5,7 @@
 
 =head1 NAME
 
-B<idgames_file_map.pl> - Build a mapping of filenames to file ID's from the
+B<idgames_file_map> - Build a mapping of filenames to file ID's from the
 files stored in C<idGames Archive>.
 
 =cut
@@ -15,7 +15,7 @@ our $copyright =
 
 =head1 SYNOPSIS
 
- perl idgames_file_map.pl [OPTIONS]
+ perl idgames_file_map [OPTIONS]
 
  Script options:
  -h|--help          Shows this help text
@@ -51,7 +51,7 @@ our $copyright =
     --debug --colorize --overwrite
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
-idgames_file_map.pl>.
+idgames_file_map>.
 
 =cut
 
@@ -98,7 +98,7 @@ our @options = (
 
 =head1 DESCRIPTION
 
-B<idgames_file_map.pl> - Build a mapping of filenames to file ID's from the
+B<idgames_file_map> - Build a mapping of filenames to file ID's from the
 files stored in C<idGames Archive>.
 
 =cut

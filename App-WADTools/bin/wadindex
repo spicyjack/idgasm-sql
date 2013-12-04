@@ -13,7 +13,7 @@ our @copyright = (
 
 =head1 NAME
 
-B<wadindex.pl> - Create an index of WAD files
+B<wadindex> - Create an index of WAD files
 
 
 =head1 VERSION
@@ -26,7 +26,7 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
- perl wadindex.pl [OPTIONS]
+ perl wadindex [OPTIONS]
 
  Script options:
  -v|--verbose       Verbose script execution
@@ -40,10 +40,10 @@ our $VERSION = '0.01';
  Example usage:
 
  # list the structure of an XLS file
- wadindex.pl --path /path/to/wad/files --tempdir /dev/shm
+ wadindex --path /path/to/wad/files --tempdir /dev/shm
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
-wadindex.pl>.
+wadindex>.
 
 =cut
 
@@ -515,7 +515,7 @@ use constant {
         unless ( -r $cfg->get(q(path)) );
 
     # print a nice banner
-    $log->info(qq(Starting wadindex.pl, version $VERSION));
+    $log->info(qq(Starting wadindex, version $VERSION));
     foreach my $c ( @copyright ) {
         $log->info($c);
     }
@@ -563,7 +563,7 @@ C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 You can find documentation for this script with the perldoc command.
 
-    perldoc wadindex.pl
+    perldoc wadindex
 
 =head1 COPYRIGHT & LICENSE
 

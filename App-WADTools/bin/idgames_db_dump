@@ -5,7 +5,7 @@
 
 =head1 NAME
 
-B<idgames_file_map> - Build a mapping of filenames to file ID's from the
+B<idgames_db_dump> - Build a mapping of filenames to file ID's from the
 files stored in C<idGames Archive>.
 
 =cut
@@ -15,7 +15,7 @@ our $copyright =
 
 =head1 SYNOPSIS
 
- perl idgames_file_map [OPTIONS]
+ perl idgames_db_dump [OPTIONS]
 
  Script options:
  -h|--help          Shows this help text
@@ -35,23 +35,23 @@ our $copyright =
 
  # build a mapping of file IDs to file paths from idGames API,
  # output to STDOUT
- idgames_file_map
+ idgames_db_dump
 
  # build a mapping, output to a file
- idgames_file_map --output /path/to/local/file.txt
+ idgames_db_dump --output /path/to/local/file.txt
 
  # build a mapping, output to a file and database file;
  # idgames_archive.db would have been created using 'db_bootstrap'
- idgames_file_map --output /path/to/local/file.txt \
+ idgames_db_dump --output /path/to/local/file.txt \
     --database /path/to/local/idgames_archive.db
 
  # debug with colorized debug messages, overwrite existing file map
- idgames_file_map --output /path/to/key_value_file.txt \
-    --database /path/to/idgames_file_map.db \
+ idgames_db_dump --output /path/to/key_value_file.txt \
+    --database /path/to/idgames_db_dump.db \
     --debug --colorize --overwrite
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
-idgames_file_map>.
+idgames_db_dump>.
 
 =cut
 
@@ -68,7 +68,7 @@ our $morehelp = <<MOREHELP;
  Example usage:
 
  # Debug, start at request ID 1242, make only 5 requests
- idgames_file_map --debug --start-at 1242 --debug-requests 5
+ idgames_db_dump --debug --start-at 1242 --debug-requests 5
 
 MOREHELP
 
@@ -98,7 +98,7 @@ our @options = (
 
 =head1 DESCRIPTION
 
-B<idgames_file_map> - Build a mapping of filenames to file ID's from the
+B<idgames_db_dump> - Build a mapping of filenames to file ID's from the
 files stored in C<idGames Archive>.
 
 =cut
@@ -383,7 +383,7 @@ C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 You can find documentation for this script with the perldoc command.
 
-    perldoc idgames_file_map
+    perldoc idgames_db_dump
 
 =head1 COPYRIGHT & LICENSE
 

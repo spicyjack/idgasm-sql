@@ -1,9 +1,9 @@
 ### `App::WADTools` ###
 
-The Perl distribution `App::WADTools` is a set of tools that will index/catalog
-`WAD` files stored on the local machine, as well as query the [idGames Archive
-API](http://www.doomworld.com/idgames/api) and download different
-records from the serivce into a local database file.
+This Perl module is a set of tools that will index/catalog `WAD` files stored
+on the local machine, as well as query the [idGames Archive
+API](http://www.doomworld.com/idgames/api) and download different records from
+the serivce into a local database file.
 
 The local database files are [SQLite](http://www.sqlite.org/) files that are
 generated from [INI](https://metacpan.org/pod/Config::Std) files using a
@@ -27,12 +27,17 @@ specific format to describe the tables and columns of the database.
 
 ### Installation ###
 
-To install this module type the following:
+To install this module from the source tarball, type the following:
 
     perl Makefile.PL
     make
     make test
     make install
+
+To install this module from Git, you need to have `Dist::Zilla` installed.
+Once `Dist::Zilla` is installed, type the following:
+
+    dzil install
 
 ### Dependencies ###
 
@@ -51,6 +56,28 @@ To install this module type the following:
   - `Moo`
   - `XML::Fast`
   - `strictures`
+
+If the above list of dependencies is daunting, and you're on a UNIX machine,
+consider installing Perlbrew (http://perlbrew.pl/).  Perlbrew installs a local
+copy of Perl in your home directory, along with a bunch of Perl tools that
+make things super easy for installing Perl module dependencies.
+
+    # install Perlbrew
+    curl -L http://install.perlbrew.pl | bash
+
+    # install a Perl, this will install the latest stable release
+    perlbrew install perl-5.18.1
+
+    # install 'cpanm'
+    perlbrew install-cpanm
+
+    # install required non-core modules
+    cpanm <list of modules from above>
+
+    # go get your favorite beverage, sit back and enjoy while 'cpanm' 
+    # installs your list of modules
+
+`cpanm` is also available with Strawberry Perl on Windows.
 
 ### Contact info ###
 

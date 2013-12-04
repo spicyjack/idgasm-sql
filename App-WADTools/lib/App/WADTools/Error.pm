@@ -1,9 +1,9 @@
-###################################
-# package App::idgasmTools::Error #
-###################################
-package App::idgasmTools::Error;
+################################
+# package App::WADTools::Error #
+################################
+package App::WADTools::Error;
 
-=head1 App::idgasmTools::Error
+=head1 App::WADTools::Error
 
 Object used to return success/error status to other objects for a given method
 call.
@@ -48,7 +48,7 @@ has q(content_block) => (
 
 =item BUILD() (aka 'new')
 
-Creates the L<App::idgasmTools::Error> object, pass with C<error_msg> and
+Creates the L<App::WADTools::Error> object, pass with C<error_msg> and
 C<content_block> in order to populate those attributes, or populate those
 attributes once the C<Error> object has been created.
 

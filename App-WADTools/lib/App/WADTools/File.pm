@@ -1,9 +1,9 @@
-##################################
-# package App::idgasmTools::File #
-##################################
-package App::idgasmTools::File;
+###############################
+# package App::WADTools::File #
+###############################
+package App::WADTools::File;
 
-=head1 App::idgasmTools::File
+=head1 App::WADTools::File
 
 An individual file in C<idGames Archive>.  The information in this object is
 taken from the C<*.txt> file that is uploaded with each file to C<idGames
@@ -20,7 +20,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local modules
-use App::idgasmTools::Error;
+use App::WADTools::Error;
 =head2 Attributes
 
 =over
@@ -285,7 +285,7 @@ has q(attributes) => (
 
 =item BUILD() (aka 'new')
 
-Creates the L<App::idgasmTools::File> object, optionally with an error
+Creates the L<App::WADTools::File> object, optionally with an error
 message.
 
 =item populate()
@@ -337,7 +337,7 @@ sub populate {
                     . $content->{$key});
             }
         } else {
-            my $error = App::idgasmTools::Error->new();
+            my $error = App::WADTools::Error->new();
             $error->error_msg(q(Received 'error' response to API query));
             return $error;
         }

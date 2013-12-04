@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # For support with this file, please file an issue on the GitHub issue tracker
-# for this project: https://github.com/spicyjack/idgasm-tools/issues
+# for this project: https://github.com/spicyjack/wadtools/issues
 
 =head1 NAME
 
@@ -131,11 +131,11 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local packages
-use App::idgasmTools::Config;
-use App::idgasmTools::DBFile;
-use App::idgasmTools::File;
-use App::idgasmTools::JSONParser;
-use App::idgasmTools::XMLParser;
+use App::WADTools::Config;
+use App::WADTools::DBFile;
+use App::WADTools::File;
+use App::WADTools::JSONParser;
+use App::WADTools::XMLParser;
 
 # script constants
 use constant {
@@ -152,7 +152,7 @@ use constant {
     binmode(STDOUT, ":utf8");
 
     # create a logger object
-    my $cfg = App::idgasmTools::Config->new(options => \@options);
+    my $cfg = App::WADTools::Config->new(options => \@options);
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
@@ -243,7 +243,7 @@ use constant {
     my %file_map;
     my $db;
     if ( $cfg->defined(q(database)) && -e $cfg->get(q(database)) ) {
-        $db = App::idgasmTools::DBFile->new(
+        $db = App::WADTools::DBFile->new(
             filename => $cfg->get(q(database))
         );
         if ( defined $db->connect ) {
@@ -267,11 +267,11 @@ use constant {
         $parse_type = q(json);
         # don't append 'out=json' to URL unless --json was used
         $idgames_url .= q(out=json&);
-        $parser = App::idgasmTools::JSONParser->new();
+        $parser = App::WADTools::JSONParser->new();
         $log->debug(qq(Using JSON API calls to idGames Archive API));
     } else {
         $parse_type = q(xml);
-        $parser = App::idgasmTools::XMLParser->new();
+        $parser = App::WADTools::XMLParser->new();
         $log->debug(qq(Using XML API calls to idGames Archive API));
     }
 
@@ -295,7 +295,7 @@ use constant {
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
             my $file = $parser->parse(data => $resp->content);
             # Check for parsing errors
-            if ( ref($file) eq q(App::idgasmTools::Error) ) {
+            if ( ref($file) eq q(App::WADTools::Error) ) {
                 $log->error(q(Error parsing downloaded )
                     . uc($parse_type) . q( data));
                 $log->error(q(Error message: ) . $file->error_msg);
@@ -377,13 +377,13 @@ Brian Manning, C<< <brian at xaoc dot org> >>
 Please report any bugs or feature requests to the GitHub issue tracker for
 this project:
 
-C<< <https://github.com/spicyjack/public/issues> >>.
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 =head1 SUPPORT
 
 You can find documentation for this script with the perldoc command.
 
-    perldoc idgames_file_map.pl
+    perldoc idgames_file_map
 
 =head1 COPYRIGHT & LICENSE
 

@@ -1,9 +1,9 @@
-########################################
-# package App::idgasmTools::XMLParser #
-########################################
-package App::idgasmTools::XMLParser;
+####################################
+# package App::WADTools::XMLParser #
+####################################
+package App::WADTools::XMLParser;
 
-=head1 App::idgasmTools::XMLParser
+=head1 App::WADTools::XMLParser
 
 Parse XML text downloaded via HTTP request to C<idGames Archive API>.
 
@@ -20,8 +20,8 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local modules
-use App::idgasmTools::Error;
-use App::idgasmTools::File;
+use App::WADTools::Error;
+use App::WADTools::File;
 
 =head2 Methods
 
@@ -31,8 +31,8 @@ use App::idgasmTools::File;
 
 Parses the XML content inside of the HTTP response message sent from the
 server in response to an C<idGames Archive API> request.  Returns an
-L<App::idgasmTools::File> object if parsing was successful, or a
-L<App::idgasmTools::Error> object if parsing was not successful.
+L<App::WADTools::File> object if parsing was successful, or a
+L<App::WADTools::Error> object if parsing was not successful.
 
 =back
 
@@ -52,7 +52,7 @@ sub parse {
     # with an eval to handle dying gracefully
     my $parsed_data = eval{XML::Fast::xml2hash($data);};
     if ( $@ ) {
-        my $error = App::idgasmTools::Error->new(
+        my $error = App::WADTools::Error->new(
             error_msg => qq(Error parsing XML content; $@),
         );
         return $error;
@@ -60,7 +60,7 @@ sub parse {
         my $content = $parsed_data->{q(idgames-response)}->{content};
         #$log->warn(qq(Dumping content:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
-        my $file = App::idgasmTools::File->new();
+        my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy
         # them to the same attributes in this File object
         my @attribs = @{$file->attributes};
@@ -72,13 +72,13 @@ sub parse {
         }
         return $file
     } elsif ( exists $parsed_data->{q(idgames-response)}->{error} ) {
-        my $error = App::idgasmTools::Error->new(
+        my $error = App::WADTools::Error->new(
             error_msg => q(Received 'error' response to API query),
             content_block => $parsed_data->{q(idgames-response)}->{error},
         );
         return $error;
     } else {
-        my $error = App::idgasmTools::Error->new();
+        my $error = App::WADTools::Error->new();
         $error->error_msg(q(Received undefined response to API query));
         return $error;
     }

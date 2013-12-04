@@ -1,9 +1,9 @@
-####################################
-# package App::idgasmTools::Config #
-####################################
-package App::idgasmTools::Config;
+#################################
+# package App::WADTools::Config #
+#################################
+package App::WADTools::Config;
 
-=head1 App::idgasmTools::Config
+=head1 App::WADTools::Config
 
 Configure/manage script options using L<Getopt::Long>.
 
@@ -40,7 +40,7 @@ has q(options) => (
 
 =item BUILD() (aka 'new')
 
-Creates the L<App::idgasmTools::Config> object, parses options from the
+Creates the L<App::WADTools::Config> object, parses options from the
 command line via L<Getopt::Long>, and returns the object to the caller.
 =cut
 
@@ -75,7 +75,7 @@ sub BUILD {
 =item get($key)
 
 Returns the scalar value of the key passed in as C<key>, or C<undef> if the
-key does not exist in the L<App::idgasmTools::Config> object.
+key does not exist in the L<App::WADTools::Config> object.
 
 =cut
 
@@ -91,9 +91,9 @@ sub get {
 
 =item set(key => $value)
 
-Sets in the L<App::idgasmTools::Config> object the key/value pair passed in
+Sets in the L<App::WADTools::Config> object the key/value pair passed in
 as arguments.  Returns the old value if the key already existed in the
-L<App::idgasmTools::Config> object, or C<undef> otherwise.
+L<App::WADTools::Config> object, or C<undef> otherwise.
 
 =cut
 

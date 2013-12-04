@@ -9,7 +9,7 @@ our @copyright = (
 );
 
 # For support with this file, please file an issue on the GitHub issue tracker
-# for this project: https://github.com/spicyjack/App-WADTools/issues
+# for this project: https://github.com/spicyjack/wadtools/issues
 
 =head1 NAME
 
@@ -557,7 +557,7 @@ Brian Manning, C<< <brian at xaoc dot org> >>
 Please report any bugs or feature requests to the GitHub issue tracker for
 this project:
 
-C<< <https://github.com/spicyjack/App-WADTools/issues> >>.
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 =head1 SUPPORT
 

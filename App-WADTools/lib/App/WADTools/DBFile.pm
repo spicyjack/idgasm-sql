@@ -1,7 +1,7 @@
-####################################
-# package App::idgasmTools::DBFile #
-####################################
-package App::idgasmTools::DBFile;
+#################################
+# package App::WADTools::DBFile #
+#################################
+package App::WADTools::DBFile;
 
 # system modules
 use Date::Format;
@@ -16,13 +16,13 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local modules
-use App::idgasmTools::Error;
+use App::WADTools::Error;
 
 # local variables
 # store the database handle
 my $dbh;
 
-=head1 App::idgasmTools::DBFile
+=head1 App::WADTools::DBFile
 
 Create/read/update/delete an C<idgasm> database file, or records in an
 existing database file.
@@ -55,7 +55,7 @@ has filename => (
 
 =item new()
 
-Creates the L<App::idgasmTools::DBFile> object.  Method is automatically
+Creates the L<App::WADTools::DBFile> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
 Required arguments:
@@ -72,7 +72,7 @@ The filename of the C<INI> file to read from and possibly write to.
 
 Connects to the database (calls C<DBI-E<gt>connect> using the C<filename>
 attribute), and returns true (C<1>) if the connection did not have any errors,
-or an L<App::idgasmTools::Error> object if there was a problem connecting to
+or an L<App::WADTools::Error> object if there was a problem connecting to
 the database.
 
 =cut
@@ -155,7 +155,7 @@ sub create_schema {
         if ( defined $dbh->err ) {
             $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
             $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::idgasmTools::Error->new(error_msg => $dbh->errstr);
+            my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
             return $error;
         }
 
@@ -167,7 +167,7 @@ sub create_schema {
         if ( defined $dbh->err ) {
             $log->error(q('prepare' call to INSERT into 'schema' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::idgasmTools::Error->new(error_msg => $dbh->errstr);
+            my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
             return $error;
         }
         $sth->bind_param(1, $key);
@@ -189,7 +189,7 @@ sub create_schema {
 
 =item add_file()
 
-Add an L<App::idgasmTools::File> object to the database.
+Add an L<App::WADTools::File> object to the database.
 
 Required arguments:
 
@@ -197,7 +197,7 @@ Required arguments:
 
 =item file_obj
 
-The L<App::idgasmTools::File> object to add to the database.
+The L<App::WADTools::File> object to add to the database.
 
 =back
 
@@ -225,7 +225,7 @@ FILESQL
     if ( defined $dbh->err ) {
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
-        my $error = App::idgasmTools::Error->new(error_msg => $dbh->errstr);
+        my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
         return $error;
     }
 
@@ -242,7 +242,7 @@ FILESQL
     if ( ! defined $rv ) {
         $log->error(q(INSERT for file ID ) . $file->id
             . q( returned an error: ) . $sth->errstr);
-        my $error = App::idgasmTools::Error->new(error_msg => $sth->errstr);
+        my $error = App::WADTools::Error->new(error_msg => $sth->errstr);
         return $error;
     } else {
         $log->debug(qq(INSERT for file ID ) . $file->id . qq( successful));

@@ -1,9 +1,9 @@
-########################################
-# package App::idgasmTools::JSONParser #
-########################################
-package App::idgasmTools::JSONParser;
+#####################################
+# package App::WADTools::JSONParser #
+#####################################
+package App::WADTools::JSONParser;
 
-=head1 App::idgasmTools::JSONParser
+=head1 App::WADTools::JSONParser
 
 Parse JSON text downloaded via HTTP request to C<idGames Archive API>.
 
@@ -20,8 +20,8 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local modules
-use App::idgasmTools::Error;
-use App::idgasmTools::File;
+use App::WADTools::Error;
+use App::WADTools::File;
 
 =head2 Methods
 
@@ -31,8 +31,8 @@ use App::idgasmTools::File;
 
 Parses the JSON content inside of the HTTP response message sent from the
 server in response to an C<idGames Archive API> request.  Returns an
-L<App::idgasmTools::File> object if parsing was successful, or a
-L<App::idgasmTools::Error> object if parsing was not successful.
+L<App::WADTools::File> object if parsing was successful, or a
+L<App::WADTools::Error> object if parsing was not successful.
 
 =cut
 
@@ -49,7 +49,7 @@ sub parse {
     # wrap decode() in an eval to handle parsing errors
     my $parsed_data = eval{$json->decode($data);};
     if ( $@ ) {
-        my $error = App::idgasmTools::Error->new(
+        my $error = App::WADTools::Error->new(
             error_msg => qq(Error parsing JSON content; $@),
         );
         return $error;
@@ -59,7 +59,7 @@ sub parse {
         if ( exists $parsed_data->{content} ) {
             my $content = $parsed_data->{content};
             #$log->warn(qq(Dumping content:\n) . Dumper($content));
-            my $file = App::idgasmTools::File->new();
+            my $file = App::WADTools::File->new();
             # go through all of the attributes in the content object, copy
             # them to the same attributes in this File object
             my @attribs = @{$file->attributes};
@@ -75,13 +75,13 @@ sub parse {
             }
             return $file
         } elsif ( exists $parsed_data->{error} ) {
-            my $error = App::idgasmTools::Error->new(
+            my $error = App::WADTools::Error->new(
                 error_msg => q(Received 'error' response to API query),
                 content_block => $parsed_data->{error},
             );
             return $error;
         } else {
-            my $error = App::idgasmTools::Error->new();
+            my $error = App::WADTools::Error->new();
             $error->error_msg(q(Received undefined response to API query));
             return $error;
         }

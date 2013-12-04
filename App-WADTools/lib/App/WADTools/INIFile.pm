@@ -1,7 +1,7 @@
 #####################################
-# package App::idgasmTools::INIFile #
+# package App::WADTools::INIFile #
 #####################################
-package App::idgasmTools::INIFile;
+package App::WADTools::INIFile;
 
 # system modules
 use Config::Std;
@@ -15,9 +15,9 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local modules
-use App::idgasmTools::Error;
+use App::WADTools::Error;
 
-=head1 App::idgasmTools::INIFile
+=head1 App::WADTools::INIFile
 
 INIFileure/manage script options using L<Getopt::Long>.
 
@@ -49,7 +49,7 @@ has filename => (
 
 =item new()
 
-Creates the L<App::idgasmTools::INIFile> object.  Method is automatically
+Creates the L<App::WADTools::INIFile> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
 Required arguments:
@@ -128,7 +128,7 @@ sub md5_checksum {
 
 Reads the INI file specified by the C<filename> attribute, and returns a
 reference to the hash data structure set up by C<Config::Std>, or an
-L<App::idgasmTools::Error> object if there was a problem reading the INI file.
+L<App::WADTools::Error> object if there was a problem reading the INI file.
 
 =cut
 
@@ -146,7 +146,7 @@ sub read_ini_config {
         #$self->db_schema($db_schema);
         return $db_schema;
     } else {
-        my $error = App::idgasmTools::Error->new();
+        my $error = App::WADTools::Error->new();
         $error->error_msg(qq(Can't read INI file!));
     }
 }
@@ -155,7 +155,7 @@ sub read_ini_config {
 
 Writes the C<INI> file, to the same filename that was used when this object
 was created, unless optional argument C<filename> below is used.  Returns the
-size of the file that was written, or an L<App::idgasmTools::Error> object if
+size of the file that was written, or an L<App::WADTools::Error> object if
 there was a problem writing the file.
 
 Required arguments:
@@ -205,12 +205,12 @@ sub write_ini_config {
     if ( -w $write_filename ) {
         eval { write_config($db_schema => $write_filename); };
         if ( $@ ) {
-            my $error = App::idgasmTools::Error->new(error_msg => $@);
+            my $error = App::WADTools::Error->new(error_msg => $@);
             return $error;
         }
         $filesize = (-s $write_filename);
     } else {
-        my $error = App::idgasmTools::Error->new(
+        my $error = App::WADTools::Error->new(
             error_msg => q(Can't write INI file!)
         );
         return $error;

@@ -4,9 +4,9 @@ A bunch of tools that interact with WAD files from the games
 Doom/Doom II/Heretic/Hexen/Strife and others.
 
 There's also tools that will interact with the `Doomworld idGames Archive`
-(http://www.doomworld.com/idgames), a web front with extra functionality on
-top of the `idGames Archive` FTP/HTTP service via the [idGames Archive
-API](http://www.doomworld.com/idgames/api).
+(http://www.doomworld.com/idgames), a web front end with extra functionality
+(ratings, searching, and more) on top of the `idGames Archive` FTP/HTTP
+service via the [idGames Archive API](http://www.doomworld.com/idgames/api).
 
 ### What's in this repo? ###
 

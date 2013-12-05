@@ -131,6 +131,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local packages
+use App::WADTools; # for $VERSION
 use App::WADTools::Config;
 use App::WADTools::DBFile;
 use App::WADTools::File;
@@ -139,14 +140,18 @@ use App::WADTools::XMLParser;
 
 # script constants
 use constant {
-    DELAY_TIME           => 5,
-    DEBUG_REQUESTS       => 100,
-    FILE_REQUEST_ERRORS  => 2,
-    MAX_REQUEST_ERRORS => 10,
+    DELAY_TIME          => 5,
+    DEBUG_REQUESTS      => 100,
+    FILE_REQUEST_ERRORS => 2,
+    MAX_REQUEST_ERRORS  => 10,
 };
 
     # create a variable with the current name of the script
     my $my_name = basename($0);
+    # provide a version string if dzil hasn't populated modules with $VERSION
+    # scalars
+    my $VERSION = $App::WADTools::VERSION || q(git-dev);
+
     # total number of API requests
     my $total_requests = 0;
     binmode(STDOUT, ":utf8");

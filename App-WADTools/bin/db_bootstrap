@@ -76,7 +76,7 @@ Creates databases using config specified in INI file.
 
 =head1 OBJECTS
 
-=head2 App::idgasmTools::Config
+=head2 App::WADTools::Config
 
 An object used for storing configuration data.
 
@@ -110,16 +110,16 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local packages
-use App::idgasmTools::Config;
-use App::idgasmTools::DBFile;
-use App::idgasmTools::INIFile;
+use App::WADTools::Config;
+use App::WADTools::DBFile;
+use App::WADTools::INIFile;
 
     # create a variable with the current name of the script
     my $my_name = basename($0);
 
     binmode(STDOUT, ":utf8");
     # create a logger object
-    my $cfg = App::idgasmTools::Config->new(options => \@options);
+    my $cfg = App::WADTools::Config->new(options => \@options);
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
@@ -176,13 +176,13 @@ use App::idgasmTools::INIFile;
     }
 
     # print a nice banner
-    $log->info(qq(Starting $my_name, version $VERSION));
+    $log->info(qq(Starting $my_name, version '$VERSION'));
     $log->info(qq(My PID is $$));
 
     my $db_schema;
-    my $parser = App::idgasmTools::INIFile->new(
+    my $parser = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));
-    if ( ref($parser) eq q(App::idgasmTools::Error) ) {
+    if ( ref($parser) eq q(App::WADTools::Error) ) {
         $log->logdie(q(Error opening INI file ') . $cfg->get(q(input)) . q('));
     }
     if ( $cfg->defined(q(create-db)) ) {
@@ -196,7 +196,7 @@ use App::idgasmTools::INIFile;
             $log->debug(q(Parsing schema;));
             $log->debug(q(  Epoch: ) . $db_schema->{q()}->{q(schema_epoch)});
             $log->debug(q(  Date:  ) . $db_schema->{q()}->{q(schema_date)});
-            my $db = App::idgasmTools::DBFile->new(
+            my $db = App::WADTools::DBFile->new(
                 filename => $cfg->get(q(output))
             );
             if ( $db->connect ) {
@@ -228,7 +228,7 @@ use App::idgasmTools::INIFile;
                 extra_text => q(Dump called post-MD5 checksum),
             );
             my $filesize = $parser->write_ini_config(db_schema => $db_schema);
-            if ( ref($filesize) eq q(App::idgasmTools::Error) ) {
+            if ( ref($filesize) eq q(App::WADTools::Error) ) {
                 $log->error(q(Writing config file returned an error!));
                 $log->logdie(q(Error message: ) . $filesize->error_msg);
             } else {

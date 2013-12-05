@@ -5,9 +5,9 @@ on the local machine, as well as query the [idGames Archive
 API](http://www.doomworld.com/idgames/api) and download different records from
 the serivce into a local database file.
 
-The local database files are [SQLite](http://www.sqlite.org/) files that are
-generated from [INI](https://metacpan.org/pod/Config::Std) files using a
-specific format to describe the tables and columns of the database.
+The local database files are [SQLite](http://www.sqlite.org/) files, with
+schemas that are generated from [INI](https://metacpan.org/pod/Config::Std)
+files using a specific format to describe the database schema and metadata.
 
 **Scripts included with this distribution:**
 

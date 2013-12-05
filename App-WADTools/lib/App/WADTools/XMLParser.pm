@@ -47,6 +47,7 @@ sub parse {
         unless (exists $args{data});
 
     my $data = $args{data};
+    my $api_meta_version = 0;
 
     # XML::Fast::xml2hash will die if there are parsing errors; wrap parsing
     # with an eval to handle dying gracefully
@@ -55,10 +56,10 @@ sub parse {
         my $error = App::WADTools::Error->new(
             error_msg => qq(Error parsing XML content; $@),
         );
-        return $error;
+        return ($error, $api_meta_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content} ) {
         my $content = $parsed_data->{q(idgames-response)}->{content};
-        #$log->warn(qq(Dumping content:\n) . Dumper($content));
+        $log->warn(qq(Dumping content:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
         my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy
@@ -70,17 +71,17 @@ sub parse {
             next if ( $key eq q(textfile) );
             #$log->debug(qq(  $key: >) . $file->$key . q(<));
         }
-        return $file
+        return ($file, $api_meta_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{error} ) {
         my $error = App::WADTools::Error->new(
             error_msg => q(Received 'error' response to API query),
             content_block => $parsed_data->{q(idgames-response)}->{error},
         );
-        return $error;
+        return ($error, $api_meta_version);
     } else {
         my $error = App::WADTools::Error->new();
         $error->error_msg(q(Received undefined response to API query));
-        return $error;
+        return ($error, $api_meta_version);
     }
 
     # we shouldn't get this far

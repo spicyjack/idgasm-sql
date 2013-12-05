@@ -298,8 +298,10 @@ use constant {
             $log->debug(qq(HTTP API request is successful for ID: $file_id));
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my $file = $parser->parse(data => $resp->content);
+            my ($file, $api_meta_version)
+                = $parser->parse(data => $resp->content);
             # Check for parsing errors
+            $log->debug(qq(idGames API metaversion is: $api_meta_version));
             if ( ref($file) eq q(App::WADTools::Error) ) {
                 $log->error(q(Error parsing downloaded )
                     . uc($parse_type) . q( data));

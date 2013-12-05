@@ -110,12 +110,16 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 # local packages
+use App::WADTools; # for $VERSION
 use App::WADTools::Config;
 use App::WADTools::DBFile;
 use App::WADTools::INIFile;
 
     # create a variable with the current name of the script
     my $my_name = basename($0);
+    # provide a version string if dzil hasn't populated modules with $VERSION
+    # scalars
+    my $VERSION = $App::WADTools::VERSION || q(git-dev);
 
     binmode(STDOUT, ":utf8");
     # create a logger object

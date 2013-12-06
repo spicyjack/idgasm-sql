@@ -245,8 +245,8 @@ use constant {
         }
     }
     my $ua = LWP::UserAgent->new(agent => qq($my_name $VERSION));
-    my $idgames_url = q(http://www.doomworld.com/idgames/api/api.php?);
-    $idgames_url .= q(action=get&);
+    my $idgames_base_url = q(http://www.doomworld.com/idgames/api/api.php?);
+    my $idgames_get_url =  $idgames_base_url . q(action=get&);
     # What kind of data are we requesting and parsing? JSON or XML?
     my ($parse_type, $parser);
     if ( $cfg->defined(q(json)) ) {
@@ -264,6 +264,27 @@ use constant {
     my $file_request_errors = 0;
     my $total_request_errors = 0;
     my $sequential_request_errors = 0;
+    my $last_id_url = $idgames_base_url . q(action=latestfiles&limit=1);
+    my $last_id_req = HTTP::Request->new(GET => $last_id_url);
+    my $last_idgames_file_id = 0;
+    my $api_meta_version = 0;
+    my $resp = $ua->request($req);
+    if ( $resp->is_success ) {
+        my $last_id;
+        ($last_file, $api_meta_version)
+            = $parser->parse(data => $resp->content);
+        if ( ref($file) eq q(App::WADTools::Error) ) {
+            $log->error(q(Error parsing downloaded )
+                . uc($parse_type) . q( data));
+        } else {
+            $last_idgames_file_id = $last_file->id;
+        }
+    } else {
+        # HTTP error
+        $log->logdie(q(Received HTTP error from API server: )
+            . $resp->status_line);
+    }
+
     # Loop across all of the file IDs, until a request for a file ID returns
     # an error of some kind
     HTTP_REQUEST: while (1) {
@@ -272,7 +293,7 @@ use constant {
         $log->debug(qq(Fetching: $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
         my $req = HTTP::Request->new(GET => $fetch_url);
-        my $resp = $ua->request($req);
+        $resp = $ua->request($req);
         $total_requests++;
         # Handle HTTP status messages
         if ( $resp->is_success ) {
@@ -325,7 +346,8 @@ use constant {
             }
         } else {
             # HTTP error
-            $log->logdie($resp->status_line);
+            $log->logdie(q(Received HTTP error from API server: )
+                . $resp->status_line);
         }
         $log->debug(qq(Finished parsing of ID $file_id));
         $file_id++;

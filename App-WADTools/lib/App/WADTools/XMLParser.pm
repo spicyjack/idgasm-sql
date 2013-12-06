@@ -57,7 +57,11 @@ sub parse {
             error_msg => qq(Error parsing XML content; $@),
         );
         return ($error, $api_meta_version);
-    } elsif ( exists $parsed_data->{q(idgames-response)}->{content} ) {
+    } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
+        # a 'latestfiles' request
+
+    } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{id} ) {
+        # a 'get' request
         my $content = $parsed_data->{q(idgames-response)}->{content};
         $log->warn(qq(Dumping content:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));

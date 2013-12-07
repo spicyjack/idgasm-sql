@@ -59,11 +59,13 @@ sub parse {
         return ($error, $api_meta_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
         # a 'latestfiles' request
-
+        my $content = $parsed_data->{q(idgames-response)}->{content};
+        $log->warn(qq(Dumping latestfiles:\n) . Dumper($content));
+        $log->debug(q(Successfully parsed XML content block));
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{id} ) {
         # a 'get' request
         my $content = $parsed_data->{q(idgames-response)}->{content};
-        $log->warn(qq(Dumping content:\n) . Dumper($content));
+        $log->warn(qq(Dumping get request:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
         my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy

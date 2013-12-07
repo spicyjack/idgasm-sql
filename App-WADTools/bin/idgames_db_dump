@@ -252,7 +252,7 @@ use constant {
     if ( $cfg->defined(q(json)) ) {
         $parse_type = q(json);
         # don't append 'out=json' to URL unless --json was used
-        $idgames_url .= q(out=json&);
+        $idgames_get_url .= q(out=json&);
         $parser = App::WADTools::JSONParser->new();
         $log->debug(qq(Using JSON API calls to idGames Archive API));
     } else {
@@ -264,20 +264,21 @@ use constant {
     my $file_request_errors = 0;
     my $total_request_errors = 0;
     my $sequential_request_errors = 0;
-    my $last_id_url = $idgames_base_url . q(action=latestfiles&limit=1);
-    my $last_id_req = HTTP::Request->new(GET => $last_id_url);
+    # Query for the latestfiles, limit one, XML format
+    my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=1);
+    my $latestfiles_req = HTTP::Request->new(GET => $latestfiles_url);
     my $last_idgames_file_id = 0;
     my $api_meta_version = 0;
-    my $resp = $ua->request($req);
+    my $resp = $ua->request($latestfiles_req);
     if ( $resp->is_success ) {
-        my $last_id;
-        ($last_file, $api_meta_version)
+        my $latestfile;
+        ($latestfile, $api_meta_version)
             = $parser->parse(data => $resp->content);
-        if ( ref($file) eq q(App::WADTools::Error) ) {
+        if ( ref($latestfile) eq q(App::WADTools::Error) ) {
             $log->error(q(Error parsing downloaded )
                 . uc($parse_type) . q( data));
         } else {
-            $last_idgames_file_id = $last_file->id;
+            $last_idgames_file_id = $latestfile->id;
         }
     } else {
         # HTTP error
@@ -289,7 +290,7 @@ use constant {
     # an error of some kind
     HTTP_REQUEST: while (1) {
         my $random_wait = int(rand($random_wait_delay));
-        my $fetch_url =  $idgames_url . qq(id=$file_id);
+        my $fetch_url =  $idgames_get_url . qq(id=$file_id);
         $log->debug(qq(Fetching: $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
         my $req = HTTP::Request->new(GET => $fetch_url);

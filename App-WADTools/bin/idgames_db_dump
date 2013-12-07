@@ -201,7 +201,7 @@ use constant {
     }
 
     # print a nice banner
-    $log->info(qq(Starting $my_name, version $VERSION));
+    $log->info(qq(Starting $my_name, version '$VERSION'));
     $log->info(qq($copyright));
     $log->info(qq(My PID is: $$));
 

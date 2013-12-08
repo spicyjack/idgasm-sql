@@ -47,7 +47,7 @@ sub parse {
         unless (exists $args{data});
 
     my $data = $args{data};
-    my $api_meta_version = 0;
+    my $api_version = 0;
 
     # XML::Fast::xml2hash will die if there are parsing errors; wrap parsing
     # with an eval to handle dying gracefully
@@ -58,47 +58,65 @@ sub parse {
         my $error = App::WADTools::Error->new(
             error_msg => qq(Error parsing XML content; $@),
         );
-        return ($error, $api_meta_version);
+        return ($error, $api_version);
     } else {
         # yes, XML parsed correctly
         # snarf tha API version
         #$log->debug(qq(Dumping parsed_data:\n) . Dumper($parsed_data));
-        $api_meta_version = $parsed_data->{q(idgames-response)}->{q(-version)};
-        $log->debug(qq(API meta version from response: $api_meta_version));
+        $api_version = $parsed_data->{q(idgames-response)}->{q(-version)};
+        $log->debug(qq(API meta version from response: $api_version));
     }
 
     # now, see what kind of API request was made
+    if ( exists $parsed_data->{q(idgames-response)}->{error} ) {
+        # an error was returned from the API
+        my $error = App::WADTools::Error->new(
+            error_msg => q(Received 'error' response to API query),
+            content_block => $parsed_data->{q(idgames-response)}->{error},
+        );
+        return (error => $error, api_version => $api_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
         # a 'latestfiles' request
-        my $content = $parsed_data->{q(idgames-response)}->{content};
-        $log->warn(qq(Dumping latestfiles:\n) . Dumper($content));
-        $log->debug(q(Successfully parsed XML content block));
+        $log->debug(q(Received a response for a 'latestfiles' request));
+        my $latestfiles
+            = $parsed_data->{q(idgames-response)}->{content}->{file};
+        #$log->debug(qq(Dumping parsed latestfiles:\n) . Dumper($latestfiles));
+        my @return_files;
+        foreach my $latestfile ( @{$latestfiles} ) {
+            $log->debug(q(Creating partial File object for file ID: )
+                . $latestfile->{id});
+            my $file = App::WADTools::File->new(partial => 1);
+            my @attribs = keys(%{$latestfile});
+            foreach my $key ( @attribs ) {
+                $file->{$key} = $latestfile->{$key};
+                next if ( $key eq q(textfile) );
+                #$log->debug(qq(  $key: >) . $file->$key . q(<));
+            }
+            push(@return_files, $file);
+        }
+        return (files => \@return_files, api_version => $api_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{id} ) {
         # a 'get' request
+        $log->debug(q(Received a response for a 'get' request));
         my $content = $parsed_data->{q(idgames-response)}->{content};
-        $log->warn(qq(Dumping get request:\n) . Dumper($content));
+        #$log->debug(qq(Dumping get request:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
         my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy
         # them to the same attributes in this File object
         my @attribs = @{$file->attributes};
-        $log->debug(q(Populating File attributes...));
+        $log->debug(q(Populating File attributes for file ID: )
+            . $content->{id});
         foreach my $key ( @attribs ) {
             $file->{$key} = $content->{$key};
             next if ( $key eq q(textfile) );
             #$log->debug(qq(  $key: >) . $file->$key . q(<));
         }
-        return ($file, $api_meta_version);
-    } elsif ( exists $parsed_data->{q(idgames-response)}->{error} ) {
-        my $error = App::WADTools::Error->new(
-            error_msg => q(Received 'error' response to API query),
-            content_block => $parsed_data->{q(idgames-response)}->{error},
-        );
-        return ($error, $api_meta_version);
+        return (file => $file, api_version => $api_version);
     } else {
         my $error = App::WADTools::Error->new();
         $error->error_msg(q(Received undefined response to API query));
-        return ($error, $api_meta_version);
+        return ($error, $api_version);
     }
 
     # we shouldn't get this far

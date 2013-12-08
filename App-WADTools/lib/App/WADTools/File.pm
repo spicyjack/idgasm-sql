@@ -25,6 +25,26 @@ use App::WADTools::Error;
 
 =over
 
+=item partial
+
+A boolean flag signifying that this file is a partial record, and does not
+have all of the information about the file from the C<idGames Archive>.
+Partial files are usually created from using the C<latestfiles> API request.
+Valid values are in the regex C</0|1|y|n/i>.
+
+=cut
+
+has q(partial) => (
+    is      => q(rw),
+    isa     => sub { $_[0] =~ /0|1|n|no|y|yes/i },
+    coerce  => sub {
+                    my $arg = $_[0];
+                    if ( $arg =~ /0|n|no/i ) { return 0; }
+                    if ( $arg =~ /1|y|yes/i ) { return 1; }
+                },
+    default => sub { 0 },
+);
+
 =item id
 
 The file's C<idGames Archive> ID number.

@@ -52,11 +52,22 @@ sub parse {
     # XML::Fast::xml2hash will die if there are parsing errors; wrap parsing
     # with an eval to handle dying gracefully
     my $parsed_data = eval{XML::Fast::xml2hash($data);};
+    # first check, was the XML parsed correctly
     if ( $@ ) {
+        # no, an error occured parsing the XML
         my $error = App::WADTools::Error->new(
             error_msg => qq(Error parsing XML content; $@),
         );
         return ($error, $api_meta_version);
+    } else {
+        # yes, XML parsed correctly
+        # snarf tha API version
+        #$log->debug(qq(Dumping parsed_data:\n) . Dumper($parsed_data));
+        $api_meta_version = $parsed_data->{q(idgames-response)}->{q(-version)};
+        $log->debug(qq(API meta version from response: $api_meta_version));
+    }
+
+    # now, see what kind of API request was made
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
         # a 'latestfiles' request
         my $content = $parsed_data->{q(idgames-response)}->{content};

@@ -99,7 +99,7 @@ sub parse {
         # a 'get' request
         $log->debug(q(Received a response for a 'get' request));
         my $content = $parsed_data->{q(idgames-response)}->{content};
-        #$log->debug(qq(Dumping get request:\n) . Dumper($content));
+        $log->debug(qq(Dumping get request:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
         my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy
@@ -108,9 +108,23 @@ sub parse {
         $log->debug(q(Populating File attributes for file ID: )
             . $content->{id});
         foreach my $key ( @attribs ) {
-            $file->{$key} = $content->{$key};
             next if ( $key eq q(textfile) );
-            #$log->debug(qq(  $key: >) . $file->$key . q(<));
+            $log->debug(qq(  $key));
+            $log->debug(qq(  $key: >) . $file->$key . q(<));
+            if ( $key eq q(reviews) ) {
+                $log->debug(q(Adding reviews block to 'votes' table));
+                my @reviews = @{$content->{reviews}->{review}};
+                foreach my $file_review ( @reviews ) {
+                    my $review = App::WADTools::Vote->new();
+                    $review->text = $file_review->{text};
+                    $review->vote = $file_review->{vote};
+                    $log->debug(qq(  vote: ) . $review->vote
+                        . q(; vote length: ) . length($review->text));
+                }
+            } else {
+                $file->{$key} = $content->{$key};
+
+            }
         }
         return (file => $file, api_version => $api_version);
     } else {

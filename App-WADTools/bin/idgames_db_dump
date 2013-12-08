@@ -265,19 +265,26 @@ use constant {
     my $total_request_errors = 0;
     my $sequential_request_errors = 0;
     # Query for the latestfiles, limit one, XML format
-    my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=1);
+    my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=10);
     my $latestfiles_req = HTTP::Request->new(GET => $latestfiles_url);
     my $last_idgames_file_id = 0;
-    my $api_meta_version = 0;
+    my $api_version = 0;
     my $resp = $ua->request($latestfiles_req);
     if ( $resp->is_success ) {
-        my $latestfile;
-        ($latestfile, $api_meta_version)
-            = $parser->parse(data => $resp->content);
-        if ( ref($latestfile) eq q(App::WADTools::Error) ) {
+        my %parser_return = $parser->parse(data => $resp->content);
+        my @latestfiles;
+        if ( exists $parser_return{error} ) {
             $log->error(q(Error parsing downloaded )
                 . uc($parse_type) . q( data));
-        } else {
+            my $error = $parser_return{error};
+            $log->error(q(Error message: ) . $error->error_msg);
+        } elsif ( exists $parser_return{files} ) {
+            @latestfiles = @{$parser_return{files}};
+            $api_version = $parser_return{api_version};
+            $log->debug(qq(idGames API version from server is: $api_version));
+            # the latest file is always first in the latestfiles array
+            my $latestfile = $latestfiles[0];
+            $log->debug(q(Last idGames Archive file ID is: ) . $latestfile->id);
             $last_idgames_file_id = $latestfile->id;
         }
     } else {
@@ -301,14 +308,14 @@ use constant {
             $log->debug(qq(HTTP API request is successful for ID: $file_id));
             #$log->info($resp->content);
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
-            my ($file, $api_meta_version)
-                = $parser->parse(data => $resp->content);
+            my %parser_return = $parser->parse(data => $resp->content);
             # Check for parsing errors
-            $log->debug(qq(idGames API metaversion is: $api_meta_version));
-            if ( ref($file) eq q(App::WADTools::Error) ) {
+            $log->debug(qq(idGames API version is: $api_version));
+            if ( exists $parser_return{error} ) {
                 $log->error(q(Error parsing downloaded )
                     . uc($parse_type) . q( data));
-                $log->error(q(Error message: ) . $file->error_msg);
+                my $error = $parser_return{error};
+                $log->error(q(Error message: ) . $error->error_msg);
                 $file_request_errors++;
                 if ( $file_request_errors > FILE_REQUEST_ERRORS ) {
                     $log->error(qq(Too many errors parsing ID $file_id!));
@@ -332,6 +339,7 @@ use constant {
                 sleep $random_wait;
                 next HTTP_REQUEST;
             } else {
+                my $file = $parser_return{file};
                 my $full_path = $file->dir . $file->filename;
                 $log->info(status_message($resp->code)
                     . sprintf(q( ID: %5u; ), $file_id)

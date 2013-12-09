@@ -211,17 +211,18 @@ sub add_file {
     $log->logdie(q(Missing 'file_obj' argument))
         unless(defined($args{file_obj}));
     my $file = $args{file_obj};
-    $log->debug(q(Received file object; id: ) . $file->id
-        . q(, filename: ) . $file->filename);
+    $log->debug(q(ID: ) . $file->id . q(, filename: ) . $file->filename);
 
-    my $filesql = <<'FILESQL';
+    my $file_sql = <<'FILESQL';
         INSERT INTO files VALUES (
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?,
             ?, ?, ?)
 FILESQL
-    my $sth = $dbh->prepare($filesql);
+
+    ### INSERT FILE
+    my $sth_file = $dbh->prepare($file_sql);
     if ( defined $dbh->err ) {
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
@@ -234,21 +235,60 @@ FILESQL
         # catches 'url', 'idgamesurl' and 'reviews'
         next if ( $key =~ /url|reviews/ );
         #$log->debug(qq(Binding $key -> ) . $file->$key));
-        $sth->bind_param($bind_counter, $file->$key);
+        $sth_file->bind_param($bind_counter, $file->$key);
         $bind_counter++;
     }
-    $log->debug(q(Calling 'execute' for file ID ) . $file->id);
-    my $rv = $sth->execute();
+    #$log->debug(q(Executing 'INSERT' for file ID ) . $file->id);
+    # $rv should be anything but 'undef' if the operation was successful
+    my $rv = $sth_file->execute();
     if ( ! defined $rv ) {
         $log->error(q(INSERT for file ID ) . $file->id
-            . q( returned an error: ) . $sth->errstr);
-        my $error = App::WADTools::Error->new(error_msg => $sth->errstr);
+            . q( returned an error: ) . $sth_file->errstr);
+        my $error = App::WADTools::Error->new(error_msg => $sth_file->errstr);
         return $error;
     } else {
-        $log->debug(qq(INSERT for file ID ) . $file->id . qq( successful));
+        $log->debug(qq(Successful INSERT of 'file' record; ID: )
+            . sprintf(q(%5u), $file->id));
     }
-    # FIXME what to return?  An error object if there's an error, what to
-    # return for success?
+
+    ### INSERT VOTES
+    my $vote_sql = q|INSERT INTO votes VALUES (?, ?, ?, ?)|;
+    my $sth_vote = $dbh->prepare($vote_sql);
+    if ( defined $dbh->err ) {
+        $log->error(q('prepare' call to INSERT into 'votes' failed));
+        $log->error(q(Error message: ) . $dbh->errstr);
+        my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
+        return $error;
+    }
+    my $vote_id = 1;
+    my @votes = @{$file->reviews};
+    foreach my $vote ( @votes ) {
+        $sth_vote->bind_param(1, $vote_id);
+        $sth_vote->bind_param(2, $file->id);
+        $sth_vote->bind_param(3, $vote->text);
+        $sth_vote->bind_param(4, $vote->vote);
+        #$log->debug(q(Executing 'INSERT' for file ID/vote ID )
+        #    . $file->id . q(/) . $vote_id);
+        $rv = $sth_vote->execute();
+        # $rv should be anything but 'undef' if the operation was successful
+        if ( ! defined $rv ) {
+            $log->error(q(INSERT for file ID ) . $file->id
+                . q( returned an error: ) . $sth_file->errstr);
+            my $error = App::WADTools::Error->new(
+                error_msg => $sth_file->errstr);
+            return $error;
+        } # else {
+        #    $log->debug(q('INSERT' of vote for file ID/vote ID )
+        #        . $file->id . q(/) . $vote_id . qq( successful));
+        #}
+        # increment $vote_id
+        $vote_id++;
+    }
+    $log->debug(qq(Successful INSERT of $vote_id votes )
+        . q(for file ID ) . sprintf(q(%5u), $file->id));
+
+    # return 'true'
+    return 1;
 }
 
 =back

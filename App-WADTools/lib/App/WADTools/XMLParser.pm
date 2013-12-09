@@ -65,7 +65,7 @@ sub parse {
         # snarf tha API version
         #$log->debug(qq(Dumping parsed_data:\n) . Dumper($parsed_data));
         $api_version = $parsed_data->{q(idgames-response)}->{q(-version)};
-        $log->debug(qq(Parsed API version from response: $api_version));
+        #$log->debug(qq(Parsed API version from response: $api_version));
     }
 
     # now, see what kind of API request was made
@@ -97,7 +97,7 @@ sub parse {
         }
 
         # now loop across $latestfiles and parse each <file> element
-        foreach my $latestfile ( @{$latestfiles} ) {
+        foreach my $latestfile ( @files ) {
             $log->debug(q(Creating partial File object for file ID: )
                 . $latestfile->{id});
             my $file = App::WADTools::File->new(partial => 1);
@@ -147,9 +147,9 @@ sub parse {
                 # assign the parsed reviews to the file object
                 $file->reviews(\@reviews);
                 my $average_review = $review_sum / $total_reviews;
-                $log->debug(q(File ) . $file->id
+                $log->debug(q(ID ) . sprintf(q(%5u), $file->id)
                     . qq( has $total_reviews reviews, )
-                    . qq(with an average score of )
+                    . qq(average score: )
                     . sprintf(q(%0.2f), $average_review));
             }
         }

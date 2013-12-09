@@ -37,7 +37,7 @@ our $copyright =
 
  # debug with colorized debug messages
  idgames_db_dump --database /path/to/idgames_db_dump.db \
-    --debug --colorize --overwrite
+    --debug --colorize
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
 idgames_db_dump>.
@@ -71,7 +71,6 @@ our @options = (
     # other options
     q(json|j),
     q(xml|x),
-    q(overwrite|w),
     q(database|db|b=s),
 
     # misc options

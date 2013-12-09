@@ -22,6 +22,7 @@ $Data::Dumper::Terse = 1;
 # local modules
 use App::WADTools::Error;
 use App::WADTools::File;
+use App::WADTools::Vote;
 
 =head2 Methods
 
@@ -99,7 +100,7 @@ sub parse {
         # a 'get' request
         $log->debug(q(Received a response for a 'get' request));
         my $content = $parsed_data->{q(idgames-response)}->{content};
-        $log->debug(qq(Dumping get request:\n) . Dumper($content));
+        #$log->debug(qq(Dumping get request:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
         my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy
@@ -108,22 +109,34 @@ sub parse {
         $log->debug(q(Populating File attributes for file ID: )
             . $content->{id});
         foreach my $key ( @attribs ) {
+            # don't save the textfile entry right now
             next if ( $key eq q(textfile) );
-            $log->debug(qq(  $key: >) . $file->$key . q(<));
-            #$log->debug(qq(  key: $key));
-            if ( $key eq q(reviews) ) {
-                $log->debug(q(Adding reviews block to 'votes' table));
-                my @reviews = @{$content->{reviews}->{review}};
-                foreach my $file_review ( @reviews ) {
-                    my $review = App::WADTools::Vote->new();
-                    $review->text = $file_review->{text};
-                    $review->vote = $file_review->{vote};
-                    $log->debug(qq(  vote: ) . $review->vote
-                        . q(; vote length: ) . length($review->text));
-                }
-            } else {
+            #$log->debug(qq(  $key: >) . $content->{$key} . q(<));
+            if ( $key ne q(reviews) ) {
                 $file->{$key} = $content->{$key};
-                #$log->debug(qq(  $key: >) . $file->$key . q(<));
+            } else {
+                $log->debug(q(Adding reviews block to 'votes' table));
+                my @file_reviews = @{$content->{reviews}->{review}};
+                my @reviews;
+                my $total_reviews = 0;
+                my $review_sum = 0;
+                foreach my $file_review ( @file_reviews ) {
+                    my $review = App::WADTools::Vote->new();
+                    $review->text($file_review->{text});
+                    $review->vote($file_review->{vote});
+                    #$log->debug(qq(  vote: ) . $review->vote
+                    #    . q(; vote length: ) . length($review->text));
+                    $review_sum += $review->vote;
+                    $total_reviews++;
+                    push(@reviews, $review);
+                }
+                # assign the parsed reviews to the file object
+                $file->reviews(\@reviews);
+                my $average_review = $review_sum / $total_reviews;
+                $log->debug(q(File ) . $file->id
+                    . qq( has $total_reviews reviews, )
+                    . qq(with an average score of )
+                    . sprintf(q(%0.2f), $average_review));
             }
         }
         return (file => $file, api_version => $api_version);

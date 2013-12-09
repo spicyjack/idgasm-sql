@@ -292,9 +292,9 @@ use constant {
             . $resp->status_line);
     }
 
-    # Loop across all of the file IDs, until a request for a file ID returns
-    # an error of some kind
-    HTTP_REQUEST: while (1) {
+    # Loop across all of the file IDs, until the last file ID is reached
+    # $last_idgames_file_id was determined by parsing 'latestfiles' above
+    HTTP_REQUEST: while ( $file_id <= $last_idgames_file_id ) {
         $log->info(qq(====== File ID: $file_id ======));
         my $random_wait = int(rand($random_wait_delay));
         my $fetch_url =  $idgames_get_url . qq(id=$file_id);
@@ -368,7 +368,7 @@ use constant {
         $file_id++;
         if ( $log->is_debug ) {
             if ( ! $cfg->defined(q(debug-noexit))
-                && $total_requests > $debug_requests ) {
+                && $total_requests >= $debug_requests ) {
                 last HTTP_REQUEST;
             }
         }

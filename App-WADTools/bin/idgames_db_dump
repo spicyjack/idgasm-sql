@@ -225,7 +225,6 @@ use constant {
         $random_wait_delay = $cfg->get(q(random-wait-time));
         $log->debug(qq(Using $random_wait_delay for ѕeed for random delay));
     }
-    my %file_map;
     my $db;
     if ( $cfg->defined(q(database)) && -e $cfg->get(q(database)) ) {
         $db = App::WADTools::DBFile->new(
@@ -264,7 +263,8 @@ use constant {
     my $total_request_errors = 0;
     my $sequential_request_errors = 0;
     # Query for the latestfiles, limit one, XML format
-    my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=10);
+    my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=1);
+    $log->debug(qq(Fetching 'latestfiles' via $latestfiles_url));
     my $latestfiles_req = HTTP::Request->new(GET => $latestfiles_url);
     my $last_idgames_file_id = 0;
     my $api_version = 0;
@@ -295,18 +295,19 @@ use constant {
     # Loop across all of the file IDs, until a request for a file ID returns
     # an error of some kind
     HTTP_REQUEST: while (1) {
+        $log->info(qq(====== File ID: $file_id ======));
         my $random_wait = int(rand($random_wait_delay));
         my $fetch_url =  $idgames_get_url . qq(id=$file_id);
-        $log->debug(qq(Fetching: $fetch_url));
+        $log->debug(qq(URL: $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
         my $req = HTTP::Request->new(GET => $fetch_url);
         $resp = $ua->request($req);
         $total_requests++;
         # Handle HTTP status messages
         if ( $resp->is_success ) {
-            $log->debug(qq(HTTP API request is successful for ID: $file_id));
-            #$log->info($resp->content);
-            #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
+            $log->info(sprintf(q(ID: %5u), $file_id)
+                . q(; HTTP status: ) . status_message($resp->code));
+            #$log->debug($resp->content);
             my %parser_return = $parser->parse(data => $resp->content);
             # Check for parsing errors
             #$log->debug(qq(idGames API version is: $api_version));
@@ -340,12 +341,18 @@ use constant {
             } else {
                 my $file = $parser_return{file};
                 my $full_path = $file->dir . $file->filename;
-                $log->info(status_message($resp->code)
-                    . sprintf(q( ID: %5u; ), $file_id)
-                    . qq(path: $full_path));
-                $file_map{$file_id} = $full_path;
+                $log->info(sprintf(q(ID: %5u), $file->id)
+                    . qq|; Parse successful ($full_path)|);
                 if ( defined $db ) {
-                    $db->add_file(file_obj => $file);
+                    my $add_status = $db->add_file(file_obj => $file);
+                    if ( ref($add_status) eq q(App::WADTools::Error) ) {
+                        $log->error(
+                            q(Inserting file into database returned error));
+                        $log->logdie(q(Insert error message: )
+                            . $add_status->error_message);
+                    }
+                    $log->info(sprintf(q|ID: %5u|, $file->id)
+                        . qq|; Added to DB ($full_path)|);
                 }
                 if ( $sequential_request_errors > 0 ) {
                     $log->debug(q(Decreasing sequential error counter...));

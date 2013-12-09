@@ -272,8 +272,8 @@ has q(idgamesurl) => (
 
 =item reviews
 
-An array reference that contains all reviews for this file (in review
-elements).
+An array reference that contains all reviews for this file (as
+L<App::WADTools::Vote objects).
 
 =cut
 
@@ -293,7 +293,7 @@ has q(attributes) => (
     is  => q(ro),
     default => sub { [qw(
         id title dir filename size age date author email description
-        credits base buildtime editors bugs textfile rating votes )]
+        credits base buildtime editors bugs textfile rating votes reviews )]
         },
 );
 

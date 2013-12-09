@@ -65,7 +65,7 @@ sub parse {
         # snarf tha API version
         #$log->debug(qq(Dumping parsed_data:\n) . Dumper($parsed_data));
         $api_version = $parsed_data->{q(idgames-response)}->{q(-version)};
-        $log->debug(qq(API meta version from response: $api_version));
+        $log->debug(qq(Parsed API version from response: $api_version));
     }
 
     # now, see what kind of API request was made
@@ -83,6 +83,20 @@ sub parse {
             = $parsed_data->{q(idgames-response)}->{content}->{file};
         #$log->debug(qq(Dumping parsed latestfiles:\n) . Dumper($latestfiles));
         my @return_files;
+        my @files;
+        if ( ref($latestfiles) eq q(ARRAY) ) {
+            # if 'action=latestfiles&limit=10' is called, an array of <file>
+            # elements is returned
+            @files = @{$latestfiles};
+        } else {
+            # if 'limit=1' is used, then only a single <file> element is
+            # returned, and XML::Fast turns this into a hash object; push the
+            # hash object onto 'latestfiles', so it's the only element in the
+            # array
+            push(@files, $latestfiles);
+        }
+
+        # now loop across $latestfiles and parse each <file> element
         foreach my $latestfile ( @{$latestfiles} ) {
             $log->debug(q(Creating partial File object for file ID: )
                 . $latestfile->{id});

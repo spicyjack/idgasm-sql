@@ -109,8 +109,8 @@ sub parse {
             . $content->{id});
         foreach my $key ( @attribs ) {
             next if ( $key eq q(textfile) );
-            $log->debug(qq(  $key));
             $log->debug(qq(  $key: >) . $file->$key . q(<));
+            #$log->debug(qq(  key: $key));
             if ( $key eq q(reviews) ) {
                 $log->debug(q(Adding reviews block to 'votes' table));
                 my @reviews = @{$content->{reviews}->{review}};
@@ -123,7 +123,7 @@ sub parse {
                 }
             } else {
                 $file->{$key} = $content->{$key};
-
+                #$log->debug(qq(  $key: >) . $file->$key . q(<));
             }
         }
         return (file => $file, api_version => $api_version);

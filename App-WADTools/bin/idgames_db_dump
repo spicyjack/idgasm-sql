@@ -310,7 +310,7 @@ use constant {
             #$log->info(qq(file ID: $file_id; ) . status_message($resp->code));
             my %parser_return = $parser->parse(data => $resp->content);
             # Check for parsing errors
-            $log->debug(qq(idGames API version is: $api_version));
+            #$log->debug(qq(idGames API version is: $api_version));
             if ( exists $parser_return{error} ) {
                 $log->error(q(Error parsing downloaded )
                     . uc($parse_type) . q( data));

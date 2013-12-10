@@ -124,6 +124,7 @@ use App::WADTools::DBFile;
 use App::WADTools::File;
 use App::WADTools::JSONParser;
 use App::WADTools::XMLParser;
+use App::WADTools::RuntimeStats;
 
 # script constants
 use constant {
@@ -210,6 +211,10 @@ use constant {
         $log->debug(qq(Setting number of API requests to $debug_requests));
     }
 
+    # create the stats object and start the timer
+    my $stats = App::WADTools::RuntimeStats->new();
+    $stats->start_timer();
+
     # start at file ID 1, keep going until you get a "error" response instead
     # of a "content" response in the JSON
     # Note: file ID '0' is invalid
@@ -262,6 +267,8 @@ use constant {
     my $file_request_errors = 0;
     my $total_request_errors = 0;
     my $sequential_request_errors = 0;
+    my $successful_api_requests = 0;
+    my $unsuccessful_api_requests = 0;
     # Query for the latestfiles, limit one, XML format
     my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=1);
     $log->debug(qq(Fetching 'latestfiles' via $latestfiles_url));
@@ -276,7 +283,7 @@ use constant {
             $log->error(q(Error parsing downloaded )
                 . uc($parse_type) . q( data));
             my $error = $parser_return{error};
-            $log->error(q(Error message: ) . $error->error_msg);
+            $log->error(q(Error message: ) . $error->message);
         } elsif ( exists $parser_return{files} ) {
             @latestfiles = @{$parser_return{files}};
             $api_version = $parser_return{api_version};
@@ -315,7 +322,7 @@ use constant {
                 $log->error(q(Error parsing downloaded )
                     . uc($parse_type) . q( data));
                 my $error = $parser_return{error};
-                $log->error(q(Error message: ) . $error->error_msg);
+                $log->error(q(Error message: ) . $error->message);
                 $file_request_errors++;
                 if ( $file_request_errors > FILE_REQUEST_ERRORS ) {
                     $log->error(qq(Too many errors parsing ID $file_id!));
@@ -337,8 +344,10 @@ use constant {
                 $log->debug(qq(Sleeping for $random_wait seconds ...)
                     . q|(error response block)|);
                 sleep $random_wait;
+                $unsuccessful_api_requests++;
                 next HTTP_REQUEST;
             } else {
+                $successful_api_requests++;
                 my $file = $parser_return{file};
                 my $full_path = $file->dir . $file->filename;
                 $log->info(sprintf(q(ID: %5u), $file->id)
@@ -349,7 +358,7 @@ use constant {
                         $log->error(
                             q(Inserting file into database returned error));
                         $log->logdie(q(Insert error message: )
-                            . $add_status->error_message);
+                            . $add_status->message);
                     }
                     $log->info(sprintf(q|ID: %5u|, $file->id)
                         . qq|; Added to DB ($full_path)|);
@@ -375,6 +384,13 @@ use constant {
         $log->debug(qq(Sleeping for $random_wait seconds...));
         sleep $random_wait;
     }
+
+    # stop the timer, display stats
+    $stats->stop_timer();
+    $stats->successful_api_requests($successful_api_requests);
+    $stats->unsuccessful_api_requests($unsuccessful_api_requests);
+    $stats->write_stats();
+
 
 =head1 AUTHOR
 

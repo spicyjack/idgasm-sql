@@ -82,24 +82,25 @@ sub parse {
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
         # a 'latestfiles' request
         $log->debug(q(Received a response for a 'latestfiles' request));
-        my $latestfiles
+        my $latestfiles_ref
             = $parsed_data->{q(idgames-response)}->{content}->{file};
-        #$log->debug(qq(Dumping parsed latestfiles:\n) . Dumper($latestfiles));
+        #$log->debug(qq(Dumping parsed latestfiles:\n)
+        #    . Dumper($latestfiles_ref));
         my @return_files;
         my @files;
-        if ( ref($latestfiles) eq q(ARRAY) ) {
+        if ( ref($latestfiles_ref) eq q(ARRAY) ) {
             # if 'action=latestfiles&limit=10' is called, an array of <file>
             # elements is returned
-            @files = @{$latestfiles};
+            @files = @{$latestfiles_ref};
         } else {
             # if 'limit=1' is used, then only a single <file> element is
             # returned, and XML::Fast turns this into a hash object; push the
             # hash object onto 'latestfiles', so it's the only element in the
             # array
-            push(@files, $latestfiles);
+            push(@files, $latestfiles_ref);
         }
 
-        # now loop across $latestfiles and parse each <file> element
+        # now loop across $latestfiles_ref and parse each <file> element
         foreach my $latestfile ( @files ) {
             $log->debug(q(Creating partial File object for file ID: )
                 . $latestfile->{id});
@@ -132,15 +133,25 @@ sub parse {
             if ( $key ne q(reviews) ) {
                 $file->{$key} = $content->{$key};
             } else {
+                my @file_reviews;
+                my $reviews_ref = $content->{reviews};
+                next unless ( ref($reviews_ref) );
+                if ( ref($reviews_ref) eq q(ARRAY) ) {
+                    # make a copy of the contents of the reviews reference
+                    @file_reviews = @{$reviews_ref};
+                } else {
+                    # only one review, push it on to the file reviews array
+                    push(@file_reviews, $reviews_ref->{review});
+                }
                 $log->debug(q(Adding reviews block to 'votes' table));
-                my @file_reviews = @{$content->{reviews}->{review}};
                 my @reviews;
                 my $total_reviews = 0;
                 my $review_sum = 0;
                 foreach my $file_review ( @file_reviews ) {
-                    my $review = App::WADTools::Vote->new();
-                    $review->text($file_review->{text});
-                    $review->vote($file_review->{vote});
+                    my $review = App::WADTools::Vote->new(
+                        text => $file_review->{text},
+                        vote => $file_review->{vote},
+                    );
                     #$log->debug(qq(  vote: ) . $review->vote
                     #    . q(; vote length: ) . length($review->text));
                     $review_sum += $review->vote;

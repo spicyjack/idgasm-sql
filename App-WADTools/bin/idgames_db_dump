@@ -27,6 +27,7 @@ our $copyright =
  -x|--xml           Request XML data from idGames API (default)
  -j|--json          Request JSON data from idGames API
  -c|--colorize      Always colorize script output
+ --save-textfile    Saves contents of '*.txt' files to database
  -m|--morehelp      Show misc/debugging options, then exit
 
  Example usage:
@@ -79,6 +80,7 @@ our @options = (
     q(debug-noexit),
     q(debug-requests=i),
     q(die-on-error!),
+    q(save-textfile),
     q(start-at=i),
     q(morehelp),
 );
@@ -256,11 +258,15 @@ use constant {
         $parse_type = q(json);
         # don't append 'out=json' to URL unless --json was used
         $idgames_get_url .= q(out=json&);
-        $parser = App::WADTools::JSONParser->new();
+        $parser = App::WADTools::JSONParser->new(
+            save_textfile => $cfg->defined(q(save-textfile))
+        );
         $log->debug(qq(Using JSON API calls to idGames Archive API));
     } else {
         $parse_type = q(xml);
-        $parser = App::WADTools::XMLParser->new();
+        $parser = App::WADTools::XMLParser->new(
+            save_textfile => $cfg->defined(q(save-textfile))
+        );
         $log->debug(qq(Using XML API calls to idGames Archive API));
     }
 
@@ -327,11 +333,9 @@ use constant {
             #$log->debug($resp->content);
             my %parser_return = $parser->parse(data => $resp->content);
             # Check for parsing errors
-            #$log->debug(qq(idGames API version is: $api_version));
             if ( exists $parser_return{error} ) {
-                $log->error(q(Error parsing downloaded )
-                    . uc($parse_type) . q( data));
                 my $error = $parser_return{error};
+                $log->error(q(Error type: ) . $error->type);
                 $log->error(q(Error message: ) . $error->message);
                 $file_request_errors++;
                 if ( $file_request_errors > FILE_REQUEST_ERRORS ) {

@@ -25,7 +25,7 @@ use Moo;
 use Number::Format; # pretty output of bytes
 use Time::HiRes qw( gettimeofday tv_interval );
 
-my ($_start_time, $_stop_time);
+my (%_starts, %_stops);
 
 =head2 Attributes
 
@@ -55,30 +55,57 @@ has q(unsuccessful_api_requests) => (
     isa => sub {$_[0] =~ /\d+/},
 );
 
+=item total_http_request_time
+
+The total amount of time making HTTP requests from the C<idGames API>.
+
+=cut
+
+has q(total_http_request_time) => (
+    is  => q(rw),
+    #isa => sub {$_[0] =~ /\d+/},
+);
+
 =back
 
 =head2 Methods
 
 =over
 
-=item start_timer()
+=item start_timer('foo')
 
-Starts the internal timer, used to measure total script execution time.
+Starts a timer with the name of C<foo>.
 
 =cut
 
 sub start_timer {
-    $_start_time = [gettimeofday];
+    my $self = shift;
+    my $timer_name = shift;
+    $_starts{$timer_name} = [gettimeofday];
 }
 
-=item stop_timer()
+=item stop_timer('foo')
 
-Stops the internal timer, used to measure total script execution time.
+Stops the timer named C<foo>.  to measure total script execution time.
 
 =cut
 
 sub stop_timer {
-    $_stop_time = [gettimeofday];
+    my $self = shift;
+    my $timer_name = shift;
+    $_stops{$timer_name} = [gettimeofday];
+}
+
+=item time_value_difference('foo')
+
+=cut
+
+sub time_value_difference {
+    my $self = shift;
+    my $timer_name = shift;
+    my $log = Log::Log4perl->get_logger();
+
+    return tv_interval ( $_starts{$timer_name}, $_stops{$timer_name});
 }
 
 =item write_stats()
@@ -98,13 +125,19 @@ sub write_stats {
     $log->info(q(Calculating runtime statistics...));
     my $nf = Number::Format->new();
     # $_start_time/$_stop_time are local script variables
-    my $script_execution_time = tv_interval ( $_start_time, $_stop_time );
+    my $script_execution_time = $self->time_value_difference(q(program));
     $log->info(qq(- Total script execution time: )
-        . sprintf(q|%0.2f second(s)|, $script_execution_time));
-    my $average_request_time = $script_execution_time
+        . sprintf(q|%0.5f second(s)|, $script_execution_time));
+    my $average_time_between_http_requests = $script_execution_time
         / ($self->successful_api_requests + $self->unsuccessful_api_requests);
-    $log->info(qq(- Average request time: )
-        . sprintf(q|%0.2f second(s)|, $average_request_time));
+    my $average_http_response_time = $self->total_http_request_time
+        / ($self->successful_api_requests + $self->unsuccessful_api_requests);
+    $log->info(qq(- Total time spent making HTTP requests: )
+        . sprintf(q|%0.5f second(s)|, $self->total_http_request_time));
+    $log->info(qq(- Average time between HTTP requests: )
+        . sprintf(q|%0.5f second(s)|, $average_time_between_http_requests));
+    $log->info(qq(- Average HTTP response time: )
+        . sprintf(q|%0.5f second(s)|, $average_http_response_time));
     $log->info(qq(- Total successful API requests: )
         . $self->successful_api_requests);
     $log->info(qq(- Total unsuccessful API requests: )

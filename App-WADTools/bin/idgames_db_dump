@@ -213,7 +213,7 @@ use constant {
 
     # create the stats object and start the timer
     my $stats = App::WADTools::RuntimeStats->new();
-    $stats->start_timer();
+    $stats->start_timer(q(program));
 
     # start at file ID 1, keep going until you get a "error" response instead
     # of a "content" response in the JSON
@@ -269,6 +269,8 @@ use constant {
     my $sequential_request_errors = 0;
     my $successful_api_requests = 0;
     my $unsuccessful_api_requests = 0;
+    my $total_http_request_time = 0;
+    my @unsuccessful_file_ids;
     # Query for the latestfiles, limit one, XML format
     my $latestfiles_url = $idgames_base_url . q(action=latestfiles&limit=1);
     $log->debug(qq(Fetching 'latestfiles' via $latestfiles_url));
@@ -307,8 +309,16 @@ use constant {
         my $fetch_url =  $idgames_get_url . qq(id=$file_id);
         $log->debug(qq(URL: $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
+        $stats->start_timer(q(http_request));
         my $req = HTTP::Request->new(GET => $fetch_url);
         $resp = $ua->request($req);
+        $stats->stop_timer(q(http_request));
+        my $http_request_time
+            = $stats->time_value_difference(q(http_request));
+        $log->debug(q(HTTP request took )
+            . sprintf(q|%0.5f second(s)|, $http_request_time)
+        );
+        $total_http_request_time += $http_request_time;
         $total_requests++;
         # Handle HTTP status messages
         if ( $resp->is_success ) {
@@ -344,6 +354,7 @@ use constant {
                 $log->debug(qq(Sleeping for $random_wait seconds ...)
                     . q|(error response block)|);
                 sleep $random_wait;
+                push(@unsuccessful_file_ids, $file_id);
                 $unsuccessful_api_requests++;
                 next HTTP_REQUEST;
             } else {
@@ -386,9 +397,12 @@ use constant {
     }
 
     # stop the timer, display stats
-    $stats->stop_timer();
+    $log->debug(q(Requests for these file IDs were unsuccessful;));
+    $log->debug(join(q(, ), @unsuccessful_file_ids));
+    $stats->stop_timer(q(program));
     $stats->successful_api_requests($successful_api_requests);
     $stats->unsuccessful_api_requests($unsuccessful_api_requests);
+    $stats->total_http_request_time($total_http_request_time);
     $stats->write_stats();
 
 

@@ -217,7 +217,8 @@ sub add_file {
     $log->logdie(q(Missing 'file_obj' argument))
         unless(defined($args{file_obj}));
     my $file = $args{file_obj};
-    $log->debug(q(ID: ) . $file->id . q(, filename: ) . $file->filename);
+    $log->debug(sprintf(q(ID: %5u; ), $file->id)
+            . qq(Adding to DB: ) . $file->filename);
 
     my $file_sql = <<'FILESQL';
         INSERT INTO files VALUES (
@@ -259,8 +260,8 @@ FILESQL
         );
         return $error;
     } else {
-        $log->debug(qq(Successful INSERT of 'file' record; ID: )
-            . sprintf(q(%5u), $file->id));
+        $log->debug(sprintf(q(ID: %5u; ), $file->id)
+            . qq(Successful INSERT of 'file' record));
     }
 
     ### INSERT VOTES
@@ -275,9 +276,15 @@ FILESQL
         );
         return $error;
     }
-    my $vote_id = 1;
-    my @votes = @{$file->reviews};
-    foreach my $vote ( @votes ) {
+    my $vote_id = 0;
+    my @reviews;
+    # if there's no reviews, then $file->reviews will be 'undef'
+    if ( defined $file->reviews ) {
+        @reviews = @{$file->reviews};
+    }
+    foreach my $vote ( @reviews ) {
+        # increment $vote_id
+        $vote_id++;
         $sth_vote->bind_param(1, $vote_id);
         $sth_vote->bind_param(2, $file->id);
         $sth_vote->bind_param(3, $vote->text);
@@ -298,11 +305,9 @@ FILESQL
         #    $log->debug(q('INSERT' of vote for file ID/vote ID )
         #        . $file->id . q(/) . $vote_id . qq( successful));
         #}
-        # increment $vote_id
-        $vote_id++;
     }
-    $log->debug(qq(Successful INSERT of $vote_id votes )
-        . q(for file ID ) . sprintf(q(%5u), $file->id));
+    $log->debug(sprintf(q(ID: %5u; ), $file->id)
+        . qq|Successful INSERT of $vote_id vote(s)|);
 
     # return 'true'
     return 1;

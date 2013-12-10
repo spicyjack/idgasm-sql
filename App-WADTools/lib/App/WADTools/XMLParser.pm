@@ -134,14 +134,15 @@ sub parse {
                 $file->{$key} = $content->{$key};
             } else {
                 my @file_reviews;
-                my $reviews_ref = $content->{reviews};
-                next unless ( ref($reviews_ref) );
-                if ( ref($reviews_ref) eq q(ARRAY) ) {
-                    # make a copy of the contents of the reviews reference
-                    @file_reviews = @{$reviews_ref};
+                next unless ( ref($content->{reviews}) );
+                my $review_ref = $content->{reviews}->{review};
+                # no reviews, skip to the next file
+                if ( ref($review_ref) eq q(ARRAY) ) {
+                    # many reviews; copy the reviews into @file_reviews
+                    @file_reviews = @{$review_ref};
                 } else {
                     # only one review, push it on to the file reviews array
-                    push(@file_reviews, $reviews_ref->{review});
+                    push(@file_reviews, $review_ref);
                 }
                 $log->debug(q(Adding reviews block to 'votes' table));
                 my @reviews;

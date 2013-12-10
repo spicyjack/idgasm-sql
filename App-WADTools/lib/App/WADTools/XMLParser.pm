@@ -24,6 +24,32 @@ use App::WADTools::Error;
 use App::WADTools::File;
 use App::WADTools::Vote;
 
+=head2 Attributes
+
+=over
+
+=item save_textfile
+
+Saves the "textfile", the contents of the C<*.txt> file that is uploaded with
+each C<*.zip> file to the C<idGames Archive>.  This can add significant
+storage requirements to the database, so by default this attribute is C<0>,
+false.
+
+=cut
+
+has q(save_textfile) => (
+    is      => q(rw),
+    isa     => sub { $_[0] =~ /0|1|n|no|y|yes/i },
+    coerce  => sub {
+                    my $arg = $_[0];
+                    if ( $arg =~ /0|n|no/i ) { return 0; }
+                    if ( $arg =~ /1|y|yes/i ) { return 1; }
+                },
+    default => sub { 0 },
+);
+
+=back
+
 =head2 Methods
 
 =over
@@ -57,7 +83,7 @@ sub parse {
     if ( $@ ) {
         # no, an error occured parsing the XML
         my $error = App::WADTools::Error->new(
-            type          => q(parse_error),
+            type          => q(xml_parse_error),
             message       => qq(Error parsing XML content; $@),
             content_block => $data,
         );
@@ -128,7 +154,7 @@ sub parse {
             . $content->{id});
         foreach my $key ( @attribs ) {
             # don't save the textfile entry right now
-            next if ( $key eq q(textfile) );
+            next if ( $key eq q(textfile) && ! $self->save_textfile );
             #$log->debug(qq(  $key: >) . $content->{$key} . q(<));
             if ( $key ne q(reviews) ) {
                 $file->{$key} = $content->{$key};

@@ -155,7 +155,10 @@ sub create_schema {
         if ( defined $dbh->err ) {
             $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
             $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
+            my $error = App::WADTools::Error->new(
+                type    => q(create_table),
+                message => $dbh->errstr
+            );
             return $error;
         }
 
@@ -167,7 +170,10 @@ sub create_schema {
         if ( defined $dbh->err ) {
             $log->error(q('prepare' call to INSERT into 'schema' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
+            my $error = App::WADTools::Error->new(
+                type    => q(schema_insert_prepare),
+                message => $dbh->errstr
+            );
             return $error;
         }
         $sth->bind_param(1, $key);
@@ -226,7 +232,10 @@ FILESQL
     if ( defined $dbh->err ) {
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
-        my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(file_insert_prepare),
+            message => $dbh->errstr
+        );
         return $error;
     }
 
@@ -244,7 +253,10 @@ FILESQL
     if ( ! defined $rv ) {
         $log->error(q(INSERT for file ID ) . $file->id
             . q( returned an error: ) . $sth_file->errstr);
-        my $error = App::WADTools::Error->new(error_msg => $sth_file->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(file_insert_execute),
+            message => $sth_file->errstr
+        );
         return $error;
     } else {
         $log->debug(qq(Successful INSERT of 'file' record; ID: )
@@ -257,7 +269,10 @@ FILESQL
     if ( defined $dbh->err ) {
         $log->error(q('prepare' call to INSERT into 'votes' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
-        my $error = App::WADTools::Error->new(error_msg => $dbh->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(vote_insert_prepare),
+            message => $dbh->errstr
+        );
         return $error;
     }
     my $vote_id = 1;
@@ -275,7 +290,9 @@ FILESQL
             $log->error(q(INSERT for file ID ) . $file->id
                 . q( returned an error: ) . $sth_file->errstr);
             my $error = App::WADTools::Error->new(
-                error_msg => $sth_file->errstr);
+                type    => q(vote_insert_execute),
+                message => $sth_file->errstr
+            );
             return $error;
         } # else {
         #    $log->debug(q('INSERT' of vote for file ID/vote ID )

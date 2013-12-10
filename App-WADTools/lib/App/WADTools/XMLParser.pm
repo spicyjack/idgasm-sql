@@ -48,7 +48,7 @@ sub parse {
         unless (exists $args{data});
 
     my $data = $args{data};
-    my $api_version = 0;
+    my $api_version = q(unknown);
 
     # XML::Fast::xml2hash will die if there are parsing errors; wrap parsing
     # with an eval to handle dying gracefully
@@ -57,9 +57,11 @@ sub parse {
     if ( $@ ) {
         # no, an error occured parsing the XML
         my $error = App::WADTools::Error->new(
-            error_msg => qq(Error parsing XML content; $@),
+            type          => q(parse_error),
+            message       => qq(Error parsing XML content; $@),
+            content_block => $data,
         );
-        return ($error, $api_version);
+        return ( error => $error, api_version => $api_version );
     } else {
         # yes, XML parsed correctly
         # snarf tha API version
@@ -72,7 +74,8 @@ sub parse {
     if ( exists $parsed_data->{q(idgames-response)}->{error} ) {
         # an error was returned from the API
         my $error = App::WADTools::Error->new(
-            error_msg => q(Received 'error' response to API query),
+            type          => q(api_error),
+            message       => q(Received 'error' response to API query),
             content_block => $parsed_data->{q(idgames-response)}->{error},
         );
         return (error => $error, api_version => $api_version);
@@ -155,12 +158,15 @@ sub parse {
         }
         return (file => $file, api_version => $api_version);
     } else {
-        my $error = App::WADTools::Error->new();
-        $error->error_msg(q(Received undefined response to API query));
-        return ($error, $api_version);
+        my $error = App::WADTools::Error->new(
+            type          => q(undefined_response),
+            message       => q(Received undefined response to API query),
+            content_block => $parsed_data,
+        );
+        return (error => $error, api_version => $api_version);
     }
 
-    # we shouldn't get this far
+    # we should never get this far...
     $log->logdie(q(XMLParser reached end of parse block without branching));
 }
 

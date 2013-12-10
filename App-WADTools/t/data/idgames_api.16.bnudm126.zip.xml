@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<idgames-response version="1.0"><content><id>16</id><title></title><dir>utils/serial/</dir><filename>bnudm126.zip</filename><size>29393</size><age>766652400</age><date>1994-04-18</date><author></author><email></email><description></description><credits></credits><base></base><buildtime></buildtime><editors></editors><bugs></bugs><textfile><![CDATA[This is version 1.2.6 of BNUDM, a replacement sersetup.exe file
+(the DOOM serial driver) for DOOM.
+
+It replaces bnudm125, which had a minor bug in it.
+
+]]></textfile><rating>4.0000</rating><votes>1</votes><url>http://www.doomworld.com/idgames/?id=16</url><idgamesurl>idgames://16</idgamesurl><reviews><review><text>Great serial driver for direct connections.  The biggest gripes are that it's not a drop-in replacement for sersetup.exe so know your parameters and that it will only look for doom.exe, so you should make a batch script for heretic and other games to make a copy /y heretic.exe doom.exe.</text><vote>4</vote></review></reviews></content></idgames-response>

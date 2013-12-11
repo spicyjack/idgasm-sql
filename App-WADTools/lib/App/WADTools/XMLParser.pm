@@ -7,9 +7,12 @@ package App::WADTools::XMLParser;
 
 Parse XML text downloaded via HTTP request to C<idGames Archive API>.
 
+Inherits from L<App::WADTools::Role::Parser>, see that module for additional
+methods/attributes.
+
 =cut
 
-# system modules
+### System modules
 use XML::Fast;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
@@ -19,36 +22,13 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-# local modules
+### Roles
+with q(App::WADTools::Roles::Parser);
+
+### Local modules
 use App::WADTools::Error;
 use App::WADTools::File;
 use App::WADTools::Vote;
-
-=head2 Attributes
-
-=over
-
-=item save_textfile
-
-Saves the "textfile", the contents of the C<*.txt> file that is uploaded with
-each C<*.zip> file to the C<idGames Archive>.  This can add significant
-storage requirements to the database, so by default this attribute is C<0>,
-false.
-
-=cut
-
-has q(save_textfile) => (
-    is      => q(rw),
-    isa     => sub { $_[0] =~ /0|1|n|no|y|yes/i },
-    coerce  => sub {
-                    my $arg = $_[0];
-                    if ( $arg =~ /0|n|no/i ) { return 0; }
-                    if ( $arg =~ /1|y|yes/i ) { return 1; }
-                },
-    default => sub { 0 },
-);
-
-=back
 
 =head2 Methods
 

@@ -9,7 +9,7 @@ Parse JSON text downloaded via HTTP request to C<idGames Archive API>.
 
 =cut
 
-# system modules
+### System modules
 use JSON;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
@@ -19,7 +19,11 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-# local modules
+### Roles consumed
+# parser attributes; --save-textfile
+with(q(App::WADTools::Roles::Parser));
+
+### Local modules
 use App::WADTools::Error;
 use App::WADTools::File;
 

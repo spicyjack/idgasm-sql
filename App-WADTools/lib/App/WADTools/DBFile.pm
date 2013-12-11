@@ -306,8 +306,13 @@ FILESQL
         #        . $file->id . q(/) . $vote_id . qq( successful));
         #}
     }
-    $log->debug(sprintf(q(ID: %5u; ), $file->id)
-        . qq|Successful INSERT of $vote_id vote(s)|);
+    if ( $vote_id > 0 ) {
+        $log->debug(sprintf(q(ID: %5u; ), $file->id)
+            . qq|Successful INSERT of $vote_id vote(s)|);
+    } else {
+        $log->debug(sprintf(q(ID: %5u; ), $file->id)
+            . q|No votes to INSERT into database|);
+    }
 
     # return 'true'
     return 1;

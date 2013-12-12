@@ -341,10 +341,10 @@ use constant {
             # Check for parsing errors
             if ( exists $parser_return{error} ) {
                 my $error = $parser_return{error};
-                $log->error(qq(Unable to parse $parse_type response )
-                    . qq(for $file_id));
+                $log->error(qq(Error parsing API response for $file_id));
                 $log->error(q(Error type: ) . $error->type);
                 $log->error(q(Error message: ) . $error->message);
+                $log->error(q(Error contents:) . Dumper($error->content_block));
                 push(@unsuccessful_parse_ids, $file_id);
                 # move to the next file ID
                 $file_id++;

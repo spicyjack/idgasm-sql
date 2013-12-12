@@ -114,7 +114,6 @@ sub parse {
             my @attribs = keys(%{$latestfile});
             foreach my $key ( @attribs ) {
                 $file->{$key} = $latestfile->{$key};
-                next if ( $key eq q(textfile) );
                 #$log->debug(qq(  $key: >) . $file->$key . q(<));
             }
             push(@return_files, $file);

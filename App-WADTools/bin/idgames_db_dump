@@ -279,11 +279,11 @@ use constant {
 
     my $file_request_errors = 0;
     my $total_request_errors = 0;
-    my $sequential_request_errors = 0;
+    my $total_parse_errors = 0;
     my $successful_api_requests = 0;
-    my $unsuccessful_api_requests = 0;
     my $total_http_request_time = 0;
-    my @unsuccessful_file_ids;
+    my @unsuccessful_request_ids;
+    my @unsuccessful_parse_ids;
     $log->debug(qq(Fetching 'latestfiles' via $latestfiles_url));
     my $latestfiles_req = HTTP::Request->new(GET => $latestfiles_url);
     my $last_idgames_file_id = 0;
@@ -293,10 +293,11 @@ use constant {
         my %parser_return = $parser->parse(data => $resp->content);
         my @latestfiles;
         if ( exists $parser_return{error} ) {
-            $log->error(q(Error parsing downloaded )
-                . uc($parse_type) . q( data));
             my $error = $parser_return{error};
+            $log->error(q(Error type: ) . $error->type);
             $log->error(q(Error message: ) . $error->message);
+            $log->logdie(q(Error parsing 'latestfiles' from )
+                . uc($parse_type) . q( request));
         } elsif ( exists $parser_return{files} ) {
             @latestfiles = @{$parser_return{files}};
             $api_version = $parser_return{api_version};
@@ -340,31 +341,16 @@ use constant {
             # Check for parsing errors
             if ( exists $parser_return{error} ) {
                 my $error = $parser_return{error};
+                $log->error(qq(Unable to parse $parse_type response )
+                    . qq(for $file_id));
                 $log->error(q(Error type: ) . $error->type);
                 $log->error(q(Error message: ) . $error->message);
-                $file_request_errors++;
-                if ( $file_request_errors > FILE_REQUEST_ERRORS ) {
-                    $log->error(qq(Too many errors parsing ID $file_id!));
-                    $log->error(qq(Moving to the next file ID in sequence));
-                    # reset the file request error flag
-                    $file_request_errors = 0;
-                    # move to the next file ID
-                    $file_id++;
-                    # increase the total number of request errors
-                    $log->debug(q(Bumping up error counters));
-                    $total_request_errors++;
-                    $sequential_request_errors++;
-                    if ( $sequential_request_errors > MAX_REQUEST_ERRORS ) {
-                        $log->logdie(q|Received too many API errors (|
-                            . MAX_REQUEST_ERRORS
-                            . q|) in too short a period of time|);
-                    }
-                }
+                push(@unsuccessful_parse_ids, $file_id);
+                # move to the next file ID
+                $file_id++;
                 $log->debug(qq(Sleeping for $random_wait seconds ...)
-                    . q|(error response block)|);
+                    . q|(after parse error)|);
                 sleep $random_wait;
-                push(@unsuccessful_file_ids, $file_id);
-                $unsuccessful_api_requests++;
                 next HTTP_REQUEST;
             } else {
                 $successful_api_requests++;
@@ -383,15 +369,12 @@ use constant {
                     $log->info(sprintf(q|ID: %5u|, $file->id)
                         . qq|; Added to DB ($full_path)|);
                 }
-                if ( $sequential_request_errors > 0 ) {
-                    $log->debug(q(Decreasing sequential error counter...));
-                    $sequential_request_errors--;
-                }
             }
         } else {
             # HTTP error
-            $log->logdie(q(Received HTTP error from API server: )
+            $log->error(q(Received HTTP error from API server: )
                 . $resp->status_line);
+            push(@unsuccessful_request_ids, $file_id);
         }
         $log->debug(qq(Finished parsing of ID $file_id));
         $file_id++;
@@ -407,10 +390,13 @@ use constant {
 
     # stop the timer, display stats
     $log->debug(q(Requests for these file IDs were unsuccessful;));
-    $log->debug(join(q(, ), @unsuccessful_file_ids));
+    $log->debug(join(q(, ), @unsuccessful_request_ids));
+    $log->debug(q(Parsing of these file IDs was unsuccessful;));
+    $log->debug(join(q(, ), @unsuccessful_parse_ids));
     $stats->stop_timer(q(program));
     $stats->successful_api_requests($successful_api_requests);
-    $stats->unsuccessful_api_requests($unsuccessful_api_requests);
+    $stats->unsuccessful_api_requests(scalar(@unsuccessful_request_ids));
+    $stats->unsuccessful_api_parses(scalar(@unsuccessful_parse_ids));
     $stats->total_http_request_time($total_http_request_time);
     $stats->write_stats();
 

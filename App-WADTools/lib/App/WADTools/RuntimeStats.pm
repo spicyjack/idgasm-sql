@@ -55,6 +55,18 @@ has q(unsuccessful_api_requests) => (
     isa => sub {$_[0] =~ /\d+/},
 );
 
+=item unsuccessful_api_parses
+
+Total API responses that could not be parsed (for whatever reason).  Usually
+means a badly formed API response message from the server.
+
+=cut
+
+has q(unsuccessful_api_parses) => (
+    is  => q(rw),
+    isa => sub {$_[0] =~ /\d+/},
+);
+
 =item total_http_request_time
 
 The total amount of time making HTTP requests from the C<idGames API>.
@@ -142,6 +154,8 @@ sub write_stats {
         . $self->successful_api_requests);
     $log->info(qq(- Total unsuccessful API requests: )
         . $self->unsuccessful_api_requests);
+    $log->info(qq(- Total unsuccessful API parses: )
+        . $self->unsuccessful_api_parses);
 }
 
 1;

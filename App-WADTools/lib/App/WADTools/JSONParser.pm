@@ -175,41 +175,6 @@ sub parse {
         return (error => $error, api_version => $api_version);
     }
 
-=pod
-
-    #$log->debug(q(Dumping JSON parser output:));
-    #$log->debug(Dumper $parsed_data);
-    if ( exists $parsed_data->{content} ) {
-        my $content = $parsed_data->{content};
-        #$log->warn(qq(Dumping content:\n) . Dumper($content));
-        my $file = App::WADTools::File->new();
-        # go through all of the attributes in the content object, copy
-        # them to the same attributes in this File object
-        my @attribs = @{$file->attributes};
-        $log->debug(q(Populating File attributes...));
-        foreach my $key ( @attribs ) {
-            if ( defined $content->{$key} ) {
-                $file->{$key} = $content->{$key};
-            } else {
-                $file->{$key} = q();
-            }
-            next if ( $key eq q(textfile) );
-            $log->debug(qq(  $key: >) . $file->$key . q(<));
-        }
-        return $file
-    } elsif ( exists $parsed_data->{error} ) {
-        my $error = App::WADTools::Error->new(
-            error_msg => q(Received 'error' response to API query),
-            content_block => $parsed_data->{error},
-        );
-        return $error;
-    } else {
-        my $error = App::WADTools::Error->new();
-        $error->error_msg(q(Received undefined response to API query));
-        return $error;
-    }
-=cut
-
     # we shouldn't get this far
     $log->logdie(q(JSONParser reached end of parse block without branching));
 

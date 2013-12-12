@@ -94,9 +94,7 @@ sub parse {
             @files = @{$latestfiles_ref};
         } else {
             # if 'limit=1' is used, then only a single <file> element is
-            # returned, and XML::Fast turns this into a hash object; push the
-            # hash object onto 'latestfiles', so it's the only element in the
-            # array
+            # returned
             push(@files, $latestfiles_ref);
         }
 
@@ -118,7 +116,7 @@ sub parse {
         $log->debug(q(Received a response for a 'get' request));
         my $content = $parsed_data->{content};
         #$log->debug(qq(Dumping get request:\n) . Dumper($content));
-        $log->debug(q(Successfully parsed XML content block));
+        $log->debug(q(Successfully parsed JSON content block));
         my $file = App::WADTools::File->new();
         # go through all of the attributes in the content object, copy
         # them to the same attributes in this File object
@@ -133,7 +131,7 @@ sub parse {
                 $file->{$key} = $content->{$key};
             } else {
                 my @file_reviews;
-                next unless ( ref($content->{reviews}) );
+                next unless ( defined $content->{reviews}->{review} );
                 my $review_ref = $content->{reviews}->{review};
                 # no reviews, skip to the next file
                 if ( ref($review_ref) eq q(ARRAY) ) {

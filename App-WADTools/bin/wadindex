@@ -39,7 +39,7 @@ our $VERSION = '0.01';
 
  Example usage:
 
- # list the structure of an XLS file
+ # walk a directory structure full of '*.zip' files and index
  wadindex --path /path/to/wad/files --tempdir /dev/shm
 
 You can view the full C<POD> documentation of this file by calling C<perldoc

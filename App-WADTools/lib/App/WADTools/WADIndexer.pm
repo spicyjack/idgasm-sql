@@ -1,19 +1,20 @@
-#####################
-# WADIndex::Indexer #
-#####################
-package WADIndex::Indexer;
+#############################
+# App::WADTools::WADIndexer #
+#############################
+package App::WADTools::WADIndexer;
 use strict;
 use warnings;
 use Data::Hexdumper;
 use Fcntl qw(:seek);
 use Log::Log4perl;
+use Moo;
 
 use constant {
     WAD_DIRECTORY_ENTRY_SIZE => 16,
     WAD_HEADER_SIZE          => 12,
 };
 
-=head2 WADIndex::Indexer
+=head2 App::WADTools::WADIndexer
 
 An object used for storing configuration data.
 
@@ -21,17 +22,11 @@ An object used for storing configuration data.
 
 =over
 
-=item new( )
+=item new( ) (aka BUILD)
 
-Parses WAD files, outputs information about the WAD file.
+Creates a new WADIndexer object, returns it to the caller.
 
 =cut
-
-sub new {
-    my $class = shift;
-    my $self = bless ({}, $class);
-    return $self;
-}
 
 =item index( )
 
@@ -63,11 +58,12 @@ sub index {
         my $header;
         # read the header from the WAD file
         my $bytes_read = read( $WAD,$header, WAD_HEADER_SIZE );
-        die qq(Failed to read header: $!)
+        $log->logdie(qq(Failed to read header: $!))
             unless (defined $bytes_read);
-        die qq(Only read $bytes_read bytes from header, header size is ) .
-            WAD_HEADER_SIZE
-            unless ( $bytes_read == WAD_HEADER_SIZE );
+        if ( $bytes_read != WAD_HEADER_SIZE ) {
+            $log->error(qq(Only read $bytes_read bytes from header));
+            $log->logdie(q(Header size is ) . WAD_HEADER_SIZE . q( bytes));
+        }
         my ($wad_sig,$num_lumps,$dir_offset) = unpack("a4VV",$header);
         $log->info(qq(WAD signature: $wad_sig));
         $log->info(sprintf(q(Number of lumps in the WAD:  %u lumps),

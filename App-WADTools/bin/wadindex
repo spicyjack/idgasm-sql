@@ -81,8 +81,7 @@ use strict;
 use warnings;
 use utf8;
 
-# system modules
-
+### System modules
 use Carp;
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -96,6 +95,11 @@ use File::Temp;
 use IO::File;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
+
+### Local modules
+use App::WADTools::Config;
+use App::WADTools::WADIndexer;
+use App::WADTools::ZipTool;
 
 # FIXME change these into regexes
 # WARNING: these will change depending on which 'magic' file you're looking at
@@ -115,7 +119,7 @@ use constant {
     binmode(STDOUT, ":utf8");
 
     # create a logger object
-    my $cfg = App::WADTools::Config->new();
+    my $cfg = App::WADTools::Config->new(options => \@options);
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
@@ -182,7 +186,7 @@ use constant {
     $log->info($copyright);
     $log->info(qq(My PID is $$));
 
-    my $indexer = WADIndex::Indexer->new();
+    my $indexer = App::WADTools::WADIndexer->new();
     my @files = File::Find::Rule
                         ->file
                         #->name(q(*.wad), q(*.zip))
@@ -191,7 +195,7 @@ use constant {
         my $filename = basename($found_file);
         $log->info(qq(Processing file $filename));
         if ( $filename =~ /\.zip$/ ) {
-            my $zipfile = WADIndex::ZipTool->new(
+            my $zipfile = App::WADTools::ZipTool->new(
                 cfg => $cfg,
                 filename => $cfg->get(q(path)) . q(/) . $filename,
             );
@@ -201,7 +205,7 @@ use constant {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
                 my $temp_dir = $zipfile->extract_files(files => \@wads_in_zip);
-                my $indexer = WADIndex::Indexer->new();
+                my $indexer = App::WADTools::WADIndexer->new();
                 $indexer->index(tempdir => $temp_dir, files => \@wads_in_zip);
             } else {
                 $log->warn(qq(No *.wad files in $filename));

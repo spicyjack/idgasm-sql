@@ -95,6 +95,7 @@ use File::Temp;
 use IO::File;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Log::Log4perl::Level;
+use Pod::Usage;
 
 ### Local modules
 use App::WADTools::Config;
@@ -205,7 +206,6 @@ use constant {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
                 my $temp_dir = $zipfile->extract_files(files => \@wads_in_zip);
-                my $indexer = App::WADTools::WADIndexer->new();
                 $indexer->index(tempdir => $temp_dir, files => \@wads_in_zip);
             } else {
                 $log->warn(qq(No *.wad files in $filename));

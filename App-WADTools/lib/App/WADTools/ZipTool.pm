@@ -1,13 +1,13 @@
-#####################
-# WADIndex::ZipTool #
-#####################
-package WADIndex::ZipTool;
+##########################
+# App::WADTools::ZipTool #
+##########################
+package App::WADTools::ZipTool;
 use strict;
 use warnings;
 use Archive::Zip qw(:ERROR_CODES);
 use Log::Log4perl;
 
-=head2 WADIndex::ZipTool
+=head2 App::WADTools::ZipTool
 
 An object used for storing configuration data.
 

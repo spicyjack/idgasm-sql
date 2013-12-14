@@ -12,15 +12,19 @@ WAD files stored in C<idGames Archive>.
 
 =cut
 
+our $copyright =
+    q|Copyright (c)2013 Brian Manning/brian at xaoc dot org|;
+
 =head1 SYNOPSIS
 
  perl db_bootstrap [OPTIONS]
 
  Script options:
  -h|--help          Shows this help text
+ -c|--colorize      Always colorize script output
  -d|--debug         Debug script execution
  -v|--verbose       Verbose script execution
- -c|--colorize      Always colorize script output
+ --version          Print script version and copyright, then exit
 
  Script file options:
  -i|--input         The input file to read information from
@@ -57,6 +61,7 @@ our @options = (
     # script options
     q(debug|d),
     q(verbose|v),
+    q(version),
     q(help|h),
     q(colorize|c), # always colorize output
 
@@ -127,6 +132,12 @@ use App::WADTools::INIFile;
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+
+    if ( $cfg->defined(q(version)) ) {
+        print STDERR qq($my_name: version '$VERSION'\n);
+        print STDERR qq($my_name: $copyright\n);
+        exit 0;
+    }
 
     # Start setting up the Log::Log4perl object
     my $log4perl_conf = qq(log4perl.rootLogger = WARN, Screen\n);

@@ -1,29 +1,29 @@
 #!/usr/bin/perl -w
 
-use strict;
-use warnings;
-
-our @copyright = (
-    q|Copyright (c) 2013 by Brian Manning |,
-    q|<brian at xaoc dot org>|
-);
-
 # For support with this file, please file an issue on the GitHub issue tracker
 # for this project: https://github.com/spicyjack/wadtools/issues
 
 =head1 NAME
 
-B<wadindex> - Create an index of WAD files
+B<wadindex> - Create an index and/or catalog of WAD files using files stored
+on a local machine
+
+=cut
+
+our $copyright = (
+    q|Copyright (c) 2013 by Brian Manning/brian at xaoc dot org|
+);
 
 =head1 SYNOPSIS
 
  perl wadindex [OPTIONS]
 
  Script options:
- -v|--verbose       Verbose script execution
- -d|--debug         Debug script execution (tons of output)
  -h|--help          Shows this help text
+ -d|--debug         Debug script execution (tons of output)
  -c|--colorize      Always colorize script output
+ -v|--verbose       Verbose script execution
+ --version          Print script version and copyright, then exit
 
  -p|--path          Path to WAD files/directories with WAD files
  -t|--tempdir       Temporary directory to use when unzipping WAD files
@@ -42,6 +42,7 @@ our @options = (
     # script options
     q(debug|d),
     q(verbose|v),
+    q(version),
     q(help|h),
     q(colorize|c), # always colorize output
     # other options
@@ -119,6 +120,12 @@ use constant {
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
 
+    if ( $cfg->defined(q(version)) ) {
+        print STDERR qq($my_name: version '$VERSION'\n);
+        print STDERR qq($my_name: $copyright\n);
+        exit 0;
+    }
+
     if ( ! $cfg->defined(q(tempdir)) ) {
         $cfg->set(q(tempdir), q(/dev/shm));
     }
@@ -172,9 +179,7 @@ use constant {
 
     # print a nice banner
     $log->info(qq(Starting $my_name, version '$VERSION'));
-    foreach my $c ( @copyright ) {
-        $log->info($c);
-    }
+    $log->info($copyright);
     $log->info(qq(My PID is $$));
 
     my $indexer = WADIndex::Indexer->new();

@@ -20,13 +20,14 @@ our $copyright =
  Script options:
  -h|--help          Shows this help text
  -d|--debug         Debug script execution
+ -c|--colorize      Always colorize script output
  -v|--verbose       Verbose script execution
+ --version          Print script version and copyright, then exit
 
  Other script options:
  -b|--database      Write info retrieved via API to this SQLite file
  -x|--xml           Request XML data from idGames API (default)
  -j|--json          Request JSON data from idGames API
- -c|--colorize      Always colorize script output
  --save-textfile    Saves contents of '*.txt' files to database
  -m|--morehelp      Show misc/debugging options, then exit
 
@@ -66,6 +67,7 @@ our @options = (
     # script options
     q(debug|d),
     q(verbose|v),
+    q(version),
     q(help|h),
     q(colorize|c), # always colorize output
 
@@ -151,6 +153,12 @@ use constant {
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+
+    if ( $cfg->defined(q(version)) ) {
+        print STDERR qq($my_name: version '$VERSION'\n);
+        print STDERR qq($my_name: $copyright\n);
+        exit 0;
+    }
 
     # show morehelp?
     if ( $cfg->defined(q(morehelp)) ) {

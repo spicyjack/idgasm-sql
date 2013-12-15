@@ -191,8 +191,8 @@ use App::WADTools::INIFile;
     }
 
     # print a nice banner
-    $log->info(qq(Starting $my_name, version '$VERSION'));
-    $log->info(qq(My PID is $$));
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn(qq(My PID is $$));
 
     my $db_schema;
     my $parser = App::WADTools::INIFile->new(
@@ -215,14 +215,17 @@ use App::WADTools::INIFile;
                 filename => $cfg->get(q(output))
             );
             if ( $db->connect ) {
+                $log->warn(q(Checking for existing schema...));
+                $log->warn(q|(Note: errors checking for schema are harmless)|);
                 my $schema_entries = $db->has_schema;
                 if ( $schema_entries == 0 ) {
-                    $log->debug(q(DB schema empty, calling 'create_schema'));
+                    $log->warn(q(DB schema empty, calling 'create_schema'));
                     $db->create_schema(schema => $db_schema);
                 } else {
-                    $log->debug(q(DB schema has already been populated;));
-                    $log->debug(qq(Schema has $schema_entries entries));
+                    $log->warn(q(DB schema has already been populated;));
+                    $log->warn(qq(Schema has $schema_entries entries));
                 }
+                $log->warn(q(DB schema creation complete!));
             } else {
                 $log->logdie(q(Unable to connect to database));
             }
@@ -247,8 +250,8 @@ use App::WADTools::INIFile;
                 $log->error(q(Writing config file returned an error!));
                 $log->logdie(q(Error message: ) . $filesize->error_msg);
             } else {
-                $log->info(q(Wrote file ) . $parser->filename);
-                $log->info(q(File size: ) . $filesize . q| byte(s)|);
+                $log->warn(q(Wrote file ) . $parser->filename);
+                $log->warn(q(File size: ) . $filesize . q| byte(s)|);
             }
         } else {
             $log->logdie(q(Don't know how to process file )

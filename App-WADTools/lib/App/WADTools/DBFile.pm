@@ -149,7 +149,7 @@ sub create_schema {
         next if ( $key =~ /^$/ );
         my $entry = $schema->{$key};
         #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
-        $log->debug(qq(Creating table for: ) . $entry->{name});
+        $log->info(qq(Creating table: ) . $entry->{name});
         # create the table table
         $dbh->do($entry->{sql});
         if ( defined $dbh->err ) {

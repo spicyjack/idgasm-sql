@@ -99,6 +99,7 @@ use Pod::Usage;
 
 ### Local modules
 use App::WADTools::Config;
+use App::WADTools::Database;
 use App::WADTools::WADIndexer;
 use App::WADTools::ZipTool;
 
@@ -172,9 +173,10 @@ use constant {
 
     $log->logdie(qq(Missing '--path' directory argument))
         unless ( $cfg->defined(q(path)) );
+    my $wad_path = $cfg->get(q(path));
     $log->logdie(qq('--path' )
         . $cfg->get(q(path)) . q( not found/available))
-        unless ( -r $cfg->get(q(path)) );
+        unless ( -r $wad_path );
 
     # check for the database file if --database was used
     if ( $cfg->defined(q(database)) ) {
@@ -188,13 +190,16 @@ use constant {
     $log->info(qq(My PID is $$));
 
     my $indexer = App::WADTools::WADIndexer->new();
+    my $db = App::WADTools::Database->new(filename => $cfg->get(q(database)));
     my @files = File::Find::Rule
                         ->file
                         #->name(q(*.wad), q(*.zip))
-                        ->in($cfg->get(q(path)));
+                        ->in($wad_path);
     foreach my $found_file ( sort(@files) ) {
         my $filename = basename($found_file);
-        $log->info(qq(Processing file $filename));
+        my $dirname = dirname($found_file);
+        $dirname =~ s/^$wad_path//;
+        $log->info(qq(Processing $dirname/$filename));
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(
                 cfg => $cfg,

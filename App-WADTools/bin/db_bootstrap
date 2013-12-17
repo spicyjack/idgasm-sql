@@ -117,7 +117,7 @@ $Data::Dumper::Terse = 1;
 # local packages
 use App::WADTools; # for $VERSION
 use App::WADTools::Config;
-use App::WADTools::DBFile;
+use App::WADTools::Database;
 use App::WADTools::INIFile;
 
     # create a variable with the current name of the script
@@ -211,7 +211,7 @@ use App::WADTools::INIFile;
             $log->debug(q(Parsing schema;));
             $log->debug(q(  Epoch: ) . $db_schema->{q()}->{q(schema_epoch)});
             $log->debug(q(  Date:  ) . $db_schema->{q()}->{q(schema_date)});
-            my $db = App::WADTools::DBFile->new(
+            my $db = App::WADTools::Database->new(
                 filename => $cfg->get(q(output))
             );
             if ( $db->connect ) {

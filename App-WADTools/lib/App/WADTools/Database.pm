@@ -1,7 +1,7 @@
-#################################
-# package App::WADTools::DBFile #
-#################################
-package App::WADTools::DBFile;
+###################################
+# package App::WADTools::Database #
+###################################
+package App::WADTools::Database;
 
 # system modules
 use Date::Format;
@@ -22,7 +22,7 @@ use App::WADTools::Error;
 # store the database handle
 my $dbh;
 
-=head1 App::WADTools::DBFile
+=head1 App::WADTools::Database
 
 Create/read/update/delete an C<idgasm> database file, or records in an
 existing database file.
@@ -55,7 +55,7 @@ has filename => (
 
 =item new()
 
-Creates the L<App::WADTools::DBFile> object.  Method is automatically
+Creates the L<App::WADTools::Database> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
 Required arguments:

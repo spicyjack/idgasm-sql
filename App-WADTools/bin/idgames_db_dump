@@ -124,7 +124,7 @@ $Data::Dumper::Terse = 1;
 # local packages
 use App::WADTools; # for $VERSION
 use App::WADTools::Config;
-use App::WADTools::DBFile;
+use App::WADTools::Database;
 use App::WADTools::File;
 use App::WADTools::JSONParser;
 use App::WADTools::XMLParser;
@@ -242,7 +242,7 @@ use constant {
     }
     my $db;
     if ( $cfg->defined(q(database)) && -e $cfg->get(q(database)) ) {
-        $db = App::WADTools::DBFile->new(
+        $db = App::WADTools::Database->new(
             filename => $cfg->get(q(database))
         );
         if ( defined $db->connect ) {

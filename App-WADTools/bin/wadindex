@@ -103,7 +103,7 @@ use App::WADTools::Database;
 use App::WADTools::WADIndexer;
 use App::WADTools::ZipTool;
 
-# FIXME change these into regexes
+# FIXME: GitHub issue #83, create a MIME magic preflight check
 # WARNING: these will change depending on which 'magic' file you're looking at
 use constant {
     OCTET_STREAM => q(application/octet-stream;),

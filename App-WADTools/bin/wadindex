@@ -25,13 +25,24 @@ our $copyright = (
  -v|--verbose       Verbose script execution
  --version          Print script version and copyright, then exit
 
+ Path/database options:
  -p|--path          Path to WAD files/directories with WAD files
  -t|--tempdir       Temporary directory to use when unzipping WAD files
+ -b|--database      Path to database created with 'idgames_db_dump'
+
+ Debug options:
+ --debug-noexit     Don't exit script when --debug is used
+ --debug-requests   Exit after this many files when --debug used
 
  Example usage:
 
  # walk a directory structure full of '*.zip' files and index
  wadindex --path /path/to/wad/files --tempdir /dev/shm
+
+ # run wadindex with debugging output, process 100 zip/non-zip files,
+ # then exit
+ wadindex --path /path/to/wad/files --tempdir /dev/shm \
+  --debug --debug-requests 100
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
 wadindex>.
@@ -44,11 +55,16 @@ our @options = (
     q(verbose|v),
     q(version),
     q(help|h),
-    q(colorize|c), # always colorize output
-    # other options
+    q(colorize|c), # ignore '-t' test and always colorize output
 
+    # path/db options
     q(path|p=s),
     q(tempdir|t=s),
+    q(database|db|b=s),
+
+    # debug options
+    q(debug-noexit),
+    q(debug-requests=i),
 );
 
 =head1 DESCRIPTION
@@ -185,21 +201,28 @@ use constant {
     }
 
     # print a nice banner
-    $log->info(qq(Starting $my_name, version '$VERSION'));
-    $log->info($copyright);
-    $log->info(qq(My PID is $$));
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn($copyright);
+    $log->warn(qq(My PID is $$));
+    $log->warn(qq(Searching for ZIP files in: $wad_path));
 
+    my $zip_file_counter = 0;
+    my $total_file_counter = 0;
     my $indexer = App::WADTools::WADIndexer->new();
     my $db = App::WADTools::Database->new(filename => $cfg->get(q(database)));
     my @files = File::Find::Rule
                         ->file
                         #->name(q(*.wad), q(*.zip))
                         ->in($wad_path);
-    foreach my $found_file ( sort(@files) ) {
+    FILE_LOOP: foreach my $found_file ( sort(@files) ) {
+        $total_file_counter++;
+        last FILE_LOOP if ( $cfg->defined(q(debug-requests))
+            && $total_file_counter > $cfg->get(q(debug-requests)) );
         my $filename = basename($found_file);
         my $dirname = dirname($found_file);
-        $dirname =~ s/^$wad_path//;
-        $log->info(qq(Processing $dirname/$filename));
+        my $archive_path = $dirname . q(/) . $filename;
+        $log->warn(sprintf(q(Processing file #: %5u), $total_file_counter));
+        $log->warn(sprintf(q(Filename: %s), $filename));
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(
                 cfg => $cfg,
@@ -213,9 +236,13 @@ use constant {
                 my $temp_dir = $zipfile->extract_files(files => \@wads_in_zip);
                 $indexer->index(tempdir => $temp_dir, files => \@wads_in_zip);
             } else {
-                $log->warn(qq(No *.wad files in $filename));
+                $log->info(qq(No *.wad files in $filename));
             }
+            $zip_file_counter++;
+        } else {
+            $log->info(qq(Not a zip file: $filename));
         }
+        $log->warn(sprintf(q(Finished processing: %s), $filename));
     }
 
 =head1 AUTHOR

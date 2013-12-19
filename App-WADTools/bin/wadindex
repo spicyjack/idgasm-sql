@@ -237,7 +237,6 @@ use constant {
             #$log->debug(qq(Setting short_path to $short_path));
             $file_path = qq($short_path/$filename);
         }
-        $log->warn(qq(Processing file #: $total_file_counter));
         $log->warn(qq(File: $file_path));
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(

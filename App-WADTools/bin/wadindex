@@ -27,6 +27,7 @@ our $copyright = (
 
  Path/database options:
  -p|--path          Path to WAD files/directories with WAD files
+ --strip-path       Strip this string out of log output
  -t|--tempdir       Temporary directory to use when unzipping WAD files
  -b|--database      Path to database created with 'idgames_db_dump'
 
@@ -44,6 +45,12 @@ our $copyright = (
  wadindex --path /path/to/wad/files --tempdir /dev/shm \
   --debug --debug-requests 100
 
+ # Strip a string out of the --path argument;
+ # good for traversing a local mirror of idGames Archive
+ wadindex --path /real/long/path/to/idgames/archive \
+    --strip-path "/real/long/path/to"
+
+
 You can view the full C<POD> documentation of this file by calling C<perldoc
 wadindex>.
 
@@ -59,6 +66,7 @@ our @options = (
 
     # path/db options
     q(path|p=s),
+    q(strip-path=s),
     q(tempdir|t=s),
     q(database|db|b=s),
 
@@ -220,13 +228,21 @@ use constant {
             && $total_file_counter > $cfg->get(q(debug-requests)) );
         my $filename = basename($found_file);
         my $dirname = dirname($found_file);
-        my $archive_path = $dirname . q(/) . $filename;
-        $log->warn(sprintf(q(Processing file #: %5u), $total_file_counter));
-        $log->warn(sprintf(q(Filename: %s), $filename));
+        my $file_path = $dirname . q(/) . $filename;
+        if ( $cfg->defined(q(strip-path)) ) {
+            my $strip_path = $cfg->get(q(strip-path));
+            #$log->debug(qq('strip-path' is $strip_path));
+            my $short_path = $dirname;
+            $short_path =~ s/^$strip_path//;
+            #$log->debug(qq(Setting short_path to $short_path));
+            $file_path = qq($short_path/$filename);
+        }
+        $log->warn(qq(Processing file #: $total_file_counter));
+        $log->warn(qq(File: $file_path));
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(
                 cfg => $cfg,
-                filename => $cfg->get(q(path)) . q(/) . $filename,
+                filename => $found_file,
             );
             my @members = $zipfile->get_zip_members();
             my @wads_in_zip = grep(/\.wad/i, @members);
@@ -236,13 +252,13 @@ use constant {
                 my $temp_dir = $zipfile->extract_files(files => \@wads_in_zip);
                 $indexer->index(tempdir => $temp_dir, files => \@wads_in_zip);
             } else {
-                $log->info(qq(No *.wad files in $filename));
+                $log->info(qq(No *.wad files in $file_path));
             }
             $zip_file_counter++;
         } else {
             $log->info(qq(Not a zip file: $filename));
         }
-        $log->warn(sprintf(q(Finished processing: %s), $filename));
+        $log->warn(qq(Finished processing: $file_path));
     }
 
 =head1 AUTHOR

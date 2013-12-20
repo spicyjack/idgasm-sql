@@ -68,131 +68,6 @@ The filename of the C<INI> file to read from and possibly write to.
 
 =back
 
-=item connect()
-
-Connects to the database (calls C<DBI-E<gt>connect> using the C<filename>
-attribute), and returns true (C<1>) if the connection did not have any errors,
-or an L<App::WADTools::Error> object if there was a problem connecting to
-the database.
-
-=cut
-
-sub connect {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger("");
-
-    $log->debug(q(Connecting to/reading database file ) . $self->filename);
-    if ( ! defined $dbh ) {
-        $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
-        # turn on unicode handling
-        $dbh->{sqlite_unicode} = 1;
-        # don't print errors by default, they should be handled by the calling
-        # code
-        $dbh->{PrintError} = 0;
-        if ( defined $dbh->err ) {
-            $log->error($dbh->errstr);
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-}
-
-sub has_schema {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger("");
-
-    my $sql = <<SQL;
-        SELECT id, date_applied
-        FROM schema
-        ORDER BY date_applied ASC
-SQL
-    $log->debug(q(Preparing SQL for querying 'schema' table));
-    my $sth = $dbh->prepare($sql);
-    if ( defined $dbh->err ) {
-        $log->error(q(Checking for schema failed: ) . $dbh->errstr);
-        return 0;
-    }
-
-    my $schema_rows = 0;
-    $log->debug(q(Reading schema entries from 'schema' table));
-    $sth->execute;
-    if ( defined $sth->err ) {
-        $log->error(q(Execution of schema entries read failed));
-        $log->error(q(Error message: ) . $sth->errstr);
-        return 0;
-    }
-    while ( my @row = $sth->fetchrow_array ) {
-        $schema_rows++;
-        # "unpack" the row
-        #my ($row_id, $date_applied) = @row;
-        #$log->debug(qq(Row; id: $row_id, date: $date_applied));
-    }
-
-    # return the number of schema rows read from the database; this should
-    # roughly correspond to the schema version of the database
-    return $schema_rows;
-}
-
-sub create_schema {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
-
-    $log->logdie(q(Missing 'schema' parameter))
-        unless ( defined $args{schema} );
-    my $schema = $args{schema};
-    # prepare the database statement beforehand; use bind_param (below) to set
-    # the values inserted into the database
-
-    foreach my $key ( sort(keys(%{$schema})) ) {
-        next if ( $key =~ /^$/ );
-        my $entry = $schema->{$key};
-        #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
-        $log->info(qq(Creating table: ) . $entry->{name});
-        # create the table table
-        $dbh->do($entry->{sql});
-        if ( defined $dbh->err ) {
-            $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
-            $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::WADTools::Error->new(
-                type    => q(create_table),
-                message => $dbh->errstr
-            );
-            return $error;
-        }
-
-        # add the newly created table to the schema table
-        # this statement handle is only valid *after* the `schema` table has
-        # been created
-        my $sth = $dbh->prepare(
-            q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
-        if ( defined $dbh->err ) {
-            $log->error(q('prepare' call to INSERT into 'schema' failed));
-            $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::WADTools::Error->new(
-                type    => q(schema_insert_prepare),
-                message => $dbh->errstr
-            );
-            return $error;
-        }
-        $sth->bind_param(1, $key);
-        $sth->bind_param(2, time);
-        $sth->bind_param(3, $entry->{name});
-        $sth->bind_param(4, $entry->{description});
-        $sth->bind_param(5, $entry->{notes});
-        $sth->bind_param(6, $entry->{checksum});
-        my $rv = $sth->execute();
-        if ( ! defined $rv ) {
-            $log->error(qq(INSERT for schema ID $key returned an error: )
-                . $sth->errstr);
-            return undef;
-        } else {
-            $log->debug(qq(INSERT for schema ID $key changed $rv row));
-        }
-    }
-}
-
 =item add_file()
 
 Add an L<App::WADTools::File> object to the database.
@@ -317,6 +192,158 @@ FILESQL
     # return 'true'
     return 1;
 }
+
+=item connect()
+
+Connects to the database (calls C<DBI-E<gt>connect> using the C<filename>
+attribute), and returns true (C<1>) if the connection did not have any errors,
+or an L<App::WADTools::Error> object if there was a problem connecting to
+the database.
+
+=cut
+
+sub connect {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger("");
+
+    $log->debug(q(Connecting to/reading database file ) . $self->filename);
+    if ( ! defined $dbh ) {
+        $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
+        # turn on unicode handling
+        $dbh->{sqlite_unicode} = 1;
+        # don't print errors by default, they should be handled by the calling
+        # code
+        $dbh->{PrintError} = 0;
+        if ( defined $dbh->err ) {
+            $log->error($dbh->errstr);
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+}
+
+=item create_schema()
+
+Creates a database with a schema as determined by the C<schema> argument.
+
+Required arguments:
+
+=over
+
+=item schema
+
+A data structure that specifies different SQL data definition language (DDL)
+commands to run in order to create a database.
+
+=back
+
+=cut
+
+sub create_schema {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger("");
+
+    $log->logdie(q(Missing 'schema' parameter))
+        unless ( defined $args{schema} );
+    my $schema = $args{schema};
+    # prepare the database statement beforehand; use bind_param (below) to set
+    # the values inserted into the database
+
+    foreach my $key ( sort(keys(%{$schema})) ) {
+        next if ( $key =~ /^$/ );
+        my $entry = $schema->{$key};
+        #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
+        $log->info(qq(Creating table: ) . $entry->{name});
+        # create the table table
+        $dbh->do($entry->{sql});
+        if ( defined $dbh->err ) {
+            $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
+            $log->error(q(Error message: ) . $dbh->errstr);
+            my $error = App::WADTools::Error->new(
+                type    => q(create_table),
+                message => $dbh->errstr
+            );
+            return $error;
+        }
+
+        # add the newly created table to the schema table
+        # this statement handle is only valid *after* the `schema` table has
+        # been created
+        my $sth = $dbh->prepare(
+            q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
+        if ( defined $dbh->err ) {
+            $log->error(q('prepare' call to INSERT into 'schema' failed));
+            $log->error(q(Error message: ) . $dbh->errstr);
+            my $error = App::WADTools::Error->new(
+                type    => q(schema_insert_prepare),
+                message => $dbh->errstr
+            );
+            return $error;
+        }
+        $sth->bind_param(1, $key);
+        $sth->bind_param(2, time);
+        $sth->bind_param(3, $entry->{name});
+        $sth->bind_param(4, $entry->{description});
+        $sth->bind_param(5, $entry->{notes});
+        $sth->bind_param(6, $entry->{checksum});
+        my $rv = $sth->execute();
+        if ( ! defined $rv ) {
+            $log->error(qq(INSERT for schema ID $key returned an error: )
+                . $sth->errstr);
+            return undef;
+        } else {
+            $log->debug(qq(INSERT for schema ID $key changed $rv row));
+        }
+    }
+}
+
+=item has_schema()
+
+Determines if the database specified with the C<filename> attribute has
+already had a schema applied to it via L<create_schema>.  Returns ? if the
+schema has been applied, and ? if the schema has not been applied.
+
+=cut
+
+
+sub has_schema {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger("");
+
+    my $sql = <<SQL;
+        SELECT id, date_applied
+        FROM schema
+        ORDER BY date_applied ASC
+SQL
+    $log->debug(q(Preparing SQL for querying 'schema' table));
+    my $sth = $dbh->prepare($sql);
+    if ( defined $dbh->err ) {
+        $log->error(q(Checking for schema failed: ) . $dbh->errstr);
+        return 0;
+    }
+
+    my $schema_rows = 0;
+    $log->debug(q(Reading schema entries from 'schema' table));
+    $sth->execute;
+    if ( defined $sth->err ) {
+        $log->error(q(Execution of schema entries read failed));
+        $log->error(q(Error message: ) . $sth->errstr);
+        return 0;
+    }
+    while ( my @row = $sth->fetchrow_array ) {
+        $schema_rows++;
+        # "unpack" the row
+        #my ($row_id, $date_applied) = @row;
+        #$log->debug(qq(Row; id: $row_id, date: $date_applied));
+    }
+
+    # return the number of schema rows read from the database; this should
+    # roughly correspond to the schema version of the database
+    return $schema_rows;
+}
+
 
 =back
 

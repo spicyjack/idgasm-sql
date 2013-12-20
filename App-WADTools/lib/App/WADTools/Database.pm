@@ -53,7 +53,7 @@ has filename => (
 
 =over
 
-=item new()
+=item new(filename => $filename)
 
 Creates the L<App::WADTools::Database> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
@@ -68,15 +68,16 @@ The filename of the C<INI> file to read from and possibly write to.
 
 =back
 
-=item add_file()
+=item add_file(file => $file)
 
-Add an L<App::WADTools::File> object to the database.
+Add an L<App::WADTools::File> object to the database.  Returns true C<1> in
+all cases; errors will cause the program to exit.
 
 Required arguments:
 
 =over
 
-=item file_obj
+=item file
 
 The L<App::WADTools::File> object to add to the database.
 
@@ -89,9 +90,9 @@ sub add_file {
     my %args = @_;
     my $log = Log::Log4perl->get_logger("");
 
-    $log->logdie(q(Missing 'file_obj' argument))
-        unless(defined($args{file_obj}));
-    my $file = $args{file_obj};
+    $log->logdie(q(Missing 'file' argument))
+        unless(defined($args{file}));
+    my $file = $args{file};
     $log->debug(sprintf(q(ID: %5u; ), $file->id)
             . qq(Adding to DB: ) . $file->filename);
 
@@ -298,6 +299,74 @@ sub create_schema {
         }
     }
 }
+
+=item get_file_by_id()
+
+Queries the database for a L<App::WADTools::File> object in the database with
+the ID passed in as the argument.  Returns a L<App::WADTools::File> object if
+the file ID was found in the database, or an L<App::WADTools::Error> object
+with the C<error_type> of C<file_id_not_found>.
+
+Required arguments:
+
+=over
+
+=item id
+
+An integer value that represents a file ID in the idGames Archive.
+
+=back
+
+=cut
+
+sub get_file_by_id {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger("");
+
+    $log->logdie(q(Missing 'id' parameter))
+        unless ( defined $args{id} );
+    my $file_id = $args{id};
+}
+
+=item get_file_by_path()
+
+Queries the database for a L<App::WADTools::File> object in the database that
+matches the C<$path/$filename> arguments passed in.  A valid file path is the
+path from the root of the idGames Archive file tree, i.e. the directory
+containing the folders C<combos>, Returns a L<App::WADTools::File> object if
+the file was found in the database, or an L<App::WADTools::Error> object with
+the C<error_type> of C<file_not_found>.
+
+Required arguments:
+
+=over
+
+=item path
+
+The path to the file from the root of the C<idGames Archive>.
+
+=item filename
+
+The filename of the file in C<idGames Archive>.
+
+=back
+
+=cut
+
+sub get_file_by_path  {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger("");
+
+    $log->logdie(q(Missing 'path' parameter))
+        unless ( defined $args{path} );
+    $log->logdie(q(Missing 'filename' parameter))
+        unless ( defined $args{filename} );
+    my $path = $args{path};
+    my $filename = $args{filename};
+}
+
 
 =item has_schema()
 

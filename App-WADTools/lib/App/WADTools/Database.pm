@@ -328,8 +328,8 @@ SQL
     $log->debug(q(Reading schema entries from 'schema' table));
     $sth->execute;
     if ( defined $sth->err ) {
-        $log->error(q(Execution of schema entries read failed));
-        $log->error(q(Error message: ) . $sth->errstr);
+        $log->warn(q(Execution of schema entries read failed));
+        $log->warn(q(Error message: ) . $sth->errstr);
         return 0;
     }
     while ( my @row = $sth->fetchrow_array ) {

@@ -103,7 +103,7 @@ sub index {
                 $lump_entry );
             $lump_name =~ s/\0+//g;
             $log->info(sprintf(q(lump %-4u name: %-8s size: %-8u start: %-8x),
-                $i, $lump_name, $lump_size, $lump_start));
+                $i + 1, $lump_name, $lump_size, $lump_start));
         }
         close($WAD);
     }

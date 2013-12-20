@@ -367,7 +367,7 @@ use constant {
                 $log->info(sprintf(q(ID: %5u), $file->id)
                     . qq|; Parse successful ($full_path)|);
                 if ( defined $db ) {
-                    my $add_status = $db->add_file(file_obj => $file);
+                    my $add_status = $db->add_file(file => $file);
                     if ( ref($add_status) eq q(App::WADTools::Error) ) {
                         $log->error(
                             q(Inserting file into database returned error));

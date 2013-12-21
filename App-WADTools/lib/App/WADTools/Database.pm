@@ -88,7 +88,9 @@ The L<App::WADTools::File> object to add to the database.
 sub add_file {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    # just in case we need to throw an error
+    my $error;
 
     $log->logdie(q(Missing 'file' argument))
         unless(defined($args{file}));
@@ -109,7 +111,7 @@ FILESQL
     if ( defined $dbh->err ) {
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
-        my $error = App::WADTools::Error->new(
+        $error = App::WADTools::Error->new(
             type    => q(file_insert_prepare),
             message => $dbh->errstr
         );
@@ -205,7 +207,7 @@ the database.
 
 sub connect {
     my $self = shift;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->debug(q(Connecting to/reading database file ) . $self->filename);
     if ( ! defined $dbh ) {
@@ -244,7 +246,7 @@ commands to run in order to create a database.
 sub create_schema {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'schema' parameter))
         unless ( defined $args{schema} );
@@ -322,7 +324,7 @@ An integer value that represents a file ID in the idGames Archive.
 sub get_file_by_id {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'id' parameter))
         unless ( defined $args{id} );
@@ -357,7 +359,7 @@ The filename of the file in C<idGames Archive>.
 sub get_file_by_path  {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'path' parameter))
         unless ( defined $args{path} );
@@ -414,7 +416,7 @@ schema has been applied, and ? if the schema has not been applied.
 
 sub has_schema {
     my $self = shift;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $sql = <<SQL;
         SELECT id, date_applied

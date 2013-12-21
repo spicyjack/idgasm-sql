@@ -112,7 +112,7 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         $error = App::WADTools::Error->new(
-            type    => q(file_insert_prepare),
+            type    => q(database.file_insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -133,7 +133,7 @@ FILESQL
         $log->error(q(INSERT for file ID ) . $file->id
             . q( returned an error: ) . $sth_file->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(file_insert_execute),
+            type    => q(database.file_insert.execute),
             message => $sth_file->errstr
         );
         return $error;
@@ -149,7 +149,7 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'votes' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(vote_insert_prepare),
+            type    => q(database.vote_insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -175,7 +175,7 @@ FILESQL
             $log->error(q(INSERT for file ID ) . $file->id
                 . q( returned an error: ) . $sth_file->errstr);
             my $error = App::WADTools::Error->new(
-                type    => q(vote_insert_execute),
+                type    => q(database.vote_insert.execute),
                 message => $sth_file->errstr
             );
             return $error;
@@ -218,7 +218,6 @@ sub connect {
         # code
         $dbh->{PrintError} = 0;
         if ( defined $dbh->err ) {
-            $log->error($dbh->errstr);
             return undef;
         } else {
             return 1;
@@ -265,7 +264,7 @@ sub create_schema {
             $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
             $log->error(q(Error message: ) . $dbh->errstr);
             my $error = App::WADTools::Error->new(
-                type    => q(create_table),
+                type    => q(database.create_table),
                 message => $dbh->errstr
             );
             return $error;
@@ -280,7 +279,7 @@ sub create_schema {
             $log->error(q('prepare' call to INSERT into 'schema' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
             my $error = App::WADTools::Error->new(
-                type    => q(schema_insert_prepare),
+                type    => q(database.schema_insert.prepare),
                 message => $dbh->errstr
             );
             return $error;
@@ -365,6 +364,7 @@ sub get_file_by_path  {
         unless ( defined $args{path} );
     $log->logdie(q(Missing 'filename' parameter))
         unless ( defined $args{filename} );
+
     my $path = $args{path};
     my $filename = $args{filename};
     my $sql = q(SELECT id FROM files WHERE dir = ? AND filename = ?);
@@ -375,7 +375,7 @@ sub get_file_by_path  {
     if ( defined $dbh->err ) {
         $log->error(q(Querying for file ID failed: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(get_file_by_path-prepare),
+            type    => q(database.get_file_by_path.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -391,7 +391,7 @@ sub get_file_by_path  {
         $log->warn(q(Querying for file ID failed:));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(get_file_by_path-execute),
+            type    => q(database.get_file_by_path.execute),
             message => $dbh->errstr
         );
         return $error;

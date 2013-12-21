@@ -241,18 +241,33 @@ use constant {
         my $filename = basename($found_file);
         my $dirname = dirname($found_file);
         my $file_path = $dirname . q(/) . $filename;
+        my $short_path;
         if ( $cfg->defined(q(strip-path)) ) {
             my $strip_path = $cfg->get(q(strip-path));
             #$log->debug(qq('strip-path' is $strip_path));
-            my $short_path = $dirname;
+            $short_path = $dirname;
             $short_path =~ s/^$strip_path//;
+            $short_path =~ s!^/!!;
             #$log->debug(qq(Setting short_path to $short_path));
             $file_path = qq($short_path/$filename);
+        } else {
+            $short_path = $dirname;
         }
+
         $log->warn(qq(File: $file_path));
+        my $file_id = $db->get_file_by_path(
+            path     => $short_path . q(/),
+            filename => $filename,
+        );
+        if ( defined $file_id ) {
+            $log->info(qq(Path/filename matched file ID $file_id in database));
+        } else {
+            $log->info(qq(No match for '$short_path/' )
+                 . qq(+ '$filename' in database));
+        }
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(
-                cfg => $cfg,
+                cfg      => $cfg,
                 filename => $found_file,
             );
             my @members = $zipfile->get_zip_members();

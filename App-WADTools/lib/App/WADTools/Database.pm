@@ -365,6 +365,42 @@ sub get_file_by_path  {
         unless ( defined $args{filename} );
     my $path = $args{path};
     my $filename = $args{filename};
+    my $sql = q(SELECT id FROM files WHERE dir = ? AND filename = ?);
+    $log->debug(q(Prepare: querying for file ID from dir/filename));
+
+    # prepare the SQL
+    my $sth = $dbh->prepare($sql);
+    if ( defined $dbh->err ) {
+        $log->error(q(Querying for file ID failed: ) . $dbh->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(get_file_by_path-prepare),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
+
+    # bind params
+    $sth->bind_param(1, $path);
+    $sth->bind_param(2, $filename);
+
+    # execute the SQL
+    $sth->execute;
+    if ( defined $sth->err ) {
+        $log->warn(q(Querying for file ID failed:));
+        $log->warn(q(Error message: ) . $sth->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(get_file_by_path-execute),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
+    my $file_id;
+    while ( my @row = $sth->fetchrow_array ) {
+        # "unpack" the row
+        $file_id = $row[0];
+        $log->debug(qq(File ID for $path/$filename is $file_id));
+    }
+    return $file_id;
 }
 
 
@@ -375,7 +411,6 @@ already had a schema applied to it via L<create_schema>.  Returns ? if the
 schema has been applied, and ? if the schema has not been applied.
 
 =cut
-
 
 sub has_schema {
     my $self = shift;

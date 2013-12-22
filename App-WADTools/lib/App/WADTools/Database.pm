@@ -64,14 +64,15 @@ Required arguments:
 
 =item filename
 
-The filename of the C<INI> file to read from and possibly write to.
+The filename of the database file that will be read from and written to.
 
 =back
 
 =item add_file(file => $file)
 
-Add an L<App::WADTools::File> object to the database.  Returns true C<1> in
-all cases; errors will cause the program to exit.
+Add an L<App::WADTools::File> object to the database.  Returns true C<1> if
+the insert was successful, or an L<App::WADTools::Error> object if there was a
+problem inserting the L<App::WADTools::File> object into the database.
 
 Required arguments:
 
@@ -89,8 +90,10 @@ sub add_file {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    # just in case we need to throw an error
-    my $error;
+
+    # check for an existing database connection
+    my $error = $self->is_connected;
+    return $error if ( ref($error) eq q(App::WADTools::Error));
 
     $log->logdie(q(Missing 'file' argument))
         unless(defined($args{file}));
@@ -218,7 +221,11 @@ sub connect {
         # code
         $dbh->{PrintError} = 0;
         if ( defined $dbh->err ) {
-            return undef;
+            my $error = App::WADTools::Error->new(
+                type    => q(database.connect),
+                message => $dbh->errstr,
+            );
+            return $error;
         } else {
             return 1;
         }
@@ -247,12 +254,17 @@ sub create_schema {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    # check for an existing database connection
+    my $error = $self->is_connected;
+    return $error if ( ref($error) eq q(App::WADTools::Error));
+
     $log->logdie(q(Missing 'schema' parameter))
         unless ( defined $args{schema} );
+
     my $schema = $args{schema};
+
     # prepare the database statement beforehand; use bind_param (below) to set
     # the values inserted into the database
-
     foreach my $key ( sort(keys(%{$schema})) ) {
         next if ( $key =~ /^$/ );
         my $entry = $schema->{$key};
@@ -325,6 +337,10 @@ sub get_file_by_id {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    # check for an existing database connection
+    my $error = $self->is_connected;
+    return $error if ( ref($error) eq q(App::WADTools::Error));
+
     $log->logdie(q(Missing 'id' parameter))
         unless ( defined $args{id} );
     my $file_id = $args{id};
@@ -335,9 +351,10 @@ sub get_file_by_id {
 Queries the database for a L<App::WADTools::File> object in the database that
 matches the C<$path/$filename> arguments passed in.  A valid file path is the
 path from the root of the idGames Archive file tree, i.e. the directory
-containing the folders C<combos>, Returns a L<App::WADTools::File> object if
-the file was found in the database, or an L<App::WADTools::Error> object with
-the C<error_type> of C<file_not_found>.
+containing the folders C<combos>, C<deathmatch>, C<historic>, C<idstuff>, etc.
+Returns a L<App::WADTools::File> object if the file was found in the database,
+or an L<App::WADTools::Error> object with the error C<type> of
+C<file_not_found>.
 
 Required arguments:
 
@@ -359,6 +376,10 @@ sub get_file_by_path  {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    # check for an existing database connection
+    my $error = $self->is_connected;
+    return $error if ( ref($error) eq q(App::WADTools::Error));
 
     $log->logdie(q(Missing 'path' parameter))
         unless ( defined $args{path} );
@@ -405,7 +426,6 @@ sub get_file_by_path  {
     return $file_id;
 }
 
-
 =item has_schema()
 
 Determines if the database specified with the C<filename> attribute has
@@ -417,6 +437,10 @@ schema has been applied, and ? if the schema has not been applied.
 sub has_schema {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    # check for an existing database connection
+    my $error = $self->is_connected;
+    return $error if ( ref($error) eq q(App::WADTools::Error));
 
     my $sql = <<SQL;
         SELECT id, date_applied
@@ -450,6 +474,32 @@ SQL
     return $schema_rows;
 }
 
+=item is_connected()
+
+Determines if the database has already been connected to (the C<connect()>
+method has already been called successfully). Returns an empty string if the
+database has already been connected to successfully, and an
+L<App::WADTools::Error> object if the database connection was never set up (by
+calling the C<connect()> method).
+
+=cut
+
+sub is_connected {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    # check that the database handle has already been set up via a call to
+    # connect()
+    if ( ! defined $dbh ) {
+        $error = App::WADTools::Error->new(
+            type    => q(database.no_connection),
+            message => q|connect() never called to set up database handle|,
+        );
+        return $error;
+    } else {
+        return q();
+    }
+}
 
 =back
 

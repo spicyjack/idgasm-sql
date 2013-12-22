@@ -226,7 +226,8 @@ sub connect {
         $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
         # turn on unicode handling
         $dbh->{sqlite_unicode} = 1;
-        # don't print errors by default, they should be handled by the calling
+        # don't print errors by default, all of the methods in this object are
+        # checking $dbh->err after every interaction with the database
         # code
         $dbh->{PrintError} = 0;
         if ( defined $dbh->err ) {
@@ -238,6 +239,12 @@ sub connect {
         } else {
             return 1;
         }
+    } else {
+        # database connection has already been set up (connection should
+        # always be a singleton)
+        $log->warn(q(Database connection already set up!));
+        $log->warn(q|Database connect() method has previously been called...|);
+        return 1;
     }
 }
 

@@ -115,7 +115,7 @@ sub stop_timer {
 sub time_value_difference {
     my $self = shift;
     my $timer_name = shift;
-    my $log = Log::Log4perl->get_logger();
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     return tv_interval ( $_starts{$timer_name}, $_stops{$timer_name});
 }
@@ -131,8 +131,7 @@ Output the runtime stats from the script.
 sub write_stats {
     my $self = shift;
     my %args = @_;
-
-    my $log = Log::Log4perl->get_logger();
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->info(q(Calculating runtime statistics...));
     my $nf = Number::Format->new();

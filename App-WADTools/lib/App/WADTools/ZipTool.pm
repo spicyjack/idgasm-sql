@@ -26,7 +26,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = bless ({%args}, $class);
-    my $log = Log::Log4perl->get_logger();
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $zip = Archive::Zip->new();
     my $zipfile = $self->{filename};
@@ -53,7 +53,7 @@ Returns all of the files contained inside of the zipfile.
 sub get_zip_members {
     my $self = shift;
     my $zip = $self->{_zip};
-    my $log = Log::Log4perl->get_logger();
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     return @{$self->{_members}};
 }
@@ -69,7 +69,7 @@ were extracted into.
 sub extract_files {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger();
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $zip = $self->{_zip};
     my $cfg = $self->{cfg};

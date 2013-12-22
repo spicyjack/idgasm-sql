@@ -193,7 +193,7 @@ use constant {
 
     # create a logger object, and prime the logfile for this session
     Log::Log4perl::init( \$log_conf );
-    my $log = get_logger("");
+    my $log = get_logger(""); # "" = root logger
 
     $log->logdie(qq(Missing '--path' directory argument))
         unless ( $cfg->defined(q(path)) );

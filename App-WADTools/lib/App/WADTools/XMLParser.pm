@@ -48,7 +48,7 @@ L<App::WADTools::Error> object if parsing was not successful.
 sub parse {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing data to parse as argument 'data'))
         unless (exists $args{data});

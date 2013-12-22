@@ -83,7 +83,7 @@ A scalar reference to the database schema hash read in from the C<INI> file.
 sub md5_checksum {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'db_schema' argument))
         unless(defined($args{db_schema}));
@@ -134,7 +134,7 @@ L<App::WADTools::Error> object if there was a problem reading the INI file.
 
 sub read_ini_config {
     my $self = shift;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $db_schema;
     $log->debug(q(Reading INI file ) . $self->filename);
@@ -185,7 +185,7 @@ If a C<filename> argument is passed in, write C<INI> config to that filename
 sub write_ini_config {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'db_schema' argument))
         unless(defined($args{db_schema}));
@@ -237,7 +237,7 @@ Extra text that will be printed along with the database schema dump
 sub dump_schema {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'db_schema' argument))
         unless(defined($args{db_schema}));

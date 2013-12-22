@@ -331,7 +331,7 @@ different ways.
 sub populate {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger("");
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q|Missing data to be parsed (as 'data')|)
         unless ( exists $args{data} );

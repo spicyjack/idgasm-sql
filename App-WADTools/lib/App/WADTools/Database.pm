@@ -3,6 +3,20 @@
 ###################################
 package App::WADTools::Database;
 
+=head1 NAME
+
+App::WADTools::Database
+
+=head1 SYNOPSIS
+
+ my $db = App::WADTools::Database->new(filename => q(/path/to/file.db));
+
+=head1 DESCRIPTION
+
+Create/read/update/delete different database files created by WADTools.
+
+=cut
+
 # system modules
 use Date::Format;
 use DBI;
@@ -21,11 +35,6 @@ use App::WADTools::Error;
 # local variables
 # store the database handle
 my $dbh;
-
-=head1 App::WADTools::Database
-
-Create/read/update/delete an C<idgasm> database file, or records in an
-existing database file.
 
 =head2 Attributes
 
@@ -502,6 +511,30 @@ sub is_connected {
 }
 
 =back
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::Database
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 

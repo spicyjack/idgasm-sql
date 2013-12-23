@@ -364,12 +364,14 @@ sub get_file_by_id {
     my $file_id = $args{id};
 
     my $sql = q(SELECT * FROM files WHERE id = ?);
-    $log->debug(q(Prepare: querying for file from ID));
+    $log->debug(q(Prepare: querying for file from file ID));
+    $log->debug(qq(Prepare: SQL: $sql));
 
     # prepare the SQL
     my $sth = $dbh->prepare($sql);
     if ( defined $dbh->err ) {
-        $log->error(q(Querying for file failed: ) . $dbh->errstr);
+        $log->warn(q(Preparing query for file failed));
+        $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
             type    => q(database.get_file_by_id.prepare),
             message => $dbh->errstr
@@ -377,24 +379,32 @@ sub get_file_by_id {
         return $error;
     }
 
+    # bind params
+    $log->debug(qq(Binding query params; 1: $file_id));
+    $sth->bind_param(1, $file_id);
+
     # execute the SQL
+    $log->debug(q(Calling $sth->execute));
     $sth->execute;
     if ( defined $sth->err ) {
-        $log->warn(q(Querying for file ID failed:));
+        $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.execute),
+            type    => q(database.get_file_by_id.execute),
             message => $dbh->errstr
         );
         return $error;
     }
 
-    # there should only be one row returned; maybe switch this to a while loop
-    # to check for more rows, in order to throw an error?
+    $log->debug(q(Retrieving row via fetchrow_arrayref));
     my $row = $sth->fetchrow_arrayref;
+    # return $row as an undefined value if there are no rows returned from the
+    # database query
+    return $row unless ( defined $row );
+    #$log->debug(q(dump: ) . Dumper $row);
     my $file = $self->unserialize_file(db_row => $row);
-    $log->debug(qq(File ID for ) . $file->path . q(/) . $file->filename
-        . q( is ) . $file->id);
+    $log->debug(qq(File ID ) . $file->id . q( has path: )
+        . $file->dir . q(/) . $file->filename);
     return $file;
 }
 
@@ -447,7 +457,8 @@ sub get_file_by_path  {
     # prepare the SQL
     my $sth = $dbh->prepare($sql);
     if ( defined $dbh->err ) {
-        $log->error(q(Querying for file ID failed: ) . $dbh->errstr);
+        $log->warn(q(Preparing query for file failed));
+        $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
             type    => q(database.get_file_by_path.prepare),
             message => $dbh->errstr
@@ -464,7 +475,7 @@ sub get_file_by_path  {
     $log->debug(q(Calling $sth->execute));
     $sth->execute;
     if ( defined $sth->err ) {
-        $log->warn(q(Querying for file ID failed:));
+        $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
             type    => q(database.get_file_by_path.execute),
@@ -472,7 +483,7 @@ sub get_file_by_path  {
         );
         return $error;
     }
-    my $file_id;
+
     $log->debug(q(Retrieving row via fetchrow_arrayref));
     my $row = $sth->fetchrow_arrayref;
     # return $row as an undefined value if there are no rows returned from the

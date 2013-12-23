@@ -58,7 +58,7 @@ sub parse {
     if ( $@ ) {
         # encountered an error parsing the JSON
         my $error = App::WADTools::Error->new(
-            type          => q(json_parse_error),
+            type          => q(jsonparser.parse_error),
             message       => qq(Error parsing JSON content; $@),
             content_block => $data,
         );
@@ -75,7 +75,7 @@ sub parse {
     if ( exists $parsed_data->{error} ) {
         # an error was returned from the API
         my $error = App::WADTools::Error->new(
-            type          => q(api_error),
+            type          => q(jsonparser.api_error),
             message       => q(Received 'error' response to API query),
             content_block => $parsed_data->{error},
         );
@@ -168,7 +168,7 @@ sub parse {
         return (file => $file, api_version => $api_version);
     } else {
         my $error = App::WADTools::Error->new(
-            type          => q(undefined_response),
+            type          => q(jsonparser.undefined_response),
             message       => q(Received undefined response to API query),
             content_block => $parsed_data,
         );

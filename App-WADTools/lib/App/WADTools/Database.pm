@@ -31,6 +31,7 @@ $Data::Dumper::Terse = 1;
 
 # local modules
 use App::WADTools::Error;
+use App::WADTools::File;
 
 # local variables
 # store the database handle
@@ -130,6 +131,7 @@ FILESQL
         return $error;
     }
 
+    # bind params; bind params start counting at '1'
     my $bind_counter = 1;
     foreach my $key ( @{$file->attributes} ) {
         # catches 'url', 'idgamesurl' and 'reviews'
@@ -360,6 +362,40 @@ sub get_file_by_id {
     $log->logdie(q(Missing 'id' parameter))
         unless ( defined $args{id} );
     my $file_id = $args{id};
+
+    my $sql = q(SELECT * FROM files WHERE id = ?);
+    $log->debug(q(Prepare: querying for file from ID));
+
+    # prepare the SQL
+    my $sth = $dbh->prepare($sql);
+    if ( defined $dbh->err ) {
+        $log->error(q(Querying for file failed: ) . $dbh->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(database.get_file_by_id.prepare),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
+
+    # execute the SQL
+    $sth->execute;
+    if ( defined $sth->err ) {
+        $log->warn(q(Querying for file ID failed:));
+        $log->warn(q(Error message: ) . $sth->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(database.get_file_by_path.execute),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
+
+    # there should only be one row returned; maybe switch this to a while loop
+    # to check for more rows, in order to throw an error?
+    my $row = $sth->fetchrow_arrayref;
+    my $file = $self->unserialize_file(db_row => $row);
+    $log->debug(qq(File ID for ) . $file->path . q(/) . $file->filename
+        . q( is ) . $file->id);
+    return $file;
 }
 
 =item get_file_by_path()
@@ -434,12 +470,11 @@ sub get_file_by_path  {
         return $error;
     }
     my $file_id;
-    while ( my @row = $sth->fetchrow_array ) {
-        # "unpack" the row
-        $file_id = $row[0];
-        $log->debug(qq(File ID for $path/$filename is $file_id));
-    }
-    return $file_id;
+    my $row = $sth->fetchrow_arrayref;
+    my $file = $self->unserialize_file(db_row => $row);
+    $log->debug(qq(File ID for ) . $file->path . q(/) . $file->filename
+        . q( is ) . $file->id);
+    return $file;
 }
 
 =item has_schema()
@@ -507,7 +542,7 @@ sub is_connected {
     # check that the database handle has already been set up via a call to
     # connect()
     if ( ! defined $dbh ) {
-        $error = App::WADTools::Error->new(
+        my $error = App::WADTools::Error->new(
             type    => q(database.no_connection),
             message => q|connect() never called to set up database handle|,
         );
@@ -515,6 +550,50 @@ sub is_connected {
     } else {
         return q();
     }
+}
+
+=item unserialize_file(db_row => $row)
+
+Accepts a row from a database query of the C<files> table, and unserializes
+the file object into a L<App::WADTools::File> object.   Returns the
+unserialized C<File> object if there were no errors, or an
+L<App::WADTools::Error> object if there was an error.
+
+Required arguments:
+
+=over
+
+=item db_row
+
+The row from a query of the C<files> table, obtained with a call to
+C<$sth-E<gt>fetchrow_arrayref()> from a L<DBI> database handle.
+
+=back
+
+=cut
+
+sub unserialize_file {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->logdie(q(Missing 'db_row' parameter))
+        unless ( defined $args{db_row} );
+
+    my $db_row = $args{db_row};
+    my @row = @{$db_row};
+    my $file = App::WADTools::File->new();
+    # bind params; bind params start counting at '1'
+    my $bind_counter = 1;
+    foreach my $key ( @{$file->attributes} ) {
+        # catches 'url', 'idgamesurl' and 'reviews'
+        next if ( $key =~ /url|reviews/ );
+        $log->debug(qq(Unserializing: $key -> ) . $row[$bind_counter]);
+        $file->$key = $row[$bind_counter];
+        $bind_counter++;
+    }
+
+
 }
 
 =back

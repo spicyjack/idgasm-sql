@@ -7,7 +7,7 @@
 
 =head1 NAME
 
-B<db_bootstrap> - Bootstrap a database that will contain information about
+B<db_tool> - Bootstrap a database that will contain information about
 WAD files stored in C<idGames Archive>.
 
 =cut
@@ -17,7 +17,7 @@ our $copyright =
 
 =head1 SYNOPSIS
 
- perl db_bootstrap [OPTIONS]
+ perl db_tool [OPTIONS]
 
  Script options:
  -h|--help          Shows this help text
@@ -40,20 +40,20 @@ our $copyright =
  Example usage:
 
  # build a database file using the given INI file
- db_bootstrap --input /path/to/db.ini \
+ db_tool --input /path/to/db.ini \
     --output sample.db --create-db
 
  # update the checksums in an existing INI file
- db_bootstrap --input /path/to/db.ini \
+ db_tool --input /path/to/db.ini \
     --output /path/to/db.ini --checksum --overwrite
 
  # create a database, debug mode, with colorization
- db_bootstrap --input /path/to/db.ini \
+ db_tool --input /path/to/db.ini \
    --output idgames_file_map.db \
    --create-db --debug --colorize --overwrite
 
-You can view the full C<POD> documentation of this file by calling C<perldoc
-db_bootstrap>.
+You can view the full C<POD> documentation of this file by calling
+C<perldoc db_tool>.
 
 =cut
 
@@ -283,7 +283,7 @@ C<< <https://github.com/spicyjack/public/issues> >>.
 
 You can find documentation for this script with the perldoc command.
 
-    perldoc db_bootstrap
+    perldoc db_tool
 
 =head1 COPYRIGHT & LICENSE
 

@@ -440,8 +440,9 @@ sub get_file_by_path  {
 
     my $path = $args{path};
     my $filename = $args{filename};
-    my $sql = q(SELECT id FROM files WHERE dir = ? AND filename = ?);
+    my $sql = q(SELECT * FROM files WHERE dir = ? AND filename = ?);
     $log->debug(q(Prepare: querying for file ID from dir/filename));
+    $log->debug(qq(Prepare: SQL: $sql));
 
     # prepare the SQL
     my $sth = $dbh->prepare($sql);
@@ -455,10 +456,12 @@ sub get_file_by_path  {
     }
 
     # bind params
+    $log->debug(qq(Binding query params; 1: $path, 2: $filename));
     $sth->bind_param(1, $path);
     $sth->bind_param(2, $filename);
 
     # execute the SQL
+    $log->debug(q(Calling $sth->execute));
     $sth->execute;
     if ( defined $sth->err ) {
         $log->warn(q(Querying for file ID failed:));
@@ -470,9 +473,14 @@ sub get_file_by_path  {
         return $error;
     }
     my $file_id;
+    $log->debug(q(Retrieving row via fetchrow_arrayref));
     my $row = $sth->fetchrow_arrayref;
+    # return $row as an undefined value if there are no rows returned from the
+    # database query
+    return $row unless ( defined $row );
+    #$log->debug(q(dump: ) . Dumper $row);
     my $file = $self->unserialize_file(db_row => $row);
-    $log->debug(qq(File ID for ) . $file->path . q(/) . $file->filename
+    $log->debug(qq(File ID for ) . $file->dir . q(/) . $file->filename
         . q( is ) . $file->id);
     return $file;
 }
@@ -578,22 +586,24 @@ sub unserialize_file {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->logdie(q(Missing 'db_row' parameter))
-        unless ( defined $args{db_row} );
+        unless ( exists $args{db_row} );
 
     my $db_row = $args{db_row};
     my @row = @{$db_row};
+    # create the $file object that will be returned after it is unserialized
     my $file = App::WADTools::File->new();
     # bind params; bind params start counting at '1'
-    my $bind_counter = 1;
+    my $column = 0;
     foreach my $key ( @{$file->attributes} ) {
-        # catches 'url', 'idgamesurl' and 'reviews'
+        # skip the 'url', 'idgamesurl' and 'reviews' fields
         next if ( $key =~ /url|reviews/ );
-        $log->debug(qq(Unserializing: $key -> ) . $row[$bind_counter]);
-        $file->$key = $row[$bind_counter];
-        $bind_counter++;
+        #$log->debug(qq(Unserializing: '$key' -> ') . $row[$column] . q('));
+        # $file->{$key} needs the curly braces
+        $file->{$key} = $row[$column];
+        # go to the next column in the row array
+        $column++;
     }
-
-
+    return $file;
 }
 
 =back

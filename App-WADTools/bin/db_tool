@@ -195,16 +195,16 @@ use App::WADTools::INIFile;
     $log->warn(qq(My PID is $$));
 
     my $db_schema;
-    my $parser = App::WADTools::INIFile->new(
+    my $ini_file = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));
-    if ( ref($parser) eq q(App::WADTools::Error) ) {
+    if ( ref($ini_file) eq q(App::WADTools::Error) ) {
         $log->logdie(q(Error opening INI file ') . $cfg->get(q(input)) . q('));
     }
     if ( $cfg->defined(q(create-db)) ) {
         $log->debug(q(Running as: --create-db));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            $db_schema = $parser->read_ini_config();
-            #$parser->dump_schema(
+            $db_schema = $ini_file->read_ini_config();
+            #$ini_file->dump_schema(
             #    db_schema  => $db_schema,
             #    extra_text => q(Dump called from --create-db block),
             #);
@@ -239,18 +239,20 @@ use App::WADTools::INIFile;
         $log->debug(q(Running as: --checksum));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             # MD5 checksums, for now
-            $db_schema = $parser->read_ini_config();
-            $db_schema = $parser->md5_checksum(db_schema => $db_schema);
-            $parser->dump_schema(
+            $db_schema = $ini_file->read_ini_config();
+            $db_schema = $ini_file->md5_checksum(db_schema => $db_schema);
+            $ini_file->dump_schema(
                 db_schema  => $db_schema,
                 extra_text => q(Dump called post-MD5 checksum),
             );
-            my $filesize = $parser->write_ini_config(db_schema => $db_schema);
+            my $filesize = $ini_file->write_ini_config(
+                db_schema => $db_schema
+            );
             if ( ref($filesize) eq q(App::WADTools::Error) ) {
                 $log->error(q(Writing config file returned an error!));
                 $log->logdie(q(Error message: ) . $filesize->error_msg);
             } else {
-                $log->warn(q(Wrote file ) . $parser->filename);
+                $log->warn(q(Wrote file ) . $ini_file->filename);
                 $log->warn(q(File size: ) . $filesize . q| byte(s)|);
             }
         } else {

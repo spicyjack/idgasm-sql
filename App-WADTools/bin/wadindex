@@ -254,7 +254,7 @@ use constant {
             $short_path = $dirname;
         }
 
-        $log->warn(qq(File: $file_path));
+        $log->warn(qq(File path: $file_path));
         my $file = $db->get_file_by_path(
             path     => $short_path . q(/),
             filename => $filename,
@@ -263,8 +263,7 @@ use constant {
             $log->info(qq(Path/filename matched file ID ) . $file->id
                 . q( in database));
         } else {
-            $log->info(qq(No match for '$short_path/' )
-                 . qq(+ '$filename' in database));
+            $log->info(qq(No match in db: '$short_path/$filename'));
         }
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(

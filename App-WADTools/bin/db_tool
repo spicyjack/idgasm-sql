@@ -201,7 +201,7 @@ use App::WADTools::INIFile;
         $log->logdie(q(Error opening INI file ') . $cfg->get(q(input)) . q('));
     }
     if ( $cfg->defined(q(create-db)) ) {
-        $log->debug(q(Running as: --create-db));
+        $log->warn(q(Creating database file...));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             $db_schema = $ini_file->read_ini_config();
             #$ini_file->dump_schema(
@@ -236,7 +236,7 @@ use App::WADTools::INIFile;
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
-        $log->debug(q(Running as: --checksum));
+        $log->warn(q(Checksumming database file...));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             # MD5 checksums, for now
             $db_schema = $ini_file->read_ini_config();

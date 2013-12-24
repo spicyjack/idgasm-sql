@@ -117,7 +117,7 @@ sub md5_checksum {
             . q| byte(s) in size|);
         $digest->add($data);
         my $checksum = $digest->b64digest;
-        $log->debug(qq(Checksum: $checksum));
+        $log->warn(qq($checksum: ) . $block{name});
         $block{checksum} = $checksum;
         $db_schema->{$block_id} = \%block;
     }

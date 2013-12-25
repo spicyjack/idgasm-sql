@@ -93,23 +93,23 @@ sub md5_checksum {
     # that combines all of the fields so a checksum can be generated against
     # the combined fields
     my $digest = Digest::MD5->new();
-    BLOCK: foreach my $block_id ( sort(keys(%{$db_schema})) ) {
-        my %block = %{$db_schema->{$block_id}};
-        if ( length($block_id) == 0 ) {
+    BLOCK: foreach my $block_name ( sort(keys(%{$db_schema})) ) {
+        my %block = %{$db_schema->{$block_name}};
+        if ( length($block_name) == 0 ) {
             my $epoch_time = time();
             $log->debug(q(Setting new timestamp in 'default' block));
             $block{schema_date} = time2str(q(%C), $epoch_time);
             $block{schema_epoch} = $epoch_time;
             # reassign the default block back to the config object/hash
-            $db_schema->{$block_id} = \%block;
+            $db_schema->{$block_name} = \%block;
             $log->debug(q(Done with 'default' block, skipping to next block));
             next BLOCK;
         } else {
-            $log->debug(qq(Parsing schema block: $block_id));
+            $log->debug(qq(Parsing schema block: $block_name));
         }
         # placeholder for content to be checksummed
-        my $data;
-        foreach my $block_key ( qw( name description notes sql ) ){
+        my $data = $block_name;
+        foreach my $block_key ( qw( description notes sql ) ){
             #$log->debug(qq(  $block_key: ) . $block{$block_key});
             $data .= $block{$block_key};
         }
@@ -117,9 +117,9 @@ sub md5_checksum {
             . q| byte(s) in size|);
         $digest->add($data);
         my $checksum = $digest->b64digest;
-        $log->warn(qq($checksum: ) . $block{name});
+        $log->warn(qq($checksum: ) . $block_name);
         $block{checksum} = $checksum;
-        $db_schema->{$block_id} = \%block;
+        $db_schema->{$block_name} = \%block;
     }
     return $db_schema;
 }

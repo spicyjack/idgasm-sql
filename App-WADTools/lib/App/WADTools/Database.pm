@@ -133,11 +133,11 @@ FILESQL
 
     # bind params; bind params start counting at '1'
     my $bind_counter = 1;
-    foreach my $key ( @{$file->attributes} ) {
+    foreach my $block_name ( @{$file->attributes} ) {
         # catches 'url', 'idgamesurl' and 'reviews'
-        next if ( $key =~ /url|reviews/ );
-        #$log->debug(qq(Binding $key -> ) . $file->$key));
-        $sth_file->bind_param($bind_counter, $file->$key);
+        next if ( $block_name =~ /url|reviews/ );
+        #$log->debug(qq(Binding $block_name -> ) . $file->$block_name));
+        $sth_file->bind_param($bind_counter, $file->$block_name);
         $bind_counter++;
     }
     #$log->debug(q(Executing 'INSERT' for file ID ) . $file->id);
@@ -283,15 +283,15 @@ sub create_schema {
 
     # prepare the database statement beforehand; use bind_param (below) to set
     # the values inserted into the database
-    foreach my $key ( sort(keys(%{$schema})) ) {
-        next if ( $key =~ /^$/ );
-        my $entry = $schema->{$key};
-        #$log->debug(q(Dumping schema entry: ) . Dumper($entry));
-        $log->info(qq(Creating table: ) . $entry->{name});
+    foreach my $block_name ( sort(keys(%{$schema})) ) {
+        next if ( $block_name =~ /^$/ );
+        my $block = $schema->{$block_name};
+        #$log->debug(q(Dumping schema block: ) . Dumper($block));
+        $log->info(qq(Creating table: $block_name));
         # create the table table
-        $dbh->do($entry->{sql});
+        $dbh->do($block->{sql});
         if ( defined $dbh->err ) {
-            $log->error(q(CREATE TABLE for ) . $entry->{name} . q( failed));
+            $log->error(qq(CREATE TABLE for $block_name  failed));
             $log->error(q(Error message: ) . $dbh->errstr);
             my $error = App::WADTools::Error->new(
                 type    => q(database.create_table),
@@ -304,7 +304,7 @@ sub create_schema {
         # this statement handle is only valid *after* the `schema` table has
         # been created
         my $sth = $dbh->prepare(
-            q|INSERT INTO schema VALUES (?, ?, ?, ?, ?, ?)|);
+            q|INSERT INTO schema VALUES (NULL, ?, ?, ?, ?, ?)|);
         if ( defined $dbh->err ) {
             $log->error(q('prepare' call to INSERT into 'schema' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
@@ -314,19 +314,18 @@ sub create_schema {
             );
             return $error;
         }
-        $sth->bind_param(1, $key);
-        $sth->bind_param(2, time);
-        $sth->bind_param(3, $entry->{name});
-        $sth->bind_param(4, $entry->{description});
-        $sth->bind_param(5, $entry->{notes});
-        $sth->bind_param(6, $entry->{checksum});
+        $sth->bind_param(1, time);
+        $sth->bind_param(2, $block_name);
+        $sth->bind_param(3, $block->{description});
+        $sth->bind_param(4, $block->{notes});
+        $sth->bind_param(5, $block->{checksum});
         my $rv = $sth->execute();
         if ( ! defined $rv ) {
-            $log->error(qq(INSERT for schema ID $key returned an error: )
+            $log->error(qq(INSERT for schema ID $block_name returned an error: )
                 . $sth->errstr);
             return undef;
         } else {
-            $log->debug(qq(INSERT for schema ID $key changed $rv row));
+            $log->debug(qq(INSERT for schema ID $block_name changed $rv row));
         }
     }
 }

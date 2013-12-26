@@ -213,16 +213,41 @@ FILESQL
 =item connect()
 
 Connects to the database (calls C<DBI-E<gt>connect> using the C<filename>
-attribute), and returns true (C<1>) if the connection did not have any errors,
-or an L<App::WADTools::Error> object if there was a problem connecting to
+attribute).
+
+Optional arguments:
+
+=over
+
+=item check_schema
+
+Checks to see if the schema has already been applied to this database.
+
+=back
+
+If the C<check_schema> param was used, then this method returns the number of
+schema blocks applied if the database connection was successful and has had a
+schema applied to it, or an L<App::WADTools::Error> object if there was an
+error.
+
+If the C<check_schema> param B<was not used>, then this method returns true
+(C<1>) if the database connection was successful, or an
+L<App::WADTools::Error> object if there was a problem connecting to
 the database.
 
 =cut
 
 sub connect {
     my $self = shift;
+    my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    my $check_schema_flag;
+    if ( exists ($args{check_schema} ) {
+        if ( $args{check_schema} ) {
+            $check_schema_flag = $args{check_schema};
+        }
+    }
     $log->debug(q(Connecting to/reading database file ) . $self->filename);
     if ( ! defined $dbh ) {
         $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
@@ -239,7 +264,12 @@ sub connect {
             );
             return $error;
         } else {
-            return 1;
+            if ( $check_schema_flag ) {
+                # returns the number of schema blocks applied, or an error
+                return $self->has_schema;
+            } else {
+                return 1;
+            }
         }
     } else {
         # database connection has already been set up (connection should

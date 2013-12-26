@@ -213,19 +213,16 @@ use constant {
         $idg_db = App::WADTools::Database->new(
             filename => $cfg->get(q(idgames-db))
         );
-        my $idg_db_connect = $idg_db->connect;
-        if ( ref($idg_db_connect) != q(App::WADTools::Error) ) {
-            my $schema_entries = $idg_db->has_schema;
-            if ( $schema_entries == 0 ) {
-                $log->error(q(DB schema empty, need to create idgames-db));
-                $log->logdie(q(Create idgames-db with 'db_tool' script));
-            } else {
-                $log->debug(qq(idgames-db has $schema_entries schema entries));
-            }
-        } else {
+        # with updated Database object, when check_schema => 1 is passed, the
+        # return value is the number of rows in the schema table, aka how many
+        # schema blocks that have been applied to the database
+        my $idg_db_connect = $idg_db->connect( check_schema => 1 );
+        if ( ref($idg_db_connect) == q(App::WADTools::Error) ) {
             $log->error(q(Recieved error connecting to idgames-db));
             $log->error(q(Error type) . $idg_db->type);
             $log->logdie(q(Error message: ) . $idg_db->message);
+        } else {
+            $log->debug(qq(idgames-db has $idg_db_connect schema entries));
         }
     }
 

@@ -202,6 +202,13 @@ use constant {
         . $cfg->get(q(path)) . q( not found/available))
         unless ( -r $wad_path );
 
+    # print a nice banner before checking for optional arguments
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn($copyright);
+    $log->warn(qq(My PID is $$));
+    $log->warn(qq(Searching for ZIP files in path:));
+    $log->warn(qq(-> $wad_path));
+
     # check for the database files if either --idgames-db or --index-db were
     # used
     my ($idg_db, $idx_db);
@@ -250,12 +257,6 @@ use constant {
         $log->warn(q(about files that are indexed by the script));
     }
 
-    # print a nice banner
-    $log->warn(qq(Starting $my_name, version '$VERSION'));
-    $log->warn($copyright);
-    $log->warn(qq(My PID is $$));
-    $log->warn(qq(Searching for ZIP files in: $wad_path));
-
     my $zip_file_counter = 0;
     my $total_file_counter = 0;
     my $indexer = App::WADTools::WADIndexer->new();
@@ -283,7 +284,7 @@ use constant {
             $short_path = $dirname;
         }
 
-        $log->warn(qq(File path: $file_path));
+        $log->warn(qq(=== File: $file_path ===));
         my $file;
         if ( defined $idg_db ) {
             $file = $idg_db->get_file_by_path(

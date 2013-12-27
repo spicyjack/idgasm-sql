@@ -10,9 +10,7 @@ on a local machine
 
 =cut
 
-our $copyright = (
-    q|Copyright (c) 2013 by Brian Manning/brian at xaoc dot org|
-);
+our $copyright = qq|Copyright (c) 2013 by Brian Manning|;
 
 =head1 SYNOPSIS
 

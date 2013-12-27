@@ -217,13 +217,37 @@ use constant {
         # return value is the number of rows in the schema table, aka how many
         # schema blocks that have been applied to the database
         my $idg_db_connect = $idg_db->connect( check_schema => 1 );
-        if ( ref($idg_db_connect) == q(App::WADTools::Error) ) {
+        if ( ref($idg_db_connect) eq q(App::WADTools::Error) ) {
             $log->error(q(Recieved error connecting to idgames-db));
-            $log->error(q(Error type) . $idg_db->type);
+            $log->error(q(Error type: ) . $idg_db->type);
             $log->logdie(q(Error message: ) . $idg_db->message);
         } else {
             $log->debug(qq(idgames-db has $idg_db_connect schema entries));
         }
+    } else {
+        $log->warn(q(Missing optional parameter --idgames-db;));
+        $log->warn(q(Script will continue, but will not be able to retrieve));
+        $log->warn(q(info from idGames Archive for files being indexed));
+    }
+
+    if ( $cfg->defined(q(index-db)) ) {
+        $log->logdie(qq(Can't find index-db file ) . $cfg->get(q(index-db)))
+            unless ( -e $cfg->get(q(index-db)) );
+        $idx_db = App::WADTools::Database->new(
+            filename => $cfg->get(q(index-db))
+        );
+        # use check_schema to check schema; $idx_db_connect will be the number
+        # of schema entries if there are no errors
+        my $idx_db_connect = $idx_db->connect( check_schema => 1 );
+        if ( ref($idx_db_connect) eq q(App::WADTools::Error) ) {
+            $log->error(q(Recieved error connecting to idgames-db));
+            $log->error(q(Error type: ) . $idx_db->type);
+            $log->logdie(q(Error message: ) . $idx_db->message);
+        } else {
+            $log->debug(qq(index-db has $idx_db_connect schema entries));
+        }
+    } else {
+        $log->logdie(q(Missing required parameter '--index-db'));
     }
 
     # print a nice banner

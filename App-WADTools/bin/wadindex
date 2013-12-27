@@ -225,7 +225,7 @@ use constant {
             $log->debug(qq(idgames-db has $idg_db_connect schema entries));
         }
     } else {
-        $log->warn(q(Missing optional parameter --idgames-db;));
+        $log->warn(q(WARNING: Missing optional parameter --idgames-db;));
         $log->warn(q(Script will continue, but will not be able to retrieve));
         $log->warn(q(info from idGames Archive for files being indexed));
     }
@@ -247,7 +247,9 @@ use constant {
             $log->debug(qq(index-db has $idx_db_connect schema entries));
         }
     } else {
-        $log->logdie(q(Missing required parameter '--index-db'));
+        $log->warn(q(WARNING: Missing optional parameter '--index-db'));
+        $log->warn(q(Script will continue, but will not record information));
+        $log->warn(q(about files that are indexed by the script));
     }
 
     # print a nice banner
@@ -284,15 +286,18 @@ use constant {
         }
 
         $log->warn(qq(File path: $file_path));
-        my $file = $idg_db->get_file_by_path(
-            path     => $short_path . q(/),
-            filename => $filename,
-        );
-        if ( defined $file ) {
-            $log->info(qq(Path/filename matched file ID ) . $file->id
-                . q( in idgames-db));
-        } else {
-            $log->info(qq(No match in db: '$short_path/$filename'));
+        my $file;
+        if ( defined $idg_db ) {
+            $file = $idg_db->get_file_by_path(
+                path     => $short_path . q(/),
+                filename => $filename,
+            );
+            if ( defined $file ) {
+                $log->info(qq(Path/filename matched file ID ) . $file->id
+                    . q( in idgames-db));
+            } else {
+                $log->info(qq(No match in db: '$short_path/$filename'));
+            }
         }
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(

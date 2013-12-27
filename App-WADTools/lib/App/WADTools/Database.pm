@@ -243,7 +243,7 @@ sub connect {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $check_schema_flag;
-    if ( exists ($args{check_schema} ) {
+    if ( exists $args{check_schema} ) {
         if ( $args{check_schema} ) {
             $check_schema_flag = $args{check_schema};
         }

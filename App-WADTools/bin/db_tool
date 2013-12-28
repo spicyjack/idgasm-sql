@@ -185,9 +185,17 @@ use App::WADTools::INIFile;
 
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
-        $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
-            . q( without '--overwrite' option))
-            if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) );
+        if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
+            $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
+                . q( without '--overwrite' option))
+        } else {
+            # delete the database file; it will be recreated when the database
+            # handle is instantiated
+            if ( $cfg->defined(q(create-db)) ) {
+                $log->debug(q(Unlinking old database file));
+                unlink( $cfg->get(q(output)) );
+            }
+        }
     }
 
     # print a nice banner
@@ -208,7 +216,7 @@ use App::WADTools::INIFile;
             #    db_schema  => $db_schema,
             #    extra_text => q(Dump called from --create-db block),
             #);
-            $log->debug(q(Parsing schema;));
+            $log->debug(q(Parsing schema metadata;));
             $log->debug(q(  Epoch: ) . $db_schema->{q()}->{q(schema_epoch)});
             $log->debug(q(  Date:  ) . $db_schema->{q()}->{q(schema_date)});
             my $db = App::WADTools::Database->new(

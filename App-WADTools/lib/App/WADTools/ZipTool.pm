@@ -72,18 +72,32 @@ sub extract_files {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $zip = $self->{_zip};
-    my $cfg = $self->{cfg};
+    my $tempdir = $args{tempdir};
 
-    my $dh = File::Temp->newdir(
-        UNLINK      => 1,
-        DIR         => $cfg->get(q(tempdir)),
-        TEMPLATE    => qq(wadindex.XXXXXXXX),
-    );
+    my %file_temp_opts;
+    if ( defined $tempdir ) {
+        %file_temp_opts = (
+            DIR         => $tempdir,
+            TEMPLATE    => qq(wadindex.XXXXXXXX),
+        );
+    } else {
+        %file_temp_opts = (
+            TMPDIR      => 1,
+            TEMPLATE    => qq(wadindex.XXXXXXXX),
+        );
+    }
+    my $dh = File::Temp->newdir(%file_temp_opts);
+
     $log->debug(qq(Created temp dir ) . $dh->dirname);
     foreach my $file ( @{$args{files}} ) {
         $log->debug(qq(- extracting: $file));
         my $temp_file = $dh->dirname . q(/) . $file;
-        $zip->extractMemberWithoutPaths($file, $temp_file);
+        my $unzip_status = eval{$zip->extractMemberWithoutPaths(
+            $file, $temp_file);};
+        if ( $unzip_status != AZ_OK ) {
+            $log->error(qq(Could not unzip $file));
+            return undef;
+        }
         $log->debug(q(- done extracting: ) . $file);
     }
     return $dh;

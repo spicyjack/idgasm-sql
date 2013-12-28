@@ -157,7 +157,13 @@ use constant {
     }
 
     if ( ! $cfg->defined(q(tempdir)) ) {
-        $cfg->set(q(tempdir), q(/dev/shm));
+        # If no temporary directory is defined, set one.
+        # - For Linux, use shared memory for temporary directory
+        # - For other systems, leave 'tempdir' unset, which will cause
+        # File::Temp to use the output of File::Spec->tmpdir
+        if ( -d q(/dev/shm) ) {
+            $cfg->set(q(tempdir), q(/dev/shm));
+        }
     }
     # set up the logger
     my $log_conf;
@@ -258,6 +264,7 @@ use constant {
     }
 
     my $zip_file_counter = 0;
+    my $unzip_error_counter = 0;
     my $total_file_counter = 0;
     my $indexer = App::WADTools::WADIndexer->new( idx_db => $idx_db );
     my @files = File::Find::Rule
@@ -302,7 +309,6 @@ use constant {
         }
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipTool->new(
-                cfg      => $cfg,
                 filename => $found_file,
             );
             my @members = $zipfile->get_zip_members();
@@ -310,11 +316,21 @@ use constant {
             if ( scalar(@wads_in_zip) > 0 ) {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
-                my $temp_dir = $zipfile->extract_files(files => \@wads_in_zip);
-                $indexer->index(
-                    unzip_dir => $temp_dir,
-                    files     => \@wads_in_zip,
+                my $unzip_dir = $zipfile->extract_files(
+                    files   => \@wads_in_zip,
+                    tempdir => $cfg->get(q(tempdir)),
                 );
+                if ( defined $unzip_dir ) {
+                    $indexer->index(
+                        unzip_dir => $unzip_dir,
+                        files     => \@wads_in_zip,
+                    );
+                } else {
+                    $log->warn(qq(Could not unzip $filename));
+                    $log->warn(qq(Skipping to next file));
+                    $unzip_error_counter++;
+                    next FILE_LOOP;
+                }
             } else {
                 $log->info(qq(No *.wad files in $file_path));
             }

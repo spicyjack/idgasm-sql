@@ -2,8 +2,28 @@
 # App::WADTools::WADIndexer #
 #############################
 package App::WADTools::WADIndexer;
-use strict;
-use warnings;
+
+=head1 NAME
+
+App::WADTools::WADIndexer
+
+=head1 SYNOPSIS
+
+ # if you don't pass in 'idx_db', then the index info will only be
+ # displayed on the screen, and only if log level INFO is set
+ my $indexer = App::WADTools::WADIndexer->new(idx_db => $idx_db);
+ $indexer->index(unzip_dir  => $temp_dir, files => \@wads_in_zip);
+
+=head1 DESCRIPTION
+
+C<WADIndexer> is an object that is used to read a C<WAD> file, then index
+and/or catalog the data contained inside of it, optionally storing the
+indexed/cataloged data in a database handle provided by the caller.
+
+=cut
+
+# system modules
+# 'Moo' calls 'strictures', which is 'strict' + 'warnings'
 use Data::Hexdumper;
 use Fcntl qw(:seek);
 use Log::Log4perl;
@@ -14,24 +34,65 @@ use constant {
     WAD_HEADER_SIZE          => 12,
 };
 
-=head2 App::WADTools::WADIndexer
-
-An object used for storing configuration data.
-
-=head3 Object Methods
+=head2 Attributes
 
 =over
 
-=item new( ) (aka BUILD)
+=item filename
 
-Creates a new WADIndexer object, returns it to the caller.
+A filename to the C<SQLite> database file.  If the file does not exist, a new
+file will be created.
+
+=back
 
 =cut
 
-=item index( )
+has idx_db => (
+    is      => q(rw),
+    default => sub{ undef; },
+    # returns true if the argument is a DBI object
+    #isa => sub { (ref($_[0]) eq q(DBI)) ? 1 : 0 },
+);
+
+=head2 Methods
+
+=over
+
+=item new(idx_db => $dbh) (aka BUILD)
+
+Creates a new WADIndexer object, returns it to the caller.
+
+Optional arguments:
+
+=over
+
+=item idx_db
+
+The L<DBI> database handle to an existing C<index> database that has already
+had the C<connect()> method called on it.  The database is usually created
+with the C<db_tool> script and the C<wad_index.ini> schema file.
+
+=back
+
+=item index(unzip_dir => $dir, $files => \@files)
 
 Indexes the contents of a WAD file, and displays the information on the
 screen.
+
+Required arguments:
+
+=over
+
+=item unzip_dir
+
+A path to the directory where the C<.zip> file was unzipped
+
+=item files
+
+A reference to an array of filenames that the method should index and
+optionally, add to the database.
+
+=back
 
 =cut
 
@@ -40,8 +101,8 @@ sub index {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->logdie(q(Missing 'tempdir' argument))
-        unless ( defined $args{tempdir} );
+    $log->logdie(q(Missing 'unzip_dir' argument))
+        unless ( defined $args{unzip_dir} );
     $log->logdie(q(Missing 'files' argument))
         unless ( defined $args{files} );
 
@@ -51,7 +112,7 @@ sub index {
             $log->debug(qq(Skipping dotfile '$filename'));
             next FILE;
         }
-        my $wadfile = $args{tempdir} . q(/) . $filename;
+        my $wadfile = $args{unzip_dir} . q(/) . $filename;
         $log->info(qq(Reading WAD info from '$filename'));
         open(my $WAD, qq(<$wadfile))
             or $log->logdie(qq(Failed to open WAD file '$wadfile': $!));

@@ -272,6 +272,8 @@ use constant {
         my $dirname = dirname($found_file);
         my $file_path = $dirname . q(/) . $filename;
         my $short_path;
+
+        # create a "short path", to make the logs look nicer
         if ( $cfg->defined(q(strip-path)) ) {
             my $strip_path = $cfg->get(q(strip-path));
             #$log->debug(qq('strip-path' is $strip_path));
@@ -309,7 +311,10 @@ use constant {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
                 my $temp_dir = $zipfile->extract_files(files => \@wads_in_zip);
-                $indexer->index(tempdir => $temp_dir, files => \@wads_in_zip);
+                $indexer->index(
+                    unzip_dir => $temp_dir,
+                    files     => \@wads_in_zip,
+                );
             } else {
                 $log->info(qq(No *.wad files in $file_path));
             }

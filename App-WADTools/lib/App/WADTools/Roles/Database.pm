@@ -29,12 +29,13 @@ Create/read/update/delete different database files created by WADTools.
 
 # system modules
 # 'Moo' calls 'strictures', which is 'strict' + 'warnings'
+use Moo::Role;
 use Date::Format;
 use DBI;
 use Digest::MD5;
 use File::Basename;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
-use Moo;
+
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
@@ -86,22 +87,6 @@ Required arguments:
 =item filename
 
 The filename of the database file that will be read from and written to.
-
-=back
-
-=item add_file(file => $file)
-
-Add an L<App::WADTools::File> object to the database.  Returns true C<1> if
-the insert was successful, or an L<App::WADTools::Error> object if there was a
-problem inserting the L<App::WADTools::File> object into the database.
-
-Required arguments:
-
-=over
-
-=item file
-
-The L<App::WADTools::File> object to add to the database.
 
 =back
 

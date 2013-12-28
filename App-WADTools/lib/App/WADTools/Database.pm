@@ -10,6 +10,16 @@ App::WADTools::Database
 =head1 SYNOPSIS
 
  my $db = App::WADTools::Database->new(filename => q(/path/to/file.db));
+ # check that the database already has a schema applied to it
+ my $result = $db->connect( check_schema => 1 );
+ if ( ref($result) eq q(App::WADTools::Error) ) {
+     # something bad happened
+ }
+ # returns a App::WADTools::File object
+ $file = $idg_db->get_file_by_path(
+     path     => q(/some/imaginary/path/),
+     filename => q(bogusfile.zip),
+ );
 
 =head1 DESCRIPTION
 
@@ -18,6 +28,7 @@ Create/read/update/delete different database files created by WADTools.
 =cut
 
 # system modules
+# 'Moo' calls 'strictures', which is 'strict' + 'warnings'
 use Date::Format;
 use DBI;
 use Digest::MD5;

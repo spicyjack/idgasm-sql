@@ -1,29 +1,21 @@
-###################################
-# package App::WADTools::Database #
-###################################
-package App::WADTools::Database;
+##########################################
+# package App::WADTools::Roles::Database #
+##########################################
+package App::WADTools::Roles::Database;
 
 =head1 NAME
 
-App::WADTools::Database
+App::WADTools::Roles::Database
 
 =head1 SYNOPSIS
 
- my $db = App::WADTools::Database->new(filename => q(/path/to/file.db));
- # check that the database already has a schema applied to it
- my $result = $db->connect( check_schema => 1 );
- if ( ref($result) eq q(App::WADTools::Error) ) {
-     # something bad happened
- }
- # returns a App::WADTools::File object
- $file = $idg_db->get_file_by_path(
-     path     => q(/some/imaginary/path/),
-     filename => q(bogusfile.zip),
- );
+This object provides a C<Database> role to other database objects, and as
+such, can't be created directly.
 
 =head1 DESCRIPTION
 
-Create/read/update/delete different database files created by WADTools.
+Provides the C<filename> attribute, and methods dealing with connecting to a
+database and checking schema.
 
 =cut
 
@@ -32,8 +24,6 @@ Create/read/update/delete different database files created by WADTools.
 use Moo::Role;
 use Date::Format;
 use DBI;
-use Digest::MD5;
-use File::Basename;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 
 use Data::Dumper;
@@ -44,10 +34,6 @@ $Data::Dumper::Terse = 1;
 # local modules
 use App::WADTools::Error;
 use App::WADTools::File;
-
-# local variables
-# store the database handle
-my $dbh;
 
 =head2 Attributes
 
@@ -71,13 +57,26 @@ has filename => (
 #            },
 );
 
+=item dbh
+
+The database handle, provided by the L<DBI> object.
+
+=back
+
+=cut
+
+has dbh => (
+    is  => q(rw),
+    isa => sub{ ref($_[0]) eq q(DBI) },
+);
+
 =head2 Methods
 
 =over
 
 =item new(filename => $filename)
 
-Creates the L<App::WADTools::Database> object.  Method is automatically
+Creates the L<App::WADTools::Roles::Database> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
 Required arguments:
@@ -89,122 +88,6 @@ Required arguments:
 The filename of the database file that will be read from and written to.
 
 =back
-
-=cut
-
-sub add_file {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
-
-    $log->logdie(q(Missing 'file' argument))
-        unless(defined($args{file}));
-    my $file = $args{file};
-    $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . qq(Adding to DB: ) . $file->filename);
-
-    my $file_sql = <<'FILESQL';
-        INSERT INTO files VALUES (
-            ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?,
-            ?, ?, ?)
-FILESQL
-
-    ### INSERT FILE
-    my $sth_file = $dbh->prepare($file_sql);
-    if ( defined $dbh->err ) {
-        $log->error(q('prepare' call to INSERT into 'files' failed));
-        $log->error(q(Error message: ) . $dbh->errstr);
-        $error = App::WADTools::Error->new(
-            type    => q(database.file_insert.prepare),
-            message => $dbh->errstr
-        );
-        return $error;
-    }
-
-    # bind params; bind params start counting at '1'
-    my $bind_counter = 1;
-    foreach my $block_name ( @{$file->attributes} ) {
-        # catches 'url', 'idgamesurl' and 'reviews'
-        next if ( $block_name =~ /url|reviews/ );
-        #$log->debug(qq(Binding $block_name -> ) . $file->$block_name));
-        $sth_file->bind_param($bind_counter, $file->$block_name);
-        $bind_counter++;
-    }
-    #$log->debug(q(Executing 'INSERT' for file ID ) . $file->id);
-    # $rv should be anything but 'undef' if the operation was successful
-    my $rv = $sth_file->execute();
-    if ( ! defined $rv ) {
-        $log->error(q(INSERT for file ID ) . $file->id
-            . q( returned an error: ) . $sth_file->errstr);
-        my $error = App::WADTools::Error->new(
-            type    => q(database.file_insert.execute),
-            message => $sth_file->errstr
-        );
-        return $error;
-    } else {
-        $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . qq(Successful INSERT of 'file' record));
-    }
-
-    ### INSERT VOTES
-    my $vote_sql = q|INSERT INTO votes VALUES (?, ?, ?, ?)|;
-    my $sth_vote = $dbh->prepare($vote_sql);
-    if ( defined $dbh->err ) {
-        $log->error(q('prepare' call to INSERT into 'votes' failed));
-        $log->error(q(Error message: ) . $dbh->errstr);
-        my $error = App::WADTools::Error->new(
-            type    => q(database.vote_insert.prepare),
-            message => $dbh->errstr
-        );
-        return $error;
-    }
-    my $vote_id = 0;
-    my @reviews;
-    # if there's no reviews, then $file->reviews will be 'undef'
-    if ( defined $file->reviews ) {
-        @reviews = @{$file->reviews};
-    }
-    foreach my $vote ( @reviews ) {
-        # increment $vote_id
-        $vote_id++;
-        $sth_vote->bind_param(1, $vote_id);
-        $sth_vote->bind_param(2, $file->id);
-        $sth_vote->bind_param(3, $vote->text);
-        $sth_vote->bind_param(4, $vote->vote);
-        #$log->debug(q(Executing 'INSERT' for file ID/vote ID )
-        #    . $file->id . q(/) . $vote_id);
-        $rv = $sth_vote->execute();
-        # $rv should be anything but 'undef' if the operation was successful
-        if ( ! defined $rv ) {
-            $log->error(q(INSERT for file ID ) . $file->id
-                . q( returned an error: ) . $sth_file->errstr);
-            my $error = App::WADTools::Error->new(
-                type    => q(database.vote_insert.execute),
-                message => $sth_file->errstr
-            );
-            return $error;
-        } # else {
-        #    $log->debug(q('INSERT' of vote for file ID/vote ID )
-        #        . $file->id . q(/) . $vote_id . qq( successful));
-        #}
-    }
-    if ( $vote_id > 0 ) {
-        $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . qq|Successful INSERT of $vote_id vote(s)|);
-    } else {
-        $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . q|No votes to INSERT into database|);
-    }
-
-    # return 'true'
-    return 1;
-}
 
 =item connect()
 
@@ -221,9 +104,9 @@ Checks to see if the schema has already been applied to this database.
 
 =back
 
-If the C<check_schema> param was used, then this method returns the number of
-schema blocks applied if the database connection was successful and has had a
-schema applied to it, or an L<App::WADTools::Error> object if there was an
+If the C<check_schema> param B<was used>, then this method returns the number
+of schema blocks applied if the database connection was successful and has had
+a schema applied to it, or an L<App::WADTools::Error> object if there was an
 error.
 
 If the C<check_schema> param B<was not used>, then this method returns true
@@ -239,6 +122,8 @@ sub connect {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $check_schema_flag;
+    my $dbh = $self->dbh;
+
     if ( exists $args{check_schema} ) {
         if ( $args{check_schema} ) {
             $check_schema_flag = $args{check_schema};
@@ -260,6 +145,8 @@ sub connect {
             );
             return $error;
         } else {
+            # save the database handle
+            $self->dbh($dbh);
             if ( $check_schema_flag ) {
                 # returns the number of schema blocks applied, or an error
                 return $self->has_schema;
@@ -301,6 +188,7 @@ sub create_schema {
     # check for an existing database connection
     my $error = $self->is_connected;
     return $error if ( ref($error) eq q(App::WADTools::Error));
+    my $dbh = $self->dbh;
 
     $log->logdie(q(Missing 'schema' parameter))
         unless ( defined $args{schema} );
@@ -369,171 +257,6 @@ sub create_schema {
     }
 }
 
-=item get_file_by_id()
-
-Queries the database for a L<App::WADTools::File> object in the database with
-the ID passed in as the argument.  Returns a L<App::WADTools::File> object if
-the file ID was found in the database, or an L<App::WADTools::Error> object
-with the C<error_type> of C<file_id_not_found>.
-
-Required arguments:
-
-=over
-
-=item id
-
-An integer value that represents a file ID in the idGames Archive.
-
-=back
-
-=cut
-
-sub get_file_by_id {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
-
-    $log->logdie(q(Missing 'id' parameter))
-        unless ( defined $args{id} );
-    my $file_id = $args{id};
-
-    my $sql = q(SELECT * FROM files WHERE id = ?);
-    $log->debug(q(Prepare: querying for file from file ID));
-    $log->debug(qq(Prepare: SQL: $sql));
-
-    # prepare the SQL
-    my $sth = $dbh->prepare($sql);
-    if ( defined $dbh->err ) {
-        $log->warn(q(Preparing query for file failed));
-        $log->warn(q(Error message: ) . $dbh->errstr);
-        my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_id.prepare),
-            message => $dbh->errstr
-        );
-        return $error;
-    }
-
-    # bind params
-    $log->debug(qq(Binding query params; 1: $file_id));
-    $sth->bind_param(1, $file_id);
-
-    # execute the SQL
-    $log->debug(q(Calling $sth->execute));
-    $sth->execute;
-    if ( defined $sth->err ) {
-        $log->warn(q(Executing query for file failed));
-        $log->warn(q(Error message: ) . $sth->errstr);
-        my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_id.execute),
-            message => $dbh->errstr
-        );
-        return $error;
-    }
-
-    $log->debug(q(Retrieving row via fetchrow_arrayref));
-    my $row = $sth->fetchrow_arrayref;
-    # return $row as an undefined value if there are no rows returned from the
-    # database query
-    return $row unless ( defined $row );
-    #$log->debug(q(dump: ) . Dumper $row);
-    my $file = $self->unserialize_file(db_row => $row);
-    $log->debug(qq(File ID ) . $file->id . q( has path: )
-        . $file->dir . q(/) . $file->filename);
-    return $file;
-}
-
-=item get_file_by_path()
-
-Queries the database for a L<App::WADTools::File> object in the database that
-matches the C<$path/$filename> arguments passed in.  A valid file path is the
-path from the root of the idGames Archive file tree, i.e. the directory
-containing the folders C<combos>, C<deathmatch>, C<historic>, C<idstuff>, etc.
-Returns a L<App::WADTools::File> object if the file was found in the database,
-or an L<App::WADTools::Error> object with the error C<type> of
-C<file_not_found>.
-
-Required arguments:
-
-=over
-
-=item path
-
-The path to the file from the root of the C<idGames Archive>.
-
-=item filename
-
-The filename of the file in C<idGames Archive>.
-
-=back
-
-=cut
-
-sub get_file_by_path  {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
-
-    $log->logdie(q(Missing 'path' parameter))
-        unless ( defined $args{path} );
-    $log->logdie(q(Missing 'filename' parameter))
-        unless ( defined $args{filename} );
-
-    my $path = $args{path};
-    my $filename = $args{filename};
-    my $sql = q(SELECT * FROM files WHERE dir = ? AND filename = ?);
-    $log->debug(q(Prepare: querying for file ID from dir/filename));
-    $log->debug(qq(Prepare: SQL: $sql));
-
-    # prepare the SQL
-    my $sth = $dbh->prepare($sql);
-    if ( defined $dbh->err ) {
-        $log->warn(q(Preparing query for file failed));
-        $log->warn(q(Error message: ) . $dbh->errstr);
-        my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.prepare),
-            message => $dbh->errstr
-        );
-        return $error;
-    }
-
-    # bind params
-    $log->debug(qq(Binding query params; 1: $path, 2: $filename));
-    $sth->bind_param(1, $path);
-    $sth->bind_param(2, $filename);
-
-    # execute the SQL
-    $log->debug(q(Calling $sth->execute));
-    $sth->execute;
-    if ( defined $sth->err ) {
-        $log->warn(q(Executing query for file failed));
-        $log->warn(q(Error message: ) . $sth->errstr);
-        my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.execute),
-            message => $dbh->errstr
-        );
-        return $error;
-    }
-
-    $log->debug(q(Retrieving row via fetchrow_arrayref));
-    my $row = $sth->fetchrow_arrayref;
-    # return $row as an undefined value if there are no rows returned from the
-    # database query
-    return $row unless ( defined $row );
-    #$log->debug(q(dump: ) . Dumper $row);
-    my $file = $self->unserialize_file(db_row => $row);
-    $log->debug(qq(File ID for ) . $file->dir . q(/) . $file->filename
-        . q( is ) . $file->id);
-    return $file;
-}
-
 =item has_schema()
 
 Determines if the database specified with the C<filename> attribute has
@@ -549,6 +272,7 @@ sub has_schema {
     # check for an existing database connection
     my $error = $self->is_connected;
     return $error if ( ref($error) eq q(App::WADTools::Error));
+    my $dbh = $self->dbh;
 
     my $sql = <<SQL;
         SELECT id, date_applied
@@ -598,6 +322,7 @@ sub is_connected {
 
     # check that the database handle has already been set up via a call to
     # connect()
+    my $dbh = $self->dbh;
     if ( ! defined $dbh ) {
         my $error = App::WADTools::Error->new(
             type    => q(database.no_connection),
@@ -607,52 +332,6 @@ sub is_connected {
     } else {
         return q();
     }
-}
-
-=item unserialize_file(db_row => $row)
-
-Accepts a row from a database query of the C<files> table, and unserializes
-the file object into a L<App::WADTools::File> object.   Returns the
-unserialized C<File> object if there were no errors, or an
-L<App::WADTools::Error> object if there was an error.
-
-Required arguments:
-
-=over
-
-=item db_row
-
-The row from a query of the C<files> table, obtained with a call to
-C<$sth-E<gt>fetchrow_arrayref()> from a L<DBI> database handle.
-
-=back
-
-=cut
-
-sub unserialize_file {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    $log->logdie(q(Missing 'db_row' parameter))
-        unless ( exists $args{db_row} );
-
-    my $db_row = $args{db_row};
-    my @row = @{$db_row};
-    # create the $file object that will be returned after it is unserialized
-    my $file = App::WADTools::File->new();
-    # bind params; bind params start counting at '1'
-    my $column = 0;
-    foreach my $key ( @{$file->attributes} ) {
-        # skip the 'url', 'idgamesurl' and 'reviews' fields
-        next if ( $key =~ /url|reviews/ );
-        #$log->debug(qq(Unserializing: '$key' -> ') . $row[$column] . q('));
-        # $file->{$key} needs the curly braces
-        $file->{$key} = $row[$column];
-        # go to the next column in the row array
-        $column++;
-    }
-    return $file;
 }
 
 =back
@@ -672,7 +351,7 @@ C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 You can find documentation for this script with the perldoc command.
 
-    perldoc App::WADTools::Database
+    perldoc App::WADTools::Roles::Database
 
 =head1 COPYRIGHT & LICENSE
 

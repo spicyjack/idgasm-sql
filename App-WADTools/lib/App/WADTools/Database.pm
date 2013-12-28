@@ -322,20 +322,33 @@ sub create_schema {
 
     my $schema = $args{schema};
 
-    # prepare the database statement beforehand; use bind_param (below) to set
-    # the values inserted into the database
-    foreach my $block_name ( sort(keys(%{$schema})) ) {
-        next if ( $block_name =~ /^$/ );
+    # when the schema is stuffed into a hash, the order of the blocks is
+    # randomized; we need to always have the 'schema' block be run first, then
+    # the other blocks in whatever order
+    my @unsorted_blocks = sort(keys(%{$schema}));
+    my @schema_blocks;
+    # push the 'schema' block on the list of blocks so it's at the front, if
+    # the 'schema' block even exists in the *.ini file
+    if ( grep(/schema/, @unsorted_blocks) > 0 ) {
+        push (@schema_blocks, q(schema));
+    }
+    foreach my $random_block ( @unsorted_blocks ) {
+        # skip the blank schema block, and the 'schema' schema block
+        next if ( $random_block =~ /^$|^schema/ );
+        push(@schema_blocks, $random_block);
+    }
+    foreach my $block_name ( @schema_blocks ) {
+        # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
-        $log->info(qq(Creating table: $block_name));
-        # create the table table
+        $log->info(qq(Executing SQL block: $block_name));
+        # create the table
         $dbh->do($block->{sql});
         if ( defined $dbh->err ) {
-            $log->error(qq(CREATE TABLE for $block_name  failed));
+            $log->error(qq(Execution of block '$block_name' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
             my $error = App::WADTools::Error->new(
-                type    => q(database.create_table),
+                type    => q(database.block_execute),
                 message => $dbh->errstr
             );
             return $error;

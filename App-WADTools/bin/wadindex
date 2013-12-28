@@ -123,7 +123,7 @@ use Pod::Usage;
 
 ### Local modules
 use App::WADTools::Config;
-use App::WADTools::Database;
+use App::WADTools::idGamesDB;
 use App::WADTools::WADIndexer;
 use App::WADTools::ZipTool;
 
@@ -221,7 +221,7 @@ use constant {
     if ( $cfg->defined(q(idgames-db)) ) {
         $log->logdie(qq(Can't find idgames-db file ) . $cfg->get(q(idgames-db)))
             unless ( -e $cfg->get(q(idgames-db)) );
-        $idg_db = App::WADTools::Database->new(
+        $idg_db = App::WADTools::idGamesDB->new(
             filename => $cfg->get(q(idgames-db))
         );
         # with updated Database object, when check_schema => 1 is passed, the
@@ -244,7 +244,7 @@ use constant {
     if ( $cfg->defined(q(index-db)) ) {
         $log->logdie(qq(Can't find index-db file ) . $cfg->get(q(index-db)))
             unless ( -e $cfg->get(q(index-db)) );
-        $idx_db = App::WADTools::Database->new(
+        $idx_db = App::WADTools::idGamesDB->new(
             filename => $cfg->get(q(index-db))
         );
         # use check_schema to check schema; $idx_db_connect will be the number

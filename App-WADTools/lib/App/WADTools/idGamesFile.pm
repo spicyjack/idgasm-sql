@@ -1,9 +1,9 @@
-###############################
-# package App::WADTools::File #
-###############################
-package App::WADTools::File;
+######################################
+# package App::WADTools::idGamesFile #
+######################################
+package App::WADTools::idGamesFile;
 
-=head1 App::WADTools::File
+=head1 App::WADTools::idGamesFile
 
 An individual file in C<idGames Archive>.  The information in this object is
 taken from the C<*.txt> file that is uploaded with each file to C<idGames
@@ -285,7 +285,7 @@ has q(reviews) => (
 =item file_attributes
 
 An array reference to an array that contains all of the attribute keys for a
-C<File> object.  Great for using for enumerating all of the file's attrubtes.
+C<idGamesFile> object.  Great for using for enumerating all of the file's attrubtes.
 
 =cut
 
@@ -305,7 +305,7 @@ has q(attributes) => (
 
 =item BUILD() (aka 'new')
 
-Creates the L<App::WADTools::File> object, optionally with an error
+Creates the L<App::WADTools::idGamesFile> object, optionally with an error
 message.
 
 =item populate()
@@ -348,7 +348,7 @@ sub populate {
             my $content = $data->{q(idgames-response)}->{content};
             #$log->warn(qq(Dumping content:\n) . Dumper($content));
             # go through all of the attributes in the content object, copy
-            # them to the same attributes in this File object
+            # them to the same attributes in this idGamesFile object
             my @attribs = @{$self->file_attributes};
             foreach my $key ( @attribs ) {
                 $self->{$key} = $content->{$key};

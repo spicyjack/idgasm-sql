@@ -2,34 +2,65 @@
 # App::WADTools::ZipTool #
 ##########################
 package App::WADTools::ZipTool;
-use strict;
-use warnings;
+
+=head1 NAME
+
+App::WADTools::ZipFile
+
+=head1 SYNOPSIS
+
+This object keeps track of a file compressed in C<.zip> format.  This object
+will read the contents of the zip file, as well as obtain checksums of the
+zipfile.
+
+=head1 DESCRIPTION
+
+Provides a listing of the zipfile's contents, and checksums of the zipfile.
+
+=cut
 use Archive::Zip qw(:ERROR_CODES);
+use Digest::MD5;
+use Digest::SHA;
 use Log::Log4perl;
+# 'Moo' calls 'strictures', which is 'strict' + 'warnings'
+use Moo;
 
-=head2 App::WADTools::ZipTool
-
-An object used for storing configuration data.
-
-=head3 Object Methods
+=head2 Attributes
 
 =over
 
-=item new(zipfile => $zipfile )
+=item zipfile
 
-Creates an C<Archive::Zip> object and processes requests for information about
-the zipfile.
+The zipfile to work with.
+
+=back
 
 =cut
 
-sub new {
+has q(zipfile) => (
+    is => q(rw),
+    #isa
+);
+
+=head2 Methods
+
+=over
+
+=item new(zipfile => $zipfile) (aka BUILD)
+
+Creates a L<App::WADTools::ZipFile> object, and populates the zipfile's object
+attributes, including MD5/SHA checksums.
+
+=cut
+
+sub BUILD {
     my $class = shift;
     my %args = @_;
     my $self = bless ({%args}, $class);
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $zip = Archive::Zip->new();
-    my $zipfile = $self->{filename};
+    my $zipfile = $self->zipfile;
     $log->debug(qq(Reading zipfile: $zipfile));
     $log->logdie(qq(Can't read zipfile $zipfile))
         unless ( $zip->read($zipfile) == AZ_OK );

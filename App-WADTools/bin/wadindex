@@ -215,8 +215,8 @@ use constant {
     $log->warn(qq(Searching for ZIP files in path:));
     $log->warn(qq(-> $wad_path));
 
-    # check for the database files if either --idgames-db or --index-db were
-    # used
+    # check for the database files if either/both --idgames-db and/or
+    # --index-db were used
     my ($idg_db, $idx_db);
     if ( $cfg->defined(q(idgames-db)) ) {
         $log->logdie(qq(Can't find idgames-db file ) . $cfg->get(q(idgames-db)))
@@ -338,7 +338,7 @@ use constant {
         } else {
             $log->info(qq(Not a zip file: $filename));
         }
-        $log->warn(qq(Finished processing: $file_path));
+        $log->warn(qq(Done: $file_path));
     }
 
 =head1 AUTHOR

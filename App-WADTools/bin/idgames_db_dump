@@ -124,8 +124,7 @@ $Data::Dumper::Terse = 1;
 # local packages
 use App::WADTools; # for $VERSION
 use App::WADTools::Config;
-use App::WADTools::Database;
-use App::WADTools::File;
+use App::WADTools::idGamesDB;
 use App::WADTools::JSONParser;
 use App::WADTools::XMLParser;
 use App::WADTools::RuntimeStats;
@@ -243,7 +242,7 @@ use constant {
     my $db;
     if ( $cfg->defined(q(database)) && -e $cfg->get(q(database)) ) {
         $log->debug(q(User specified database with --database));
-        $db = App::WADTools::Database->new(
+        $db = App::WADTools::idGamesDB->new(
             filename => $cfg->get(q(database))
         );
         my $db_connect = $db->connect( check_schema => 1 );

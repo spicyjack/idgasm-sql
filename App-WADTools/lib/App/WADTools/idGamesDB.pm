@@ -15,7 +15,7 @@ App::WADTools::idGamesDB
  if ( ref($result) eq q(App::WADTools::Error) ) {
      # something bad happened
  }
- # returns a App::WADTools::File object
+ # returns a App::WADTools::idGamesFile object
  $file = $idg_db->get_file_by_path(
      path     => q(/some/imaginary/path/),
      filename => q(bogusfile.zip),
@@ -40,6 +40,9 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
+### Local modules
+use App::WADTools::idGamesFile;
+
 ### Roles
 # contains App::WADTools::Error
 with q(App::WADTools::Roles::Database);
@@ -50,9 +53,10 @@ with q(App::WADTools::Roles::Database);
 
 =item add_file(file => $file)
 
-Add an L<App::WADTools::File> object to the database.  Returns true C<1> if
-the insert was successful, or an L<App::WADTools::Error> object if there was a
-problem inserting the L<App::WADTools::File> object into the database.
+Add an L<App::WADTools::idGamesFile> object to the database.  Returns true
+C<1> if the insert was successful, or an L<App::WADTools::Error> object if
+there was a problem inserting the L<App::WADTools::idGamesFile> object into
+the database.
 
 Required arguments:
 
@@ -60,7 +64,7 @@ Required arguments:
 
 =item file
 
-The L<App::WADTools::File> object to add to the database.
+The L<App::WADTools::idGamesFile> object to add to the database.
 
 =back
 
@@ -183,10 +187,11 @@ FILESQL
 
 =item get_file_by_id()
 
-Queries the database for a L<App::WADTools::File> object in the database with
-the ID passed in as the argument.  Returns a L<App::WADTools::File> object if
-the file ID was found in the database, or an L<App::WADTools::Error> object
-with the C<error_type> of C<file_id_not_found>.
+Queries the database for a L<App::WADTools::idGamesFile> object in the
+database with the ID passed in as the argument.  Returns a
+L<App::WADTools::idGamesFile> object if the file ID was found in the database,
+or an L<App::WADTools::Error> object with the C<error_type> of
+C<file_id_not_found>.
 
 Required arguments:
 
@@ -261,13 +266,13 @@ sub get_file_by_id {
 
 =item get_file_by_path()
 
-Queries the database for a L<App::WADTools::File> object in the database that
-matches the C<$path/$filename> arguments passed in.  A valid file path is the
-path from the root of the idGames Archive file tree, i.e. the directory
-containing the folders C<combos>, C<deathmatch>, C<historic>, C<idstuff>, etc.
-Returns a L<App::WADTools::File> object if the file was found in the database,
-or an L<App::WADTools::Error> object with the error C<type> of
-C<file_not_found>.
+Queries the database for a L<App::WADTools::idGamesFile> object in the
+database that matches the C<$path/$filename> arguments passed in.  A valid
+file path is the path from the root of the idGames Archive file tree, i.e. the
+directory containing the folders C<combos>, C<deathmatch>, C<historic>,
+C<idstuff>, etc.  Returns a L<App::WADTools::idGamesFile> object if the file
+was found in the database, or an L<App::WADTools::Error> object with the error
+C<type> of C<file_not_found>.
 
 Required arguments:
 
@@ -351,8 +356,8 @@ sub get_file_by_path  {
 =item unserialize_file(db_row => $row)
 
 Accepts a row from a database query of the C<files> table, and unserializes
-the file object into a L<App::WADTools::File> object.   Returns the
-unserialized C<File> object if there were no errors, or an
+the file object into a L<App::WADTools::idGamesFile> object.   Returns the
+unserialized C<idGamesFile> object if there were no errors, or an
 L<App::WADTools::Error> object if there was an error.
 
 Required arguments:
@@ -379,7 +384,7 @@ sub unserialize_file {
     my $db_row = $args{db_row};
     my @row = @{$db_row};
     # create the $file object that will be returned after it is unserialized
-    my $file = App::WADTools::File->new();
+    my $file = App::WADTools::idGamesFile->new();
     # bind params; bind params start counting at '1'
     my $column = 0;
     foreach my $key ( @{$file->attributes} ) {

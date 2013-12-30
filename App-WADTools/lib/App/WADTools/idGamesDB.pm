@@ -41,7 +41,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 ### Roles
-# contains App::WADTools::Error and App::WADTools::File
+# contains App::WADTools::Error
 with q(App::WADTools::Roles::Database);
 
 =head2 Methods

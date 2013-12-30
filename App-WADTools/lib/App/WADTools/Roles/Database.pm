@@ -33,7 +33,6 @@ $Data::Dumper::Terse = 1;
 
 # local modules
 use App::WADTools::Error;
-use App::WADTools::File;
 
 =head2 Attributes
 

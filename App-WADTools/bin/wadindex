@@ -125,7 +125,7 @@ use Pod::Usage;
 use App::WADTools::Config;
 use App::WADTools::idGamesDB;
 use App::WADTools::WADIndexer;
-use App::WADTools::ZipTool;
+use App::WADTools::ZipFile;
 
 # FIXME: GitHub issue #83, create a MIME magic preflight check
 # WARNING: these will change depending on which 'magic' file you're looking at
@@ -308,9 +308,7 @@ use constant {
             }
         }
         if ( $filename =~ /\.zip$/ ) {
-            my $zipfile = App::WADTools::ZipTool->new(
-                filename => $found_file,
-            );
+            my $zipfile = App::WADTools::ZipFile->new( file => $found_file );
             my @members = $zipfile->get_zip_members();
             my @wads_in_zip = grep(/\.wad/i, @members);
             if ( scalar(@wads_in_zip) > 0 ) {

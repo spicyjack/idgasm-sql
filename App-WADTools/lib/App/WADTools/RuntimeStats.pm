@@ -98,7 +98,7 @@ sub start_timer {
 
 =item stop_timer('foo')
 
-Stops the timer named C<foo>.  to measure total script execution time.
+Stops the timer named C<foo>.
 
 =cut
 
@@ -109,6 +109,10 @@ sub stop_timer {
 }
 
 =item time_value_difference('foo')
+
+Takes the 'start' timer value for C<foo>, and the 'stop' timer value for
+C<foo>, calculates the difference between the two values, and returns this
+value to the caller.
 
 =cut
 

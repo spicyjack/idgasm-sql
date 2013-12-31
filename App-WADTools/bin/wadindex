@@ -308,8 +308,10 @@ use constant {
             }
         }
         if ( $filename =~ /\.zip$/ ) {
-            my $zipfile = App::WADTools::ZipFile->new( file => $found_file );
+            my $zipfile = App::WADTools::ZipFile->new(filename => $found_file);
             my @members = $zipfile->get_zip_members();
+            $log->info(q(MD5  checksum: ) . $zipfile->gen_md5_checksum);
+            $log->info(q(SHA1 checksum: ) . $zipfile->gen_sha_checksum);
             my @wads_in_zip = grep(/\.wad/i, @members);
             if ( scalar(@wads_in_zip) > 0 ) {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)

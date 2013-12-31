@@ -92,9 +92,10 @@ sub BUILD {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $zip = Archive::Zip->new();
-    $log->debug(q(Reading file: ) . $self->file);
-    $log->logdie(q(Can't read zip directory for ) . $self->file)
-        unless ( $zip->read($self->file) == AZ_OK );
+    $log->debug(q(Reading file: ) . $self->filename);
+    $self->generate_filehandle();
+    $log->logdie(q(Can't read zip internal directory for ) . $self->filename)
+        unless ( $zip->readFromFileHandle($self->filehandle) == AZ_OK );
     # store a copy of the Archive::Zip object for other methods to use
     $self->_zip_obj($zip);
     $log->debug("Calling zip->members");
@@ -103,6 +104,7 @@ sub BUILD {
     foreach my $member ( @member_objs ) {
         push(@members, $member->fileName);
     }
+    # store the extracted member names inside this ZipFile object
     $self->members(\@members);
     return $self;
 }

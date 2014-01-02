@@ -65,7 +65,7 @@ our @options = (
 
     # path/db options
     q(path|p=s),
-    q(strip-path=s),
+    q(strip-path|strip|s=s),
     q(tempdir|t=s),
     q(idgames-db|idgdb|i=s),
     q(index-db|idxdb|x=s),

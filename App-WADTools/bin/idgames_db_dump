@@ -127,7 +127,8 @@ use App::WADTools::Config;
 use App::WADTools::idGamesDB;
 use App::WADTools::JSONParser;
 use App::WADTools::XMLParser;
-use App::WADTools::RuntimeStats;
+use App::WADTools::Views::CLI::idGamesDbDump;
+use App::WADTools::Timer;
 
 # script constants
 use constant {
@@ -220,9 +221,10 @@ use constant {
         $log->debug(qq(Setting number of API requests to $debug_requests));
     }
 
-    # create the stats object and start the timer
-    my $stats = App::WADTools::RuntimeStats->new();
-    $stats->start_timer(q(program));
+    # create the view object and start the timer
+    my $view = App::WADTools::Views::CLI::idGamesDbDump->new();
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => $my_name);
 
     # start at file ID 1, keep going until you get a "error" response instead
     # of a "content" response in the JSON
@@ -326,12 +328,15 @@ use constant {
         my $fetch_url =  $idgames_get_url . qq(&id=$file_id);
         $log->debug(qq(URL: $fetch_url));
         # POST requests; https://metacpan.org/pod/LWP#An-Example for an example
-        $stats->start_timer(q(http_request));
+        $timer->start(name => q(http_request));
         my $req = HTTP::Request->new(GET => $fetch_url);
         $resp = $ua->request($req);
-        $stats->stop_timer(q(http_request));
+        $timer->stop(name => q(http_request));
+        # delete this timer, so there's no chance that it's values can be
+        # reused
+        $timer->delete(name => q(http_request));
         my $http_request_time
-            = $stats->time_value_difference(q(http_request));
+            = $view->time_value_difference(name => q(http_request));
         $log->debug(q(HTTP request took )
             . sprintf(q|%0.5f second(s)|, $http_request_time)
         );
@@ -398,12 +403,16 @@ use constant {
     $log->debug(join(q(, ), @unsuccessful_request_ids));
     $log->debug(q(Parsing of these file IDs was unsuccessful;));
     $log->debug(join(q(, ), @unsuccessful_parse_ids));
-    $stats->stop_timer(q(program));
-    $stats->successful_api_requests($successful_api_requests);
-    $stats->unsuccessful_api_requests(scalar(@unsuccessful_request_ids));
-    $stats->unsuccessful_api_parses(scalar(@unsuccessful_parse_ids));
-    $stats->total_http_request_time($total_http_request_time);
-    $stats->write_stats();
+    # timer for the program
+    $timer->stop(name => $my_name);
+    $view->write_stats(
+        program_time_value_diff_name => $timer->time_value_difference(
+            name => $my_name),
+        successful_api_requests => $successful_api_requests,
+        unsuccessful_api_requests => scalar(@unsuccessful_request_ids),
+        unsuccessful_api_parses => scalar(@unsuccessful_parse_ids),
+        total_http_request_time => $total_http_request_time,
+    );
 
 
 =head1 AUTHOR

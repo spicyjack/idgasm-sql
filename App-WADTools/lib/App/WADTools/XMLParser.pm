@@ -27,7 +27,7 @@ with q(App::WADTools::Roles::Parser);
 
 ### Local modules
 use App::WADTools::Error;
-use App::WADTools::File;
+use App::WADTools::idGamesFile;
 use App::WADTools::Vote;
 
 =head2 Methods
@@ -38,7 +38,7 @@ use App::WADTools::Vote;
 
 Parses the XML content inside of the HTTP response message sent from the
 server in response to an C<idGames Archive API> request.  Returns an
-L<App::WADTools::File> object if parsing was successful, or a
+L<App::WADTools::idGamesFile> object if parsing was successful, or a
 L<App::WADTools::Error> object if parsing was not successful.
 
 =back
@@ -110,7 +110,7 @@ sub parse {
         foreach my $latestfile ( @files ) {
             $log->debug(q(Creating partial File object for file ID: )
                 . $latestfile->{id});
-            my $file = App::WADTools::File->new(partial => 1);
+            my $file = App::WADTools::idGamesFile->new(partial => 1);
             my @attribs = keys(%{$latestfile});
             foreach my $key ( @attribs ) {
                 $file->{$key} = $latestfile->{$key};
@@ -125,7 +125,7 @@ sub parse {
         my $content = $parsed_data->{q(idgames-response)}->{content};
         #$log->debug(qq(Dumping get request:\n) . Dumper($content));
         $log->debug(q(Successfully parsed XML content block));
-        my $file = App::WADTools::File->new();
+        my $file = App::WADTools::idGamesFile->new();
         # go through all of the attributes in the content object, copy
         # them to the same attributes in this File object
         my @attribs = @{$file->attributes};

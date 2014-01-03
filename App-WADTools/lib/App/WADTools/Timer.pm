@@ -3,13 +3,34 @@
 ################################
 package App::WADTools::Timer;
 
-=head1 App::WADTools::Timer
+=head1 NAME
 
-Timers that can be used by different blocks of code to time the execution of
-those blocks.
+App::WADTools::Timer
+
+=head1 SYNOPSIS
+
+ my $timer = App::WADTools::Timer->new();
+
+ my $start_time = $timer->start(name => q(foo));
+ # $start_time should now be seconds.milliseconds from epoch
+
+ my $stop_time = $timer->stop(name => q(foo));
+ # $stop_time should now be seconds.milliseconds from epoch
+
+ my $time_diff = $timer->time_value_difference(name => q(foo));
+ # $time_diff should be seconds.milliseconds between 'start' and 'stop'
+
+ # delete the time
+ $timer->delete(name => q(foo));
+
+=head1 DESCRIPTION
+
+Create timers that can be used by different blocks of code, in order to time
+the execution of those blocks.
 
 =cut
 
+### System modules
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 use Moo;
 use Time::HiRes qw( gettimeofday tv_interval );
@@ -163,6 +184,30 @@ sub time_value_difference {
 }
 
 =back
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::idGamesDB
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 

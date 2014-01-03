@@ -22,6 +22,38 @@ my (%_starts, %_stops);
 
 =over
 
+=item delete(name => q(foo))
+
+"Deletes" a timer with the name of C<foo>.  If a "start" or "stop" timer
+doesn't exist for C<foo>, no errors will be given.  This method will always
+return the "success" value of C<1>.
+
+Required arguments:
+
+=over
+
+=item name
+
+The name of the timer to delete.
+
+=back
+
+=cut
+
+sub delete {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->logdie(q(Missing required argument 'name'))
+        unless ( exists $args{name} );
+
+    delete($_starts{$args{name}});
+    delete($_stops{$args{name}});
+    return 1;
+}
+
+
 =item start(name => q(foo))
 
 "Starts" a timer with the name of C<foo>.  Returns the start time as a UNIX

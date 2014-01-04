@@ -117,7 +117,7 @@ $Data::Dumper::Terse = 1;
 # local packages
 use App::WADTools; # for $VERSION
 use App::WADTools::Config;
-use App::WADTools::Database;
+use App::WADTools::idGamesDB;
 use App::WADTools::INIFile;
 
     # create a variable with the current name of the script
@@ -217,9 +217,17 @@ use App::WADTools::INIFile;
             #    extra_text => q(Dump called from --create-db block),
             #);
             $log->debug(q(Parsing schema metadata;));
-            $log->debug(q(  Epoch: ) . $db_schema->{q()}->{q(schema_epoch)});
-            $log->debug(q(  Date:  ) . $db_schema->{q()}->{q(schema_date)});
-            my $db = App::WADTools::Database->new(
+            $log->debug(q(  Epoch:    )
+                . $db_schema->{q(default)}->{q(schema_epoch)});
+            $log->debug(q(  Date:     )
+                . $db_schema->{q(default)}->{q(schema_date)});
+            $log->debug(q(  Notes:    )
+                . $db_schema->{q(default)}->{q(schema_notes)});
+            if ( exists $db_schema->{q(default)}->{q(base_url)} ) {
+                $log->debug(q(  Base URL: )
+                    . $db_schema->{q(default)}->{q(base_url)});
+            }
+            my $db = App::WADTools::idGamesDB->new(
                 filename => $cfg->get(q(output))
             );
             if ( $db->connect ) {

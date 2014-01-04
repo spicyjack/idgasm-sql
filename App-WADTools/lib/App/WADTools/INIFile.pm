@@ -95,7 +95,8 @@ sub md5_checksum {
     my $digest = Digest::MD5->new();
     BLOCK: foreach my $block_name ( sort(keys(%{$db_schema})) ) {
         my %block = %{$db_schema->{$block_name}};
-        if ( length($block_name) == 0 ) {
+        # 'default' block needs speshul handling
+        if ( $block_name) == q(default) ) {
             my $epoch_time = time();
             $log->debug(q(Setting new timestamp in 'default' block));
             $block{schema_date} = time2str(q(%C), $epoch_time);

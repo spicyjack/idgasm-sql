@@ -183,6 +183,11 @@ use App::WADTools::INIFile;
     $log->logdie(qq(Can't read option file ) . $cfg->get(q(input)) )
         unless ( -r $cfg->get(q(input)) );
 
+    # print a nice banner first
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn(qq($copyright));
+    $log->warn(qq(My PID is $$));
+
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
         if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
@@ -192,15 +197,12 @@ use App::WADTools::INIFile;
             # delete the database file; it will be recreated when the database
             # handle is instantiated
             if ( $cfg->defined(q(create-db)) ) {
-                $log->debug(q(Unlinking old database file));
+                $log->info(q(--output file exists, --overwrite requested;));
+                $log->info(q(Unlinking old database file...));
                 unlink( $cfg->get(q(output)) );
             }
         }
     }
-
-    # print a nice banner
-    $log->warn(qq(Starting $my_name, version '$VERSION'));
-    $log->warn(qq(My PID is $$));
 
     my $db_schema;
     my $ini_file = App::WADTools::INIFile->new(

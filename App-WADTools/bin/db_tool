@@ -254,7 +254,7 @@ use App::WADTools::INIFile;
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
-        $log->warn(q(Checksumming database file...));
+        $log->warn(q(Checksumming database schema INI file...));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             # MD5 checksums, for now
             $db_schema = $ini_file->read_ini_config();

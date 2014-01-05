@@ -209,23 +209,28 @@ sub create_schema {
         next if ( $random_block =~ /^default|^schema/ );
         push(@schema_blocks, $random_block);
     }
-    foreach my $block_name ( @schema_blocks ) {
+    SQL_BLOCK: foreach my $block_name ( @schema_blocks ) {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
         $log->info(qq(Executing SQL block: $block_name));
-        # create the table
-        $dbh->do($block->{sql});
-        if ( defined $dbh->err ) {
-            $log->error(qq(Execution of block '$block_name' failed));
-            $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::WADTools::Error->new(
-                type    => q(database.block_execute),
-                message => $dbh->errstr
-            );
-            return $error;
+        if ( defined $block->{sql} ) {
+            # create the table
+            $dbh->do($block->{sql});
+            if ( defined $dbh->err ) {
+                $log->error(qq(Execution of block '$block_name' failed));
+                $log->error(q(Error message: ) . $dbh->errstr);
+                my $error = App::WADTools::Error->new(
+                    type    => q(database.block_execute),
+                    message => $dbh->errstr
+                );
+                return $error;
+            }
+        } else {
+            $log->error(qq(Block '$block_name' has no SQL key));
+            $log->error(qq(Skipping to next SQL block));
+            next SQL_BLOCK;
         }
-
         # add the newly created table to the schema table
         # this statement handle is only valid *after* the `schema` table has
         # been created

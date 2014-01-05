@@ -205,8 +205,8 @@ sub create_schema {
         push (@schema_blocks, q(schema));
     }
     foreach my $random_block ( @unsorted_blocks ) {
-        # skip the blank schema block, and the 'schema' schema block
-        next if ( $random_block =~ /^$|^schema/ );
+        # skip the 'default' schema block, and the 'schema' schema block
+        next if ( $random_block =~ /^default|^schema/ );
         push(@schema_blocks, $random_block);
     }
     foreach my $block_name ( @schema_blocks ) {

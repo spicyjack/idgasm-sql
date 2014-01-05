@@ -213,7 +213,7 @@ sub create_schema {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
-        $log->info(qq(Executing SQL block: $block_name));
+        $log->info(qq(Executing SQL schema block: $block_name));
         if ( defined $block->{sql} ) {
             # create the table
             $dbh->do($block->{sql});

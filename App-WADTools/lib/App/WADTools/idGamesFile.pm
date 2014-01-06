@@ -45,6 +45,18 @@ has q(partial) => (
     default => sub { 0 },
 );
 
+=item key
+
+The file's C<key>, a combination of C<base URL> and C<file path> from the base
+URL.
+
+=cut
+
+has q(key) => (
+    is  => q(rw),
+);
+
+
 =item id
 
 The file's C<idGames Archive> ID number.

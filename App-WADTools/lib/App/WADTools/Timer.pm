@@ -103,7 +103,9 @@ sub start {
         unless ( exists $args{name} );
 
     $_starts{$args{name}} = [gettimeofday];
-    my ($seconds, $microseconds) = $_starts{$args{name}};
+    # get seconds/microseconds so they can be returned to the caller
+    # need to cast the hash entry into an array
+    my ($seconds, $microseconds) = @{$_starts{$args{name}}};
     return $seconds . q(.) . $microseconds;
 }
 
@@ -126,7 +128,7 @@ will result in C<undef> being returned to the caller.
 
 =cut
 
-sub stop_timer {
+sub stop {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
@@ -136,12 +138,15 @@ sub stop_timer {
 
     # check to see that $self->start was called with the same 'name'
     # no sense in stopping a timer that was never started
-    if ( exists ($_stops{$args{name}}) ) {
+    if ( exists ($_starts{$args{name}}) ) {
         $_stops{$args{name}} = [gettimeofday];
-        my ($seconds, $microseconds) = $_stops{$args{name}};
+        # get seconds/microseconds so they can be returned to the caller
+        # need to cast the hash entry into an array
+        my ($seconds, $microseconds) = @{$_stops{$args{name}}};
         return $seconds . q(.) . $microseconds;
     } else {
         # nope, no timer with this name was ever started; return 'undef'
+        $log->error(q(Missing corresponding start request for ) . $args{name});
         return undef;
     }
 }
@@ -174,11 +179,13 @@ sub time_value_difference {
     $log->logdie(q(Missing required argument 'name'))
         unless ( exists $args{name} );
 
-    # check to see that $self->start was called with the same 'name'
-    # no sense in stopping a timer that was never started
+    # check to see that start/stop was called with the same 'name'
+    # no sense in calculating the difference for a timer that was never
+    # started/stopped
     if ( exists($_starts{$args{name}}) && exists($_stops{$args{name}}) ) {
         return tv_interval( $_starts{$args{name}}, $_stops{$args{name}});
     } else {
+        $log->error(q(Missing start/stop request for ) . $args{name});
         return undef;
     }
 }

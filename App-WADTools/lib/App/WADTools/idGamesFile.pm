@@ -13,6 +13,8 @@ was parsed incorrectly or was not parseable.
 =cut
 
 # system modules
+use Digest::MD5;
+use Math::Base36 qw(encode_base36);
 use Moo;
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -21,6 +23,7 @@ $Data::Dumper::Terse = 1;
 
 # local modules
 use App::WADTools::Error;
+
 =head2 Attributes
 
 =over
@@ -45,14 +48,14 @@ has q(partial) => (
     default => sub { 0 },
 );
 
-=item key
+=item base_url
 
-The file's C<key>, a combination of C<base URL> and C<file path> from the base
-URL.
+The base URL path to the file. The file's full path is made up of B<base URL>
++ B<dir> + B<filepath>.
 
 =cut
 
-has q(key) => (
+has q(base_url) => (
     is  => q(rw),
 );
 
@@ -321,6 +324,9 @@ Creates the L<App::WADTools::idGamesFile> object, optionally with an error
 message.
 
 =item populate()
+
+Populate the L<idGamesFile> object based on the schema block passed in as the
+argument C<data>.
 
 Required arguments:
 

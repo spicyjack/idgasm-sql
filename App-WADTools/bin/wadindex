@@ -310,8 +310,28 @@ use constant {
         if ( $filename =~ /\.zip$/ ) {
             my $zipfile = App::WADTools::ZipFile->new(filename => $found_file);
             my @members = $zipfile->get_zip_members();
-            $log->info(q(MD5  checksum: ) . $zipfile->gen_md5_checksum);
-            $log->info(q(SHA1 checksum: ) . $zipfile->gen_sha_checksum);
+            use App::WADTools::Timer;
+            my $timer = App::WADTools::Timer->new();
+
+            # generate the MD5 checksum
+            $timer->start(name => q(md5));
+            my $md5 = $zipfile->gen_md5_checksum;
+            $timer->stop(name => q(md5));
+            my $gen_time = $timer->time_value_difference(name => q(md5));
+            $log->info(qq(MD5 checksum: $md5));
+            $log->info(sprintf(q(MD5 generated in %0.6f seconds), $gen_time));
+            $timer->delete(name => q(md5));
+
+            # now the SHA checksum
+            $timer->start(name => q(sha));
+            my $sha = $zipfile->gen_sha_checksum;
+            $timer->stop(name => q(sha));
+            $gen_time = $timer->time_value_difference(name => q(sha));
+            $log->info(qq(SHA checksum: $sha));
+            $log->info(sprintf(q(MD5 generated in %0.6f seconds), $gen_time));
+            $timer->delete(name => q(sha));
+
+            # now figure out what's inside the ZIP file
             my @wads_in_zip = grep(/\.wad/i, @members);
             if ( scalar(@wads_in_zip) > 0 ) {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)

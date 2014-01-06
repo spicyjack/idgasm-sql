@@ -323,6 +323,34 @@ has q(attributes) => (
 Creates the L<App::WADTools::idGamesFile> object, optionally with an error
 message.
 
+=item keysum()
+
+Generate a unique C<key>, using the MD5 checksum of the file's B<base URL> +
+B<dir> + B<filepath>, and converted to C<base36>
+(L<http://en.wikipedia.org/wiki/Base36>) notation.
+
+=cut
+
+sub keysum {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    if ( defined $self->base_url
+        && defined $self->dir
+        && defined $self->filename) {
+        my $md5 = Digest::MD5->new();
+        $md5->add($self->base_url . $self->dir . $self->filename);
+        my $digest = $md5->hexdigest;
+        $log->debug(qq(Computed keysum MD5 of $digest));
+        my $base36 = encode_base36(hex $md5->hexdigest);
+        $log->debug(qq(Converted MD5 keysum to base36: $base36));
+        return $base36
+    } else {
+        # FIXME return an Error object here
+    }
+}
+
 =item populate()
 
 Populate the L<idGamesFile> object based on the schema block passed in as the

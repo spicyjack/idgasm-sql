@@ -50,6 +50,21 @@ has q(members) => (
     #isa
 );
 
+=item last_zip_error
+
+The default behaivor of L<Archive::Zip> is to use the L<Carp> module to output
+any error messages.  This module changes that behavior by telling
+L<Archive::Zip> to call this module when there are any zip errors.  Once this
+module recieves the error text, it stores the error into this attribute.
+
+=back
+
+=cut
+
+has q(last_zip_error) => (
+    is => q(rw),
+);
+
 =item _zip_obj
 
 An internal attribute meant to store a reference to the L<Archive::Zip> object
@@ -92,6 +107,9 @@ sub BUILD {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $zip = Archive::Zip->new();
+    # see https://metacpan.org/pod/Archive::Zip#Zip-Archive-Utility-Methods
+    # for more info on setting the error handler
+    Archive::Zip::setErrorHandler(sub {$self->handle_zip_error(@_)});
     $log->debug(q(Reading file: ) . $self->filename);
     $self->generate_filehandle();
     $log->logdie(q(Can't read zip internal directory for ) . $self->filename)
@@ -107,20 +125,6 @@ sub BUILD {
     # store the extracted member names inside this ZipFile object
     $self->members(\@members);
     return $self;
-}
-
-=item get_zip_members( )
-
-Returns an array containing all of the files contained inside of the zipfile.
-
-=cut
-
-sub get_zip_members {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    # cast into an array, callers are expecting an array of filenames
-    return @{$self->members};
 }
 
 =item extract_files(files => \@files, tempdir => q(/tmp))
@@ -184,11 +188,48 @@ sub extract_files {
             $file, $temp_file);};
         if ( $unzip_status != AZ_OK ) {
             $log->error(qq(Could not unzip $file));
+            $log->error(q(Error message from Archive::Zip;));
+            my $error_msg = $self->last_zip_error;
+            chomp($error_msg);
+            $log->error(qq('$error_msg'));
             return undef;
         }
         $log->debug(q(- done extracting: ) . $file);
     }
     return $dh;
+}
+
+
+=item get_zip_members( )
+
+Returns an array containing all of the files contained inside of the zipfile.
+
+=cut
+
+sub get_zip_members {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    # cast into an array, callers are expecting an array of filenames
+    return @{$self->members};
+}
+
+=item handle_zip_error()
+
+Handle any errors encountered by L<Archive::Zip>.  Sets the attribute
+L<last_zip_error> with the text of the error passed in by L<Archive::Zip> when
+called.
+
+=cut
+
+sub handle_zip_error {
+    my $self = shift;
+    my $error_msg = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->debug(q(Received error message from Archive::Zip:));
+    $log->debug($error_msg);
+    $self->last_zip_error($error_msg);
 }
 
 =back

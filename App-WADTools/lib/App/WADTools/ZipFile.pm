@@ -111,7 +111,7 @@ sub BUILD {
 
 =item get_zip_members( )
 
-Returns all of the files contained inside of the zipfile.
+Returns an array containing all of the files contained inside of the zipfile.
 
 =cut
 
@@ -119,7 +119,8 @@ sub get_zip_members {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    return $self->members;
+    # cast into an array, callers are expecting an array of filenames
+    return @{$self->members};
 }
 
 =item extract_files(files => \@files, tempdir => q(/tmp))

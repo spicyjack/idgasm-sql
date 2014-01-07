@@ -32,7 +32,7 @@ our $copyright =
  -s|--checksum      Populate --input file with checksums to --output
  -x|--overwrite     Overwrite file specified as --output
 
- Script output options (what kind of files to create, choose only one)
+ Script output options (what kind of files to create, choose only one):
  --create-db        Create a database file using the given INI file
  --create-ini       Create an INI file using schema info in database
  --create-yaml      Create a YAML file using schema info in database
@@ -180,7 +180,7 @@ use App::WADTools::INIFile;
     # check input file before doing any processing
     $log->logdie(qq(Missing '--input' file argument))
         unless ( $cfg->defined(q(input)) );
-    $log->logdie(qq(Can't read option file ) . $cfg->get(q(input)) )
+    $log->logdie(qq(Can't read input file ) . $cfg->get(q(input)) )
         unless ( -r $cfg->get(q(input)) );
 
     # print a nice banner first
@@ -191,8 +191,9 @@ use App::WADTools::INIFile;
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
         if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
-            $log->logdie(qq(Won't overwrite file) . $cfg->get(q(output))
-                . q( without '--overwrite' option))
+            $log->error(qq(Output file exists!));
+            $log->error(qq(Use '--overwrite' option to overwrite output file));
+            $log->logdie(q(Output file: ) . $cfg->get(q(output)));
         } else {
             # delete the database file; it will be recreated when the database
             # handle is instantiated
@@ -278,8 +279,8 @@ use App::WADTools::INIFile;
                 . $cfg->get(q(input)));
         }
     } else {
-        $log->error(q(Please specify what type of output file to create));
-        pod2usage(-exitstatus => 1);
+        $log->error(q(Please specify a script output option));
+        $log->error(qq(Use "$my_name --help" to see script options));
     }
 
 =cut

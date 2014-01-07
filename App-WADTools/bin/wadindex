@@ -332,7 +332,7 @@ use constant {
             $timer->delete(name => q(sha));
 
             # now figure out what's inside the ZIP file
-            my @wads_in_zip = grep(/\.wad/i, @members);
+            my @wads_in_zip = grep(/\.wad$/i, @members);
             if ( scalar(@wads_in_zip) > 0 ) {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
@@ -353,6 +353,10 @@ use constant {
                 }
             } else {
                 $log->info(qq(No *.wad files in $file_path));
+                $log->info(q(Zipfile members:));
+                foreach my $member ( @members ) {
+                    $log->info(qq(- $member));
+                }
             }
             $zip_file_counter++;
         } else {

@@ -111,6 +111,9 @@ sub BUILD {
     # for more info on setting the error handler
     Archive::Zip::setErrorHandler(sub {$self->handle_zip_error(@_)});
     $log->debug(q(Reading file: ) . $self->filename);
+
+    # generate filehandle is called here, because the Role won't run a BUILD
+    # method prior to this BUILD method being run
     $self->generate_filehandle();
     $log->logdie(q(Can't read zip internal directory for ) . $self->filename)
         unless ( $zip->readFromFileHandle($self->filehandle) == AZ_OK );

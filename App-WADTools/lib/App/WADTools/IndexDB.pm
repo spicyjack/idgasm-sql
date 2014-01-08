@@ -9,17 +9,17 @@ App::WADTools::IndexDB
 
 =head1 SYNOPSIS
 
- my $db = App::WADTools::IndexDB->new(filename => q(/path/to/file.db));
+ my $db = App::WADTools::IndexDB->new(filename => q(/path/to/index.db));
  # check that the database already has a schema applied to it
  my $result = $db->connect( check_schema => 1 );
  if ( ref($result) eq q(App::WADTools::Error) ) {
      # something bad happened
  }
- # returns a App::WADTools::File object
- $file = $idg_db->get_file_by_path(
-     path     => q(/some/imaginary/path/),
-     filename => q(bogusfile.zip),
- );
+ # returns a App::WADTools::WADFile object
+ my $wad = $db->get_wad( keysum => $keysum );
+
+ # returns a App::WADTools::ZipInfo object
+ my $zipinfo = $db->get_zipinfo( keysum => $keysum );
 
 =head1 DESCRIPTION
 

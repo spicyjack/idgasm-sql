@@ -146,6 +146,32 @@ sub gen_sha_checksum {
     return $digest;
 }
 
+=item keysum()
+
+Generate a unique C<key> (called a B<keysum>, C<key> + C<checksum>), using the
+MD5 checksum of the B<filename> + B<file size> + B<file's MD5 checksum>, and
+converted to C<base36> (L<http://en.wikipedia.org/wiki/Base36>) notation.
+
+=cut
+
+sub keysum {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    if ( ! defined $self->md5_checksum ) {
+        $self->gen_md5_checksum;
+    }
+    my $md5 = Digest::MD5->new();
+    $md5->add($self->filepath . $self->size . $self->filename);
+    my $digest = $md5->hexdigest;
+    $log->debug(qq(Computed keysum MD5 of $digest));
+    my $base36 = encode_base36(hex $md5->hexdigest);
+    $log->debug(qq(Converted MD5 keysum to base36: $base36));
+    return $base36
+}
+
+
 =item pad_base64_digest($base64_string)
 
 Pads the output of an MD5 or SHA digest that was output as a Base64 string, so

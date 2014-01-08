@@ -271,12 +271,12 @@ use constant {
                         ->file
                         #->name(q(*.wad), q(*.zip))
                         ->in($wad_path);
-    FILE_LOOP: foreach my $found_file ( sort(@files) ) {
+    FILE_LOOP: foreach my $filepath ( sort(@files) ) {
         $total_file_counter++;
         last FILE_LOOP if ( $cfg->defined(q(debug-requests))
             && $total_file_counter > $cfg->get(q(debug-requests)) );
-        my $filename = basename($found_file);
-        my $dirname = dirname($found_file);
+        my $filename = basename($filepath);
+        my $dirname = dirname($filepath);
         my $file_path = $dirname . q(/) . $filename;
         my $short_path;
 
@@ -308,7 +308,14 @@ use constant {
             }
         }
         if ( $filename =~ /\.zip$/ ) {
-            my $zipfile = App::WADTools::ZipFile->new(filename => $found_file);
+            # filepath will be verified via an '-f' test in Roles/File
+            my $zipfile
+                = eval{App::WADTools::ZipFile->new(filepath => $filepath);};
+            if ( ! defined $zipfile ) {
+                # something went wrong reading the zipfile
+                $log->error(qq(Error creating ZipFile object: $@));
+                next FILE_LOOP;
+            }
             my @members = $zipfile->get_zip_members();
             use App::WADTools::Timer;
             my $timer = App::WADTools::Timer->new();

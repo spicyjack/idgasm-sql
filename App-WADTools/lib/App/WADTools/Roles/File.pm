@@ -110,6 +110,18 @@ Generates the MD5 checksum of the file stored in the C<file> attribute, stores
 the checksum in the C<md5_checksum> attribute, and also returns it to the
 caller.
 
+Optional arguments:
+
+=over
+
+=item no_pad
+
+Don't pad the length of the checksum into even 4-byte values.  This would be
+used if you were going to generate another checksum from this checksum, or if
+you didn't need this checksum to be padded for whatever reason.
+
+=back
+
 =cut
 
 sub gen_md5_checksum {
@@ -120,7 +132,9 @@ sub gen_md5_checksum {
     $md5->addfile($self->filehandle);
     my $digest = $md5->b64digest;
     # pad the digest string as needed...
-    $digest = $self->pad_base64_digest($digest);
+    if ( ! exists $args{no_pad} ) {
+        $digest = $self->pad_base64_digest($digest);
+    }
     $self->md5_checksum($digest);
     return $digest;
 }
@@ -131,17 +145,32 @@ Generates the SHA checksum of the file stored in the C<file> attribute, stores
 the checksum in the C<sha_checksum> attribute, and also returns it to the
 caller.
 
+Optional arguments:
+
+=over
+
+=item no_pad
+
+Don't pad the length of the checksum into even 4-byte values.  This would be
+used if you were going to generate another checksum from this checksum, or if
+you didn't need this checksum to be padded for whatever reason.
+
+=back
+
 =cut
 
 sub gen_sha_checksum {
     my $self = shift;
+    my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $sha = Digest::SHA->new(q(sha1));
     $sha->addfile($self->filehandle);
     my $digest = $sha->b64digest;
     # pad the digest string as needed...
-    $digest = $self->pad_base64_digest($digest);
+    if ( ! exists $args{no_pad} ) {
+        $digest = $self->pad_base64_digest($digest);
+    }
     $self->sha_checksum($digest);
     return $digest;
 }

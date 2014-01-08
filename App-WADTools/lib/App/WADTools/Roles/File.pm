@@ -30,18 +30,6 @@ use Log::Log4perl;
 
 =over
 
-=item filename
-
-The name of the file as it exists on the filesystem.
-
-=cut
-
-has q(filename) => (
-    is => q(rw),
-    # check that the file exists
-    isa => sub { -f $_[0] },
-);
-
 =item filehandle
 
 A filehandle to the file, created as an L<IO::File> object (which inherts from
@@ -54,6 +42,18 @@ has q(filehandle) => (
     isa  => sub {
                 die qq('filehandle' is not an 'IO::File', but a ) . ref($_[0])
                     unless ref($_[0]) eq q(IO::File) },
+);
+
+=item filepath
+
+The name of the file as it exists on the filesystem.
+
+=cut
+
+has q(filepath) => (
+    is => q(rw),
+    # check that the file exists
+    isa => sub { -f $_[0] },
 );
 
 =item md5_checksum
@@ -88,7 +88,7 @@ has q(sha_checksum) => (
 
 =item generate_filehandle
 
-Creates a read-only L<IO::File> object using the C<filename> attribute, and
+Creates a read-only L<IO::File> object using the C<filepath> attribute, and
 stores it in the C<filehandle> attribute for other objects to use.  Also sets
 C<binmode> on the filehandle.
 
@@ -98,8 +98,8 @@ sub generate_filehandle {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    #$log->debug(q(filename: ) . $self->filename);
-    $self->filehandle(IO::File->new($self->filename, q(r)));
+    #$log->debug(q(filepath: ) . $self->filepath);
+    $self->filehandle(IO::File->new($self->filepath, q(r)));
     #$log->debug(q(filehandle isa: ) . ref($self->filehandle));
     $self->filehandle->binmode;
 }
@@ -178,9 +178,9 @@ sub size {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    # the 'filename' attribute should already set and checked to verify that
+    # the 'filepath' attribute should already set and checked to verify that
     # it's a valid file
-    return -s $self->filename;
+    return -s $self->filepath;
 }
 
 =back

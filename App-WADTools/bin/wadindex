@@ -301,10 +301,10 @@ use constant {
                 filename => $filename,
             );
             if ( defined $file ) {
-                $log->info(qq(Path/filename matched file ID ) . $file->id
-                    . q( in idgames-db));
+                $log->info(qq(Path/filename matched file ID ') . $file->id
+                    . q(' in idgames-db));
             } else {
-                $log->info(qq(No match in db: '$short_path/$filename'));
+                $log->info(qq(No match in db for '$short_path/$filename'));
             }
         }
         if ( $filename =~ /\.zip$/ ) {
@@ -328,7 +328,7 @@ use constant {
             $timer->stop(name => q(sha));
             $gen_time = $timer->time_value_difference(name => q(sha));
             $log->info(qq(SHA checksum: $sha));
-            $log->info(sprintf(q(MD5 generated in %0.6f seconds), $gen_time));
+            $log->info(sprintf(q(SHA generated in %0.6f seconds), $gen_time));
             $timer->delete(name => q(sha));
 
             # now figure out what's inside the ZIP file

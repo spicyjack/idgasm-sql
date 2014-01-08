@@ -168,6 +168,21 @@ sub pad_base64_digest {
     return $base64;
 }
 
+=item size
+
+Returns the size of the file, in bytes, or undef if the file is not readable.
+
+=cut
+
+sub size {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    # the 'filename' attribute should already set and checked to verify that
+    # it's a valid file
+    return -s $self->filename;
+}
+
 =back
 
 =head1 AUTHOR

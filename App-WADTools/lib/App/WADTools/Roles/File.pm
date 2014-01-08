@@ -38,8 +38,8 @@ The name of the file as it exists on the filesystem.
 
 has q(filename) => (
     is => q(rw),
-    # TODO check for a valid file here
-    #isa
+    # check that the file exists
+    isa => sub { -f $_[0] },
 );
 
 =item filehandle

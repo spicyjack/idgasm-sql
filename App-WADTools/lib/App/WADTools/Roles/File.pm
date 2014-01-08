@@ -104,7 +104,7 @@ sub generate_filehandle {
     $self->filehandle->binmode;
 }
 
-=item gen_md5_checksum
+=item gen_md5_checksum([no_pad => 1])
 
 Generates the MD5 checksum of the file stored in the C<file> attribute, stores
 the checksum in the C<md5_checksum> attribute, and also returns it to the
@@ -126,6 +126,7 @@ you didn't need this checksum to be padded for whatever reason.
 
 sub gen_md5_checksum {
     my $self = shift;
+    my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $md5 = Digest::MD5->new();
@@ -139,7 +140,7 @@ sub gen_md5_checksum {
     return $digest;
 }
 
-=item gen_sha_checksum
+=item gen_sha_checksum([no_pad => 1])
 
 Generates the SHA checksum of the file stored in the C<file> attribute, stores
 the checksum in the C<sha_checksum> attribute, and also returns it to the

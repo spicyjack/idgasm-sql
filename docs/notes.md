@@ -1,7 +1,7 @@
 ## WADTools Project Notes ##
 
 ### App Definition ###
-Tool will:
+WADTools will be able to:
 - Read WAD file
 - Parse WAD directory structure, looking for levels (for indexing), and
   textures/things (for cataloging)

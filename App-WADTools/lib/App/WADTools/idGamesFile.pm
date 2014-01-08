@@ -323,20 +323,22 @@ has q(attributes) => (
 Creates the L<App::WADTools::idGamesFile> object, optionally with an error
 message.
 
-=item keysum()
+=begin COMMENT
 
-Generate a unique C<key>, using the MD5 checksum of the file's B<base URL> +
-B<dir> + B<filepath>, and converted to C<base36>
-(L<http://en.wikipedia.org/wiki/Base36>) notation.
+#=item keysum()
 
-=cut
+Generate a unique C<key> (called a B<keysum>, C<key> + C<checksum>), using the
+MD5 checksum of the B<filename> + B<file size> + B<file's MD5 checksum>, and
+converted to C<base36> (L<http://en.wikipedia.org/wiki/Base36>) notation.
+
+#=cut
 
 sub keysum {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    if ( defined $self->base_url
+    if ( defined
         && defined $self->dir
         && defined $self->filename) {
         my $md5 = Digest::MD5->new();
@@ -350,6 +352,8 @@ sub keysum {
         # FIXME return an Error object here
     }
 }
+
+=end COMMENT
 
 =item populate()
 

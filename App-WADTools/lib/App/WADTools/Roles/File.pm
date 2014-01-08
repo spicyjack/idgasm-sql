@@ -58,25 +58,25 @@ has q(filepath) => (
 
 =item md5_checksum
 
-The file's MD5 checksum
+The file's MD5 checksum.  Defaults to C<undef>.
 
 =cut
 
 has q(md5_checksum) => (
     is => q(rw),
-    default => sub{ q() },
+    default => sub{ undef },
     #isa
 );
 
 =item sha_checksum
 
-The file's SHA1 checksum.
+The file's SHA1 checksum.  Defaults to C<undef>.
 
 =cut
 
 has q(sha_checksum) => (
     is => q(rw),
-    default => sub{ q() },
+    default => sub{ undef },
     #isa
 );
 

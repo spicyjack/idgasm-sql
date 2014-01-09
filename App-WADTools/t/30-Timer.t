@@ -1,5 +1,9 @@
 #!perl -T
 
+# Copyright (c) 2014 Brian Manning <brian at xaoc dot org>
+# For support with this file, please file an issue on the GitHub issue tracker
+# for this project: https://github.com/spicyjack/wadtools/issues
+
 use Test::More tests => 1;
 
 BEGIN {

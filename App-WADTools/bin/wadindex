@@ -10,7 +10,7 @@ on a local machine
 
 =cut
 
-our $copyright = qq|Copyright (c) 2013 by Brian Manning|;
+our $copyright = qq|Copyright (c) 2013-2014 by Brian Manning|;
 
 =head1 SYNOPSIS
 
@@ -391,7 +391,7 @@ You can find documentation for this script with the perldoc command.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright (c) 2013 Brian Manning, all rights reserved.
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

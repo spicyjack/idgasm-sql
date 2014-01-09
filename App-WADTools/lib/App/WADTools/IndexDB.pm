@@ -415,7 +415,7 @@ You can find documentation for this script with the perldoc command.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright (c) 2013 Brian Manning, all rights reserved.
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

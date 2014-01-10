@@ -12,7 +12,7 @@ was parsed incorrectly or was not parseable.
 
 =cut
 
-# system modules
+### System modules
 use Digest::MD5;
 use Math::Base36 qw(encode_base36);
 use Moo;
@@ -21,8 +21,11 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-# local modules
+### Local modules
 use App::WADTools::Error;
+
+### Roles consumed
+with qw(App::WADTools::Roles::Keysum);
 
 =head2 Attributes
 
@@ -58,7 +61,6 @@ The base URL path to the file. The file's full path is made up of B<base URL>
 has q(base_url) => (
     is  => q(rw),
 );
-
 
 =item id
 
@@ -300,7 +302,8 @@ has q(reviews) => (
 =item file_attributes
 
 An array reference to an array that contains all of the attribute keys for a
-C<idGamesFile> object.  Great for using for enumerating all of the file's attrubtes.
+C<idGamesFile> object.  Great for using for enumerating all of the file's
+attrubtes.
 
 =cut
 
@@ -320,40 +323,7 @@ has q(attributes) => (
 
 =item BUILD() (aka 'new')
 
-Creates the L<App::WADTools::idGamesFile> object, optionally with an error
-message.
-
-=begin COMMENT
-
-#=item keysum()
-
-Generate a unique C<key> (called a B<keysum>, C<key> + C<checksum>), using the
-MD5 checksum of the B<filename> + B<file size> + B<file's MD5 checksum>, and
-converted to C<base36> (L<http://en.wikipedia.org/wiki/Base36>) notation.
-
-#=cut
-
-sub keysum {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    if ( defined
-        && defined $self->dir
-        && defined $self->filename) {
-        my $md5 = Digest::MD5->new();
-        $md5->add($self->base_url . $self->dir . $self->filename);
-        my $digest = $md5->hexdigest;
-        $log->debug(qq(Computed keysum MD5 of $digest));
-        my $base36 = encode_base36(hex $md5->hexdigest);
-        $log->debug(qq(Converted MD5 keysum to base36: $base36));
-        return $base36
-    } else {
-        # FIXME return an Error object here
-    }
-}
-
-=end COMMENT
+Creates the L<App::WADTools::idGamesFile> object.
 
 =item populate()
 

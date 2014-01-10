@@ -332,11 +332,12 @@ use constant {
         my $req = HTTP::Request->new(GET => $fetch_url);
         $resp = $ua->request($req);
         $timer->stop(name => q(http_request));
+        my $http_request_time
+            = $timer->time_value_difference(name => q(http_request));
         # delete this timer, so there's no chance that it's values can be
         # reused
         $timer->delete(name => q(http_request));
-        my $http_request_time
-            = $view->time_value_difference(name => q(http_request));
+
         $log->debug(q(HTTP request took )
             . sprintf(q|%0.5f second(s)|, $http_request_time)
         );
@@ -376,8 +377,8 @@ use constant {
                         $log->logdie(q(Insert error message: )
                             . $add_status->message);
                     }
-                    $log->info(sprintf(q|ID: %5u|, $file->id)
-                        . qq|; Added to DB ($full_path)|);
+                    $log->info(sprintf(q|ID: %5u/|, $file->id) . $file->keysum);
+                    $log->info(qq|added to DB ($full_path)|);
                 }
             }
         } else {

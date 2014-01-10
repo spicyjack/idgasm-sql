@@ -11,7 +11,7 @@ WAD files stored in C<idGames Archive>.
 =cut
 
 our $copyright =
-    q|Copyright (c)2013-2014 Brian Manning/brian at xaoc dot org|;
+    q|Copyright (c)2013-2014 Brian Manning|;
 
 =head1 SYNOPSIS
 

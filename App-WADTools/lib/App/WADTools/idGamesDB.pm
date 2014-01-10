@@ -83,7 +83,7 @@ sub add_file {
     $log->logdie(q(Missing 'file' argument))
         unless(defined($args{file}));
     my $file = $args{file};
-    $log->debug(sprintf(q(ID: %5u; ), $file->id)
+    $log->debug(sprintf(q(ID: %5u/%s; ), $file->id, $file->keysum)
             . qq(Adding to DB: ) . $file->filename);
 
     my $file_sql = <<'FILESQL';
@@ -91,7 +91,7 @@ sub add_file {
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?,
-            ?, ?, ?)
+            ?, ?, ?, ?)
 FILESQL
 
     ### INSERT FILE
@@ -108,6 +108,9 @@ FILESQL
 
     # bind params; bind params start counting at '1'
     my $bind_counter = 1;
+    # bind 'keysum' by itself, because it's not part of $file->attributes
+    $sth_file->bind_param( $bind_counter, $file->keysum() );
+    $bind_counter++;
     foreach my $block_name ( @{$file->attributes} ) {
         # catches 'url', 'idgamesurl' and 'reviews'
         next if ( $block_name =~ /url|reviews/ );

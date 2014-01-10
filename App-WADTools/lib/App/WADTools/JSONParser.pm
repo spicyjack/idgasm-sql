@@ -165,6 +165,12 @@ sub parse {
                     . sprintf(q(%0.2f), $average_review));
             }
         }
+
+        # generate the file's keysum, now that all of the file's attributes
+        # have been populated
+        $file->generate_keysum();
+
+        # return the file and API version to the caller
         return (file => $file, api_version => $api_version);
     } else {
         my $error = App::WADTools::Error->new(

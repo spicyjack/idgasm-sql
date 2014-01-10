@@ -9,16 +9,15 @@ App::WADTools::WADIndexer
 
 =head1 SYNOPSIS
 
- # if you don't pass in 'idx_db', then the index info will only be
- # displayed on the screen, and only if log level INFO is set
- my $indexer = App::WADTools::WADIndexer->new(idx_db => $idx_db);
- $indexer->index(unzip_dir  => $temp_dir, files => \@wads_in_zip);
+ my $indexer = App::WADTools::WADIndexer->new();
+ my $wadfile = $indexer->index(wadfile => q(/path/to/file.wad);
+ print q(Levels in this WAD file: ) . join($wadfile->levels) . qq(\n);
 
 =head1 DESCRIPTION
 
-C<WADIndexer> is an object that is used to read a C<WAD> file, then index
-and/or catalog the data contained inside of it, optionally storing the
-indexed/cataloged data in a database handle provided by the caller.
+C<WADIndexer> is an object that reads a C<WAD> file, then indexes and/or
+catalogs the data contained inside of the C<WAD> file, and returns the indexed
+data as an C<App::WADTools::WADFile> object to the caller.
 
 =cut
 

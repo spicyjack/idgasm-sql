@@ -1,11 +1,15 @@
-#######################################
-# package App::WADTools::RuntimeStats #
-#######################################
-package App::WADTools::RuntimeStats;
+####################################################
+# package App::WADTools::Views::CLI::idGamesDbDump #
+####################################################
+package App::WADTools::Views::CLI::idGamesDbDump;
 
-=head1 App::WADTools::RuntimeStats
+=head1 App::WADTools::Views::CLI::idGamesDbDump
 
-An object that keeps the following statistics about script execution:
+The CLI "view" object for the script C<idgames_db_dump>.  Displays updates
+from the C<idgames_db_dump> script, as well as runtime statistics at the end
+of script execution.
+
+The following ѕtatistics are displayed:
 
 =over
 

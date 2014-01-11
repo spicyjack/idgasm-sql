@@ -24,9 +24,9 @@ use Moo::Role;
 use Digest::CRC;
 use Digest::MD5;
 use Digest::SHA;
-use Math::Base36 qw(encode_base36);
+#use Math::Base36 qw(encode_base36);
 use Math::BaseCalc;
-use POSIX qw(strtol);
+#use POSIX qw(strtol);
 use Log::Log4perl;
 
 # more ideas on converting to base36:
@@ -83,23 +83,26 @@ sub generate_base36_checksum {
     $log->logdie(q(Missing required argument 'data'))
         unless ( exists $args{data} );
 
-    $log->debug(q(Original data: ) . $args{data});
+    $log->debug(q(Data: ) . $args{data});
     # for conversion of the checksum to decimal
     my $hex_to_dec = Math::BaseCalc->new(digits => q(hex));
     my $dec_to_base36 = Math::BaseCalc->new(
         digits => [q(0) .. q(9), q(a) .. q(z)],
     );
-    # the checksum context
+    # create the checksum context
     my $ctx = Digest::CRC->new(type => "crc16");
     #my $ctx = Digest::CRC->new(type => "crc32");
     # add data to the context
     $ctx->add($args{data});
     # get a hex digest, convert to decimal
     my $digest = $hex_to_dec->from_base($ctx->hexdigest);
-    $log->debug(qq(Digest of data: $digest));
+    $log->debug(qq(Decimal digest of data: $digest));
     # convert to base36
-    use App::WADTools::Timer;
-    my $timer = App::WADTools::Timer->new();
+    #use App::WADTools::Timer;
+    #my $timer = App::WADTools::Timer->new();
+
+=begin COMMENT
+
     $timer->start(name => q(posix));
     my ($base36, $num_unparsed) = POSIX::strtol($digest, 36);
     $timer->stop(name => q(posix));
@@ -108,6 +111,8 @@ sub generate_base36_checksum {
     );
     $timer->delete(name => q(posix));
     $log->debug(qq(POSIX digest:          $base36));
+    $log->debug(qq(Unparsed: $num_unparsed));
+    $log->debug(qq(Translation errors: $!));
 
     $timer->start(name => q(encode_base36));
     $base36 = lc(encode_base36($digest));
@@ -118,21 +123,27 @@ sub generate_base36_checksum {
     $timer->delete(name => q(encode_base36));
     $log->debug(qq(Math::Base36 digest:   $base36));
 
-    $timer->start(name => q(math_basecalc));
-    $base36 = $dec_to_base36->to_base($digest);
-    $timer->stop(name => q(math_basecalc));
-    $log->debug(qq(Math::BaseCalc time: ) . sprintf(q|%0.8f second(s)|,
-        $timer->time_value_difference(name => q(math_basecalc)))
-    );
-    $timer->delete(name => q(math_basecalc));
-    $log->debug(qq(Math::BaseCalc digest: $base36));
+=end COMMENT
+
+=cut
+
+    #$timer->start(name => q(math_basecalc));
+    # then convert the decimal digest to Base36
+    my $base36 = $dec_to_base36->to_base($digest);
+    #$timer->stop(name => q(math_basecalc));
+    #$log->debug(qq(Math::BaseCalc checksum compute time: )
+    #    . sprintf(q|%0.8f second(s)|,
+    #    $timer->time_value_difference(name => q(math_basecalc)))
+    #);
+    #$timer->delete(name => q(math_basecalc));
+    #$log->debug(qq(Math::BaseCalc digest: $base36));
 
     # lowercase alpha to prevent confusion over similar characters
     # (0/O, 1/L, 8/B, 5/S; http://en.wikipedia.org/wiki/Base36)
-    $base36 = lc($base36);
-    $log->debug(qq(Converted Base36 keysum: $base36));
-    $log->debug(qq(Unparsed: $num_unparsed));
-    $log->debug(qq(Translation errors: $!));
+    # - not needed if it's decided to use Math::BaseCalc
+    #$base36 = lc($base36);
+    #$log->debug(qq(Converted Base36 keysum: $base36));
+
     return $base36
 }
 
@@ -153,7 +164,7 @@ sub generate_keysum {
     $self->keysum($self->generate_base36_checksum(
         data => $self->dir . $self->filename . q(:) . $self->size)
     );
-    $log->debug(qq(Converted MD5 keysum to base36: ) . $self->keysum);
+    $log->debug(qq(Created keysum: ) . $self->keysum);
     return $self->keysum;
 }
 

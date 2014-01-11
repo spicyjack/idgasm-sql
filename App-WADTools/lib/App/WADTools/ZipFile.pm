@@ -31,7 +31,6 @@ use Archive::Zip qw(:ERROR_CODES);
 use Log::Log4perl;
 
 ### Roles
-# contains App::WADTools::Error and App::WADTools::File
 with q(App::WADTools::Roles::File);
 
 =head2 Attributes
@@ -110,12 +109,12 @@ sub BUILD {
     # see https://metacpan.org/pod/Archive::Zip#Zip-Archive-Utility-Methods
     # for more info on setting the error handler
     Archive::Zip::setErrorHandler(sub {$self->handle_zip_error(@_)});
-    $log->debug(q(Reading file: ) . $self->filename);
+    $log->debug(q(Reading file: ) . $self->filepath);
 
     # generate filehandle is called here, because the Role won't run a BUILD
     # method prior to this BUILD method being run
     $self->generate_filehandle();
-    $log->logdie(q(Can't read zip internal directory for ) . $self->filename)
+    $log->logdie(q(Can't read zip internal directory for ) . $self->filepath)
         unless ( $zip->readFromFileHandle($self->filehandle) == AZ_OK );
     # store a copy of the Archive::Zip object for other methods to use
     $self->_zip_obj($zip);
@@ -123,6 +122,7 @@ sub BUILD {
     my @member_objs = $zip->members();
     my @members;
     foreach my $member ( @member_objs ) {
+        # push the filename of the zip member onto the @members array
         push(@members, $member->fileName);
     }
     # store the extracted member names inside this ZipFile object
@@ -213,7 +213,7 @@ sub get_zip_members {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    # cast into an array, callers are expecting an array of filenames
+    # cast into an array, callers are expecting an array of filepaths
     return @{$self->members};
 }
 

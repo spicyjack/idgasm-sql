@@ -400,21 +400,28 @@ use constant {
     }
 
     # stop the timer, display stats
-    $log->debug(q(Requests for these file IDs were unsuccessful;));
-    $log->debug(join(q(, ), @unsuccessful_request_ids));
-    $log->debug(q(Parsing of these file IDs was unsuccessful;));
-    $log->debug(join(q(, ), @unsuccessful_parse_ids));
+    if ( scalar(@unsuccessful_request_ids) > 0 ) {
+        $log->debug(q(Requests for these file IDs were unsuccessful;));
+        $log->debug(join(q(, ), @unsuccessful_request_ids));
+    } else {
+        $log->debug(q(All API requests were successful!));
+    }
+    if ( scalar(@unsuccessful_parse_ids) > 0 ) {
+        $log->debug(q(Parsing file IDs in API responses was unsuccessful;));
+        $log->debug(join(q(, ), @unsuccessful_parse_ids));
+    } else {
+        $log->debug(q(All API responses parsed successfully!));
+    }
     # timer for the program
     $timer->stop(name => $my_name);
-    $view->write_stats(
-        program_time_value_diff_name => $timer->time_value_difference(
-            name => $my_name),
-        successful_api_requests => $successful_api_requests,
-        unsuccessful_api_requests => scalar(@unsuccessful_request_ids),
-        unsuccessful_api_parses => scalar(@unsuccessful_parse_ids),
-        total_http_request_time => $total_http_request_time,
+    $view->program_time_value_diff(
+        $timer->time_value_difference(name => $my_name)
     );
-
+    $view->successful_api_requests($successful_api_requests);
+    $view->total_http_request_time($total_http_request_time);
+    $view->unsuccessful_api_parses(scalar(@unsuccessful_parse_ids));
+    $view->unsuccessful_api_requests(scalar(@unsuccessful_request_ids));
+    $view->write_stats();
 
 =head1 AUTHOR
 

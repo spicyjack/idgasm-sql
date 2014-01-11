@@ -13,16 +13,27 @@ Generate a C<keysum>, or a checksum that is used as a unique key.
 
 =head1 DESCRIPTION
 
-Generate a C<keysum>, or a checksum that is used as a unique key.
+The C<keysum> of a file is a combination of a file's C<directory>,
+C<filename>, and C<size>.
 
 =cut
 
 ### System modules
 # 'Moo::Role' calls 'strictures', which is 'strict' + 'warnings'
 use Moo::Role;
+use Digest::CRC;
 use Digest::MD5;
 use Digest::SHA;
+use Math::Base36 qw(encode_base36);
+use Math::BaseCalc;
+use POSIX qw(strtol);
 use Log::Log4perl;
+
+# more ideas on converting to base36:
+# - # http://stackoverflow.com/questions/2670869/whats-the-best-way-to-do-base36-arithmetic-in-perl
+# - https://metacpan.org/pod/Math::BaseCalc
+# - https://metacpan.org/pod/Math::Int2Base
+# - strol in # https://metacpan.org/pod/release/RJBS/perl-5.18.2/ext/POSIX/lib/POSIX.pod#FUNCTIONS
 
 =head2 Attributes
 
@@ -46,6 +57,85 @@ has q(keysum) => (
 
 =over
 
+=item generate_base36_checksum(data => $data)
+
+Using the data passed in as C<$data>, generate an MD5 checksum of the data,
+and then convert it to C<Base36> (L<http://en.wikipedia.org/wiki/Base36>).
+
+Returns the converted data to the caller, or C<undef> if there was an error.
+
+Required arguments:
+
+=over
+
+=item data
+
+The data to use for the MD5 checksum.  The output of the MD5 checksum is
+converted to C<Base36> prior to returning it to the caller.
+
+=cut
+
+sub generate_base36_checksum {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->logdie(q(Missing required argument 'data'))
+        unless ( exists $args{data} );
+
+    $log->debug(q(Original data: ) . $args{data});
+    # for conversion of the checksum to decimal
+    my $hex_to_dec = Math::BaseCalc->new(digits => q(hex));
+    my $dec_to_base36 = Math::BaseCalc->new(
+        digits => [q(0) .. q(9), q(a) .. q(z)],
+    );
+    # the checksum context
+    my $ctx = Digest::CRC->new(type => "crc16");
+    #my $ctx = Digest::CRC->new(type => "crc32");
+    # add data to the context
+    $ctx->add($args{data});
+    # get a hex digest, convert to decimal
+    my $digest = $hex_to_dec->from_base($ctx->hexdigest);
+    $log->debug(qq(Digest of data: $digest));
+    # convert to base36
+    use App::WADTools::Timer;
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => q(posix));
+    my ($base36, $num_unparsed) = POSIX::strtol($digest, 36);
+    $timer->stop(name => q(posix));
+    $log->debug(qq(POSIX time:          ) . sprintf(q|%0.8f second(s)|,
+        $timer->time_value_difference(name => q(posix)))
+    );
+    $timer->delete(name => q(posix));
+    $log->debug(qq(POSIX digest:          $base36));
+
+    $timer->start(name => q(encode_base36));
+    $base36 = lc(encode_base36($digest));
+    $timer->stop(name => q(encode_base36));
+    $log->debug(qq(Math::Base36 time:   ) . sprintf(q|%0.8f second(s)|,
+        $timer->time_value_difference(name => q(encode_base36)))
+    );
+    $timer->delete(name => q(encode_base36));
+    $log->debug(qq(Math::Base36 digest:   $base36));
+
+    $timer->start(name => q(math_basecalc));
+    $base36 = $dec_to_base36->to_base($digest);
+    $timer->stop(name => q(math_basecalc));
+    $log->debug(qq(Math::BaseCalc time: ) . sprintf(q|%0.8f second(s)|,
+        $timer->time_value_difference(name => q(math_basecalc)))
+    );
+    $timer->delete(name => q(math_basecalc));
+    $log->debug(qq(Math::BaseCalc digest: $base36));
+
+    # lowercase alpha to prevent confusion over similar characters
+    # (0/O, 1/L, 8/B, 5/S; http://en.wikipedia.org/wiki/Base36)
+    $base36 = lc($base36);
+    $log->debug(qq(Converted Base36 keysum: $base36));
+    $log->debug(qq(Unparsed: $num_unparsed));
+    $log->debug(qq(Translation errors: $!));
+    return $base36
+}
+
 =item generate_keysum()
 
 Generate a unique C<key> (called a B<keysum>, C<key> + C<checksum>), using the
@@ -58,17 +148,13 @@ caller.
 
 sub generate_keysum {
     my $self = shift;
-    my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    my $md5 = Digest::MD5->new();
-    $md5->add($self->dir . $self->filename . $self->size);
-    my $digest = $md5->hexdigest;
-    $log->debug(qq(Computed keysum MD5 of $digest));
-    my $base36 = encode_base36(hex $md5->hexdigest);
-    $log->debug(qq(Converted MD5 keysum to base36: $base36));
-    $self->keysum($base36);
-    return $base36
+    $self->keysum($self->generate_base36_checksum(
+        data => $self->dir . $self->filename . q(:) . $self->size)
+    );
+    $log->debug(qq(Converted MD5 keysum to base36: ) . $self->keysum);
+    return $self->keysum;
 }
 
 =back

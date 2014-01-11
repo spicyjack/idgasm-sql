@@ -32,6 +32,18 @@ use Number::Format; # pretty output of bytes
 
 =over
 
+=item program_time_value_diff
+
+The amount of time the program took to run, that is, start-to-finish process
+API requests against the C<idGames API>.
+
+=cut
+
+has q(program_time_value_diff) => (
+    is  => q(rw),
+    isa => sub {$_[0] =~ /[\d\.]+/},
+);
+
 =item successful_api_requests
 
 Total records successfully requested from C<idGames API>.  A "successful API
@@ -44,16 +56,15 @@ has q(successful_api_requests) => (
     isa => sub {$_[0] =~ /\d+/},
 );
 
-=item unsuccessful_api_requests
+=item total_http_request_time
 
-Total records unsuccessfully requested from C<idGames API>.  An "unsuccessful
-API request" is one that returns an C<error> block.
+The total amount of time making HTTP requests from the C<idGames API>.
 
 =cut
 
-has q(unsuccessful_api_requests) => (
+has q(total_http_request_time) => (
     is  => q(rw),
-    isa => sub {$_[0] =~ /\d+/},
+    isa => sub {$_[0] =~ /[\d\.]+/},
 );
 
 =item unsuccessful_api_parses
@@ -68,15 +79,16 @@ has q(unsuccessful_api_parses) => (
     isa => sub {$_[0] =~ /\d+/},
 );
 
-=item total_http_request_time
+=item unsuccessful_api_requests
 
-The total amount of time making HTTP requests from the C<idGames API>.
+Total records unsuccessfully requested from C<idGames API>.  An "unsuccessful
+API request" is one that returns an C<error> block.
 
 =cut
 
-has q(total_http_request_time) => (
+has q(unsuccessful_api_requests) => (
     is  => q(rw),
-    #isa => sub {$_[0] =~ /\d+/},
+    isa => sub {$_[0] =~ /\d+/},
 );
 
 =back
@@ -100,14 +112,16 @@ sub write_stats {
 
     $log->info(q(Calculating runtime statistics...));
     my $nf = Number::Format->new();
-    # $_start_time/$_stop_time are local script variables
-    my $script_execution_time = $self->time_value_difference(q(program));
-    $log->info(qq(- Total script execution time: )
-        . sprintf(q|%0.5f second(s)|, $script_execution_time));
-    my $average_time_between_http_requests = $script_execution_time
+
+    # calculate some things before displaying
+    my $average_time_between_http_requests = $self->program_time_value_diff
         / ($self->successful_api_requests + $self->unsuccessful_api_requests);
     my $average_http_response_time = $self->total_http_request_time
         / ($self->successful_api_requests + $self->unsuccessful_api_requests);
+
+    # start the output display
+    $log->info(qq(- Total script execution time: )
+        . sprintf(q|%0.5f second(s)|, $self->program_time_value_diff));
     $log->info(qq(- Total time spent making HTTP requests: )
         . sprintf(q|%0.5f second(s)|, $self->total_http_request_time));
     $log->info(qq(- Average time between HTTP requests: )

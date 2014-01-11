@@ -14,7 +14,6 @@ was parsed incorrectly or was not parseable.
 
 ### System modules
 use Digest::MD5;
-use Math::Base36 qw(encode_base36);
 use Moo;
 use Data::Dumper;
 $Data::Dumper::Indent = 1;

@@ -30,7 +30,6 @@ use Moo;
 use Log::Log4perl;
 
 ### Roles
-# contains App::WADTools::Error and App::WADTools::File
 with q(App::WADTools::Roles::File);
 
 =head2 Attributes

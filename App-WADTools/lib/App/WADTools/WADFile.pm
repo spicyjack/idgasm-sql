@@ -62,11 +62,22 @@ has q(lumps) => (
     default => sub { [] },
 );
 
+=item num_of_lumps
+
+The number of lumps contained in this WAD.  Provided by counting the number of
+members in the array that's contained in the L<lumps> attribute.
+
+=cut
+
+has q(num_of_lumps) => (
+    is      => q(rw),
+    isa     => sub { $_[0] =~ /\d+/ },
+    default => sub { 0 },
+);
+
 =item wadfile
 
-The full path to the C<WAD> file to parse.
-
-=back
+The full path to the C<WAD> file.
 
 =cut
 
@@ -74,6 +85,20 @@ has q(wadfile) => (
     is => q(rw),
     #isa
 );
+
+=item wad_signature
+
+The WAD's "signature", or type of WAD.  Can be either C<IWAD> or C<PWAD>.
+
+=cut
+
+has q(wad_signature) => (
+    is => q(rw),
+    # either IWAD or PWAD, case sensitive, nothing else allowed
+    isa => sub { $_[0] =~ /[IP]WAD/; },
+);
+
+=back
 
 =head2 Methods
 

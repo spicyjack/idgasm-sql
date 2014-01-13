@@ -124,6 +124,7 @@ use Pod::Usage;
 ### Local modules
 use App::WADTools::Config;
 use App::WADTools::idGamesDB;
+use App::WADTools::Timer;
 use App::WADTools::WADIndexer;
 use App::WADTools::ZipFile;
 
@@ -266,11 +267,18 @@ use constant {
     my $zip_file_counter = 0;
     my $unzip_error_counter = 0;
     my $total_file_counter = 0;
-    my $indexer = App::WADTools::WADIndexer->new( idx_db => $idx_db );
+    #my $indexer = App::WADTools::WADIndexer->new( idx_db => $idx_db );
+    my $indexer = App::WADTools::WADIndexer->new();
+    # use a timer for measuring checksum generation times
+    my $timer = App::WADTools::Timer->new();
+
+    # get a list of files underneath $wad_path
     my @files = File::Find::Rule
                         ->file
                         #->name(q(*.wad), q(*.zip))
                         ->in($wad_path);
+
+    # loop over each file in @files
     FILE_LOOP: foreach my $filepath ( sort(@files) ) {
         $total_file_counter++;
         last FILE_LOOP if ( $cfg->defined(q(debug-requests))
@@ -316,11 +324,9 @@ use constant {
                 $log->error(qq(Error creating ZipFile object: $@));
                 next FILE_LOOP;
             }
-            my @members = $zipfile->get_zip_members();
-            use App::WADTools::Timer;
-            my $timer = App::WADTools::Timer->new();
 
-            # generate the MD5 checksum
+            # valid zipfile? generate checksums
+            # MD5 checksum first
             $timer->start(name => q(md5));
             my $md5 = $zipfile->gen_md5_checksum;
             $timer->stop(name => q(md5));
@@ -338,20 +344,44 @@ use constant {
             $log->info(sprintf(q(SHA generated in %0.6f seconds), $gen_time));
             $timer->delete(name => q(sha));
 
-            # now figure out what's inside the ZIP file
+            # get a list of files in the zipfile
+            my @members = $zipfile->get_zip_members();
+            # find the WAD files inside the ZIP file
             my @wads_in_zip = grep(/\.wad$/i, @members);
+            # placeholder for WADFile objects returned from the indexer
+            #my @indexed_wads;
             if ( scalar(@wads_in_zip) > 0 ) {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
+                # FIXME add a timer to time extracting of WADs
                 my $unzip_dir = $zipfile->extract_files(
                     files   => \@wads_in_zip,
                     tempdir => $cfg->get(q(tempdir)),
                 );
                 if ( defined $unzip_dir ) {
-                    $indexer->index(
-                        unzip_dir => $unzip_dir,
-                        files     => \@wads_in_zip,
-                    );
+                    # loop over each WAD in the zipfile, and index it
+                    foreach my $wad_filename ( @wads_in_zip ) {
+                        # FIXME add a timer for indexing WAD files
+                        # passing in path/wad_filename means the indexer
+                        # doesn't have to separate the path or use basename()
+                        my $wadfile = $indexer->index_wad(
+                            path     => $unzip_dir,
+                            filename => $wad_filename,
+                        );
+                        #push(@indexed_wads, $wadfile);
+                        # FIXME add a timer for adding the WAD to the index
+                        # database
+                        # add the WADFile object to the database
+                        if ( defined $idx_db && defined $wadfile ) {
+                            $idx_db->add_wadfile(wadfile => $wadfile);
+                        } elsif ( ! defined $wadfile ) {
+                            $log->warn(q(Unable to create WADFile object));
+                            $log->warn(qq(ZIP filename: $filename));
+                            $log->warn(qq(WAD filename: $wad_filename));
+                        }
+                        # no need to add a test for (defined $idx_db), there's
+                        # already a warning about it above
+                    }
                 } else {
                     $log->warn(qq(Could not unzip $filename));
                     $log->warn(qq(Skipping to next file));

@@ -90,8 +90,8 @@ sub generate_base36_checksum {
         digits => [q(0) .. q(9), q(a) .. q(z)],
     );
     # create the checksum context
-    my $ctx = Digest::CRC->new(type => "crc16");
-    #my $ctx = Digest::CRC->new(type => "crc32");
+    #my $ctx = Digest::CRC->new(type => "crc16");
+    my $ctx = Digest::CRC->new(type => "crc32");
     # add data to the context
     $ctx->add($args{data});
     # get a hex digest, convert to decimal

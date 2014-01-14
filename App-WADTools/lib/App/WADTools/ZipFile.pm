@@ -31,7 +31,10 @@ use Archive::Zip qw(:ERROR_CODES);
 use Log::Log4perl;
 
 ### Roles
-with q(App::WADTools::Roles::File);
+with qw(
+    App::WADTools::Roles::File
+    App::WADTools::Roles::Keysum
+);
 
 =head2 Attributes
 
@@ -114,6 +117,7 @@ sub BUILD {
     # generate filehandle is called here, because the Role won't run a BUILD
     # method prior to this BUILD method being run
     $self->generate_filehandle();
+    $self->generate_filedir_filename();
     $log->logdie(q(Can't read zip internal directory for ) . $self->filepath)
         unless ( $zip->readFromFileHandle($self->filehandle) == AZ_OK );
     # store a copy of the Archive::Zip object for other methods to use

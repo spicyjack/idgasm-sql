@@ -100,7 +100,7 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         $error = App::WADTools::Error->new(
-            type    => q(database.file_insert.prepare),
+            type    => q(idgames-db.file_insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -108,9 +108,7 @@ FILESQL
 
     # bind params; bind params start counting at '1'
     my $bind_counter = 1;
-    # bind 'keysum' by itself, because it's not part of $file->attributes
-    $sth_file->bind_param( $bind_counter, $file->keysum() );
-    $bind_counter++;
+
     foreach my $block_name ( @{$file->attributes} ) {
         # catches 'url', 'idgamesurl' and 'reviews'
         next if ( $block_name =~ /url|reviews/ );
@@ -125,7 +123,7 @@ FILESQL
         $log->error(q(INSERT for file ID ) . $file->id
             . q( returned an error: ) . $sth_file->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.file_insert.execute),
+            type    => q(idgames-db.file_insert.execute),
             message => $sth_file->errstr
         );
         return $error;
@@ -141,7 +139,7 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'votes' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.vote_insert.prepare),
+            type    => q(idgames-db.vote_insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -165,10 +163,10 @@ FILESQL
         # $rv should be anything but 'undef' if the operation was successful
         if ( ! defined $rv ) {
             $log->error(q(INSERT for file ID ) . $file->id
-                . q( returned an error: ) . $sth_file->errstr);
+                . q( returned an error: ) . $sth_vote->errstr);
             my $error = App::WADTools::Error->new(
-                type    => q(database.vote_insert.execute),
-                message => $sth_file->errstr
+                type    => q(idgames-db.vote_insert.execute),
+                message => $sth_vote->errstr
             );
             return $error;
         } # else {
@@ -232,7 +230,7 @@ sub get_file_by_id {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_id.prepare),
+            type    => q(idgames-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -249,7 +247,7 @@ sub get_file_by_id {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_id.execute),
+            type    => q(idgames-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
         return $error;
@@ -311,7 +309,7 @@ sub get_file_by_path  {
     my $path = $args{path};
     my $filename = $args{filename};
     my $sql = q(SELECT * FROM files WHERE dir = ? AND filename = ?);
-    $log->debug(q(Prepare: querying for file ID from dir/filename));
+    $log->debug(q(Prepare: query file ID from dir/filename));
     $log->debug(qq(Prepare: SQL: $sql));
 
     # prepare the SQL
@@ -320,14 +318,15 @@ sub get_file_by_path  {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.prepare),
+            type    => q(idgames-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
         return $error;
     }
 
     # bind params
-    $log->debug(qq(Binding query params; 1: $path, 2: $filename));
+    $log->debug(qq(Binding query params;));
+    $log->debug(qq(1: $path, 2: $filename));
     $sth->bind_param(1, $path);
     $sth->bind_param(2, $filename);
 
@@ -338,7 +337,7 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.execute),
+            type    => q(idgames-db.get_file_by_path.execute),
             message => $dbh->errstr
         );
         return $error;
@@ -351,7 +350,7 @@ sub get_file_by_path  {
     return $row unless ( defined $row );
     #$log->debug(q(dump: ) . Dumper $row);
     my $file = $self->unserialize_file(db_row => $row);
-    $log->debug(qq(File ID for ) . $file->dir . q(/) . $file->filename
+    $log->debug(qq(File ID for ) . $file->dir . $file->filename
         . q( is ) . $file->id);
     return $file;
 }

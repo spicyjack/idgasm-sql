@@ -24,19 +24,22 @@ data as an C<App::WADTools::WADFile> object to the caller.
 
 =cut
 
-# system modules
+### System modules
 # 'Moo' calls 'strictures', which is 'strict' + 'warnings'
 use Data::Hexdumper;
 use Fcntl qw(:seek); # for random byte access to files
 use Log::Log4perl;
 use Moo;
 
+### Local modules
+use App::WADTools::WADFile;
+
 use constant {
     WAD_DIRECTORY_ENTRY_SIZE => 16,
     WAD_HEADER_SIZE          => 12,
 };
 
-my $level_lump_regex = qr/MAP[0-4][0-9]|E[1-4]M[1-9]/;
+my $lump_level_regex = qr/MAP[0-4][0-9]|E[1-4]M[1-9]/;
 
 =head2 Attributes
 
@@ -106,7 +109,10 @@ sub index_wad_list {
             next FILE;
         }
         my $wadpath = $args{unzip_dir} . q(/) . $filename;
-        my $wadfile_obj = $self->index_wad(wadpath => $wadpath);
+        my $wadfile_obj = $self->index_wad(
+            path         => $args{path},
+            wad_filename => $filename
+        );
         push(@wadlist, $wadfile_obj);
     }
     return @wadlist;
@@ -137,11 +143,11 @@ sub index_wad {
 
     $log->logdie(q(Missing 'path' argument))
         unless ( defined $args{path} );
-    $log->logdie(q(Missing 'wad_filename' argument))
-        unless ( defined $args{wad_filename} );
+    $log->logdie(q(Missing 'filename' argument))
+        unless ( defined $args{filename} );
 
     # create local variables from method arguments
-    my $filename = $args{wad_filename};
+    my $filename = $args{filename};
     my $path = $args{path};
     my $wad_path = $path . q(/) . $filename;
 
@@ -163,13 +169,19 @@ sub index_wad {
         $log->error(qq(Only read $bytes_read bytes from header));
         $log->logdie(q(Header size is ) . WAD_HEADER_SIZE . q( bytes));
     }
-    my ($wad_sig,$num_lumps,$dir_offset) = unpack("a4VV",$header);
-    $log->info(qq(WAD signature: $wad_sig));
+    my ($wad_id,$num_lumps,$dir_offset) = unpack("a4VV",$header);
+    $log->info(qq(WAD ID: $wad_id));
 
     # create the WADFile object here
-    my $wadfile = App::WADTools::WADFile->new();
-    $wadfile->wad_signature($wad_sig);
-    $wadfile->num_of_lumps($num_lumps);
+    my $wadfile = App::WADTools::WADFile->new(
+        filepath     => $wad_path,
+        wad_id       => $wad_id,
+        num_of_lumps => $num_lumps,
+    );
+    # generate_filehandle() and generate_dirname_basename() is already called
+    # in the BUILD method
+    $wadfile->gen_md5_checksum();
+    $wadfile->gen_sha_checksum();
 
     $log->info(sprintf(q(Number of lumps in the WAD:  %u lumps),
         $num_lumps));
@@ -188,11 +200,11 @@ sub index_wad {
                 + ( $i * WAD_DIRECTORY_ENTRY_SIZE )),
                 SEEK_SET));
         $bytes_read = read($WAD, $lump_entry, WAD_DIRECTORY_ENTRY_SIZE);
-        $log->logdie "Failed to read WAD directory entry: $!"
+        $log->logdie(qq(Failed to read WAD directory entry: $!))
             unless ( defined $bytes_read );
-        $log->logdie qq(Only read $bytes_read out of )
+        $log->logdie(qq(Only read $bytes_read out of )
             . WAD_DIRECTORY_ENTRY_SIZE
-            . q( bytes in header)
+            . q( bytes in header))
             unless ( $bytes_read == WAD_DIRECTORY_ENTRY_SIZE );
         # use split to parse the output of a hexdump with a special format
         my ($hex_chars, $data) = split(/::/,
@@ -209,16 +221,27 @@ sub index_wad {
         # get the start, size and name of the lump via unpack()
         my ($lump_start, $lump_size, $lump_name) = unpack(q(VVa8),
             $lump_entry );
+
         # strip trailing 'NUL' characters
         $lump_name =~ s/\0+//g;
-        # FIXME
+
         # - detect lump name here using the regex
         # - add level lumps to WADFile
-        $log->info(sprintf(q(lump %-4u name: %-8s size: %-8u start: %-8x),
+        if ( $lump_name =~ $lump_level_regex ) {
+            $log->debug(qq(Lump name matched regex; lump name: $lump_name));
+            my @levels = @{$wadfile->levels};
+            push(@levels, $lump_name);
+            $log->debug(q(Retrieved wadfile levels; )
+                . scalar(@levels) . q( levels));
+            $log->debug(join(q(, ), @levels));
+            $wadfile->levels(\@levels);
+        }
+
+        $log->info(sprintf(q(lump %-4u: %-8s size: %-8u start: %-8x),
             $i + 1, $lump_name, $lump_size, $lump_start));
     }
     close($WAD);
-
+    return $wadfile;
 }
 
 =back

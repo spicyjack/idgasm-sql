@@ -24,11 +24,23 @@ filesystem (file size, creation date, etc) and checksumming files.
 use Moo::Role;
 use Digest::MD5;
 use Digest::SHA;
+use File::Basename;
 use Log::Log4perl;
 
 =head2 Attributes
 
 =over
+
+=item filedir
+
+The dirname part of the filepath.  Defaults to C<undef>.
+
+=cut
+
+has q(filedir) => (
+    is => q(rw),
+    default => sub { undef; },
+);
 
 =item filehandle
 
@@ -42,6 +54,17 @@ has q(filehandle) => (
     isa  => sub {
                 die qq('filehandle' is not an 'IO::File', but a ) . ref($_[0])
                     unless ref($_[0]) eq q(IO::File) },
+);
+
+=item filename
+
+The filename part of the filepath.  Defaults to C<undef>.
+
+=cut
+
+has q(filename) => (
+    is => q(rw),
+    default => sub { undef; },
 );
 
 =item filepath
@@ -68,6 +91,7 @@ has q(md5_checksum) => (
     #isa
 );
 
+
 =item sha_checksum
 
 The file's SHA1 checksum.  Defaults to C<undef>.
@@ -85,6 +109,21 @@ has q(sha_checksum) => (
 =head2 Methods
 
 =over
+
+=item generate_filedir_filename
+
+Generates the C<dirname>/C<basename> attributes, by calling L<File::Basename>
+on the C<filepath> attribute.
+
+=cut
+
+sub generate_filedir_filename {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $self->filedir(dirname($self->filepath));
+    $self->filename(basename($self->filepath));
+}
 
 =item generate_filehandle
 

@@ -128,7 +128,8 @@ sub connect {
             $check_schema_flag = $args{check_schema};
         }
     }
-    $log->debug(q(Connecting to/reading database file ) . $self->filename);
+    $log->debug(q(Connecting to/reading database...));
+    $log->debug(q(Database filename: ) . $self->filename);
     if ( ! defined $dbh ) {
         $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
         # turn on unicode handling

@@ -48,25 +48,25 @@ with q(App::WADTools::Roles::Database);
 
 =over
 
-=item add_file(file => $file)
+=item add_wadfile(wadfile => $wadfile)
 
-Add an L<App::WADTools::File> object to the database.  Returns true C<1> if
+Add an L<App::WADTools::WADFile> object to the database.  Returns true C<1> if
 the insert was successful, or an L<App::WADTools::Error> object if there was a
-problem inserting the L<App::WADTools::File> object into the database.
+problem inserting the L<App::WADTools::WADFile> object into the database.
 
 Required arguments:
 
 =over
 
-=item file
+=item wadfile
 
-The L<App::WADTools::File> object to add to the database.
+The L<App::WADTools::WADFile> object to add to the database.
 
 =back
 
 =cut
 
-sub add_file {
+sub add_wadfile {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
@@ -76,105 +76,157 @@ sub add_file {
     return $error if ( ref($error) eq q(App::WADTools::Error));
     my $dbh = $self->dbh;
 
-    $log->logdie(q(Missing 'file' argument))
-        unless(defined($args{file}));
-    my $file = $args{file};
-    $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . qq(Adding to DB: ) . $file->filename);
+    $log->logdie(q(Missing 'wadfile' argument))
+        unless(defined($args{wadfile}));
+    $log->logdie(q(Missing 'zip_keysum' argument))
+        unless(defined($args{zip_keysum}));
+    my $wadfile = $args{wadfile};
+    my $zip_keysum = $args{zip_keysum};
 
-    my $file_sql = <<'FILESQL';
-        INSERT INTO files VALUES (
-            ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?,
-            ?, ?, ?)
-FILESQL
+    $log->debug(sprintf(q(keysum: %8s; ), $wadfile->keysum)
+        . q(Adding to index DB));
+    $log->debug(q|(Filepath: | . $wadfile->filepath . q|)|);
 
-    ### INSERT FILE
-    my $sth_file = $dbh->prepare($file_sql);
+    ### INSERT WAD file into 'wads'
+    my $wad_sql = q|INSERT INTO wads VALUES (?, ?, ?, ?, ?, ?, ?)|;
+    my $sth_wads = $dbh->prepare($wad_sql);
     if ( defined $dbh->err ) {
-        $log->error(q('prepare' call to INSERT into 'files' failed));
+        $log->error(q('prepare' call to INSERT into 'wads' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
-        $error = App::WADTools::Error->new(
-            type    => q(database.file_insert.prepare),
+        my $error = App::WADTools::Error->new(
+            type    => q(index-db.wads-insert.prepare),
             message => $dbh->errstr
         );
         return $error;
     }
-
-    # bind params; bind params start counting at '1'
-    my $bind_counter = 1;
-    foreach my $block_name ( @{$file->attributes} ) {
-        # catches 'url', 'idgamesurl' and 'reviews'
-        next if ( $block_name =~ /url|reviews/ );
-        #$log->debug(qq(Binding $block_name -> ) . $file->$block_name));
-        $sth_file->bind_param($bind_counter, $file->$block_name);
-        $bind_counter++;
-    }
-    #$log->debug(q(Executing 'INSERT' for file ID ) . $file->id);
+    $sth_wads->bind_param(1, $wadfile->keysum);
+    $sth_wads->bind_param(2, $zip_keysum );
+    $sth_wads->bind_param(3, 0);
+    $sth_wads->bind_param(4, $wadfile->filename);
+    $sth_wads->bind_param(5, $wadfile->size);
+    $sth_wads->bind_param(6, $wadfile->md5_checksum);
+    $sth_wads->bind_param(7, $wadfile->sha_checksum);
+    #$log->debug(q(Executing 'INSERT' for file ID/vote ID )
+    #    . $wadfile->id . q(/) . $vote_id);
+    my $rv = $sth_wads->execute();
     # $rv should be anything but 'undef' if the operation was successful
-    my $rv = $sth_file->execute();
     if ( ! defined $rv ) {
-        $log->error(q(INSERT for file ID ) . $file->id
-            . q( returned an error: ) . $sth_file->errstr);
+        $log->error(q(INSERT for keysum ') . $wadfile->keysum
+            . q(' returned an error: ) . $sth_wads->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.file_insert.execute),
-            message => $sth_file->errstr
+            type    => q(index-db.wads-insert.execute),
+            message => $sth_wads->errstr
         );
         return $error;
     } else {
-        $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . qq(Successful INSERT of 'file' record));
+        $log->debug(sprintf(q(keysum: %8s; INSERT into 'wads' successful!),
+            $wadfile->keysum));
     }
 
-    ### INSERT VOTES
-    my $vote_sql = q|INSERT INTO votes VALUES (?, ?, ?, ?)|;
-    my $sth_vote = $dbh->prepare($vote_sql);
+    ### INSERT level(s) into 'levels_to_wads'
+    my $level_sql = q|INSERT INTO levels_to_wads VALUES (?, ?)|;
+    my $sth_level = $dbh->prepare($level_sql);
     if ( defined $dbh->err ) {
-        $log->error(q('prepare' call to INSERT into 'votes' failed));
+        $log->error(q('prepare' call to INSERT into 'levels_to_wads' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.vote_insert.prepare),
+            type    => q(index-db.levels_to_wads-insert.prepare),
             message => $dbh->errstr
         );
         return $error;
     }
-    my $vote_id = 0;
-    my @reviews;
-    # if there's no reviews, then $file->reviews will be 'undef'
-    if ( defined $file->reviews ) {
-        @reviews = @{$file->reviews};
-    }
-    foreach my $vote ( @reviews ) {
-        # increment $vote_id
-        $vote_id++;
-        $sth_vote->bind_param(1, $vote_id);
-        $sth_vote->bind_param(2, $file->id);
-        $sth_vote->bind_param(3, $vote->text);
-        $sth_vote->bind_param(4, $vote->vote);
-        #$log->debug(q(Executing 'INSERT' for file ID/vote ID )
-        #    . $file->id . q(/) . $vote_id);
-        $rv = $sth_vote->execute();
+    foreach my $level ( @{$wadfile->levels} ) {
+        $sth_wads->bind_param(1, $wadfile->keysum);
+        $sth_wads->bind_param(2, $zip_keysum );
+        $rv = $sth_level->execute();
         # $rv should be anything but 'undef' if the operation was successful
         if ( ! defined $rv ) {
-            $log->error(q(INSERT for file ID ) . $file->id
-                . q( returned an error: ) . $sth_file->errstr);
+            $log->error(q(INSERT keysum/level ')
+                . $wadfile->keysum . q(/) . $level
+                . q(' returned an error: ) . $sth_wads->errstr);
             my $error = App::WADTools::Error->new(
-                type    => q(database.vote_insert.execute),
-                message => $sth_file->errstr
+                type    => q(index-db.levels_to_wads-insert.execute),
+                message => $sth_wads->errstr
             );
             return $error;
-        } # else {
-        #    $log->debug(q('INSERT' of vote for file ID/vote ID )
-        #        . $file->id . q(/) . $vote_id . qq( successful));
-        #}
+        } else {
+            $log->debug(sprintf(q(keysum/level: %8s/%4s; INSERT successful),
+                $wadfile->keysum, $level));
+        }
     }
-    if ( $vote_id > 0 ) {
-        $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . qq|Successful INSERT of $vote_id vote(s)|);
+    # return 'true'
+    return 1;
+}
+
+=item add_zipfile(zipfile => $zipfile)
+
+Add an L<App::WADTools::ZipFile> object to the database.  Returns true C<1> if
+the insert was successful, or an L<App::WADTools::Error> object if there was a
+problem inserting the L<App::WADTools::ZipFile> object into the database.
+
+Required arguments:
+
+=over
+
+=item zipfile
+
+The L<App::WADTools::ZipFile> object to add to the database.
+
+=back
+
+=cut
+
+sub add_zipfile {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    # check for an existing database connection
+    my $error = $self->is_connected;
+    return $error if ( ref($error) eq q(App::WADTools::Error));
+    my $dbh = $self->dbh;
+
+    $log->logdie(q(Missing 'zipfile' argument))
+        unless(defined($args{zipfile}));
+    my $zipfile = $args{zipfile};
+
+    $log->debug(sprintf(q(keysum: %8s; ), $zipfile->keysum)
+        . q(Adding to index DB));
+    $log->debug(q|(Filepath: | . $zipfile->filepath . q|)|);
+
+    ### INSERT WAD file into 'zipfiles'
+    my $wad_sql = q|INSERT INTO zipfiles VALUES (?, ?, ?, ?, ?, ?)|;
+    my $sth_wads = $dbh->prepare($wad_sql);
+    if ( defined $dbh->err ) {
+        $log->error(q('prepare' call to INSERT into 'zipfiles' failed));
+        $log->error(q(Error message: ) . $dbh->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(index-db.zipfiles-insert.prepare),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
+    $sth_wads->bind_param(1, $zipfile->keysum);
+    $sth_wads->bind_param(2, 0);
+    $sth_wads->bind_param(3, $zipfile->filename);
+    $sth_wads->bind_param(4, $zipfile->size);
+    $sth_wads->bind_param(5, $zipfile->md5_checksum);
+    $sth_wads->bind_param(6, $zipfile->sha_checksum);
+    #$log->debug(q(Executing 'INSERT' for file ID/vote ID )
+    #    . $wadfile->id . q(/) . $vote_id);
+    my $rv = $sth_wads->execute();
+    # $rv should be anything but 'undef' if the operation was successful
+    if ( ! defined $rv ) {
+        $log->error(q(INSERT for keysum ') . $zipfile->keysum
+            . q(' returned an error: ) . $sth_wads->errstr);
+        my $error = App::WADTools::Error->new(
+            type    => q(index-db.zipfiles-insert.execute),
+            message => $sth_wads->errstr
+        );
+        return $error;
     } else {
-        $log->debug(sprintf(q(ID: %5u; ), $file->id)
-            . q|No votes to INSERT into database|);
+        $log->debug(sprintf(q(keysum: %8s; INSERT into 'zipfiles' successful!),
+            $zipfile->keysum));
     }
 
     # return 'true'
@@ -224,7 +276,7 @@ sub get_file_by_id {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_id.prepare),
+            type    => q(index-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -241,7 +293,7 @@ sub get_file_by_id {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_id.execute),
+            type    => q(index-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
         return $error;
@@ -312,7 +364,7 @@ sub get_file_by_path  {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.prepare),
+            type    => q(index-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -330,7 +382,7 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            type    => q(database.get_file_by_path.execute),
+            type    => q(index-db.get_file_by_path.execute),
             message => $dbh->errstr
         );
         return $error;

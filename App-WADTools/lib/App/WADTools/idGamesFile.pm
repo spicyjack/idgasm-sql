@@ -309,7 +309,7 @@ attrubtes.
 has q(attributes) => (
     is  => q(ro),
     default => sub { [qw(
-        id title dir filename size age date author email description
+        keysum id title dir filename size age date author email description
         credits base buildtime editors bugs textfile rating votes reviews )]
         },
 );

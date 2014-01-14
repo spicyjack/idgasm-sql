@@ -30,7 +30,10 @@ use Moo;
 use Log::Log4perl;
 
 ### Roles
-with q(App::WADTools::Roles::File);
+with qw(
+    App::WADTools::Roles::File
+    App::WADTools::Roles::Keysum
+);
 
 =head2 Attributes
 
@@ -75,24 +78,23 @@ has q(num_of_lumps) => (
     default => sub { 0 },
 );
 
-=item wadfile
+=item wad_filename
 
-The full path to the C<WAD> file.
+The WAD's filename inside the the containing C<.zip> file.
 
 =cut
 
-has q(wadfile) => (
+has q(wad_filename) => (
     is => q(rw),
-    #isa
 );
 
-=item wad_signature
+=item wad_id
 
-The WAD's "signature", or type of WAD.  Can be either C<IWAD> or C<PWAD>.
+The WAD's "ID", or type of WAD.  Can be either C<IWAD> or C<PWAD>.
 
 =cut
 
-has q(wad_signature) => (
+has q(wad_id) => (
     is => q(rw),
     # either IWAD or PWAD, case sensitive, nothing else allowed
     isa => sub { $_[0] =~ /[IP]WAD/; },
@@ -104,7 +106,7 @@ has q(wad_signature) => (
 
 =over
 
-=item new(wadfile => $wadfile) (aka BUILD)
+=item new(filepath => $wad_path) (aka BUILD)
 
 Creates a L<App::WADTools::WADFile> object with the file passed in as
 C<wadfile> in the constructor.  This method populates the WAD file's object
@@ -114,7 +116,7 @@ Required arguments:
 
 =over
 
-=item wadfile
+=item filepath
 
 The full path to the C<*.wad> file that this object will work with.
 
@@ -126,12 +128,13 @@ sub BUILD {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(Reading file: ) . $self->wadfile);
+    $log->debug(q(Reading file: ) . $self->filepath);
 
     # generate filehandle is called here, because the Role won't run a BUILD
     # method prior to this BUILD method being run
     # the checksum methods use filehandles, not filenames
     $self->generate_filehandle();
+    $self->generate_filedir_filename();
     return $self;
 }
 

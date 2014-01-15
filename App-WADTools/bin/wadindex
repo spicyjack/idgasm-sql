@@ -319,11 +319,13 @@ use constant {
         }
         if ( $filename =~ /\.zip$/ ) {
             # filepath will be verified via an '-f' test in Roles/File
-            my $zipfile
-                = eval{App::WADTools::ZipFile->new(filepath => $filepath);};
-            if ( ! defined $zipfile ) {
+            my $zipfile = App::WADTools::ZipFile->new(filepath => $filepath);
+            if ( ref($zipfile) eq q(App::WADTools::Error) ) {
                 # something went wrong reading the zipfile
-                $log->error(qq(Error creating ZipFile object: $@));
+                $log->error(qq(Error creating/reading ZipFile object:));
+                $log->error(q(Error type: ) . $zipfile->type);
+                $log->error(q(Error message: ) . $zipfile->message);
+                $log->error(q(Raw error: ) . $zipfile->raw_error);
                 next FILE_LOOP;
             }
 
@@ -351,22 +353,6 @@ use constant {
             );
             $log->debug(q(Zipfile keysum: ) . $zipfile->keysum);
 
-            # add the zipfile to the database
-            if ( defined $idx_db ) {
-                my $zip_add = $idx_db->add_zipfile(zipfile => $zipfile);
-                if ( ref($zip_add) eq q(App::WADTools::Error) ) {
-                    $log->error(qq(keysum: ) . $zipfile->keysum
-                        . q(; unsuccessful INSERT into DB));
-                    $log->error(q(Error type: ) . $zip_add->type);
-                    $log->error(q(Error message: )
-                        . $zip_add->message);
-                } else {
-                    $log->info(qq(keysum: ) . $zipfile->keysum
-                        . q(; successful INSERT into DB));
-                }
-
-            }
-
             # get a list of files in the zipfile
             my @members = $zipfile->get_zip_members();
             # find the WAD files inside the ZIP file
@@ -381,7 +367,15 @@ use constant {
                     files   => \@wads_in_zip,
                     tempdir => $cfg->get(q(tempdir)),
                 );
-                if ( defined $unzip_dir ) {
+                if ( ref($unzip_dir) eq q(App::WADTools::Error) ) {
+                    $log->error(sprintf(q(keysum: %8s;), $zipfile->keysum)
+                        . q(; filename: ) . $zipfile->filename);
+                    $log->error(q(Error type: ) . $unzip_dir->type);
+                    $log->error(q(Error message: ) . $unzip_dir->message);
+                    $log->error(q(Raw error: ) . $unzip_dir->raw_error);
+                    $unzip_error_counter++;
+                    next FILE_LOOP;
+                } else {
                     # loop over each WAD in the zipfile, and index it
                     WAD_FILE: foreach my $wad_filename ( @wads_in_zip ) {
                         # FIXME add a timer for indexing WAD files
@@ -432,11 +426,6 @@ use constant {
                             }
                         }
                     }
-                } else {
-                    $log->warn(qq(Could not unzip $filename));
-                    $log->warn(qq(Skipping to next file));
-                    $unzip_error_counter++;
-                    next FILE_LOOP;
                 }
             } else {
                 $log->info(qq(No *.wad files in $file_path));
@@ -445,6 +434,24 @@ use constant {
                     $log->info(qq(- $member));
                 }
             }
+
+            # add the zipfile to the database
+            if ( defined $idx_db ) {
+                my $zip_add = $idx_db->add_zipfile(zipfile => $zipfile);
+                if ( ref($zip_add) eq q(App::WADTools::Error) ) {
+                    $log->error(qq(keysum: ) . $zipfile->keysum
+                        . q(; unsuccessful INSERT into DB));
+                    $log->error(q(Error type: ) . $zip_add->type);
+                    $log->error(q(Error message: ) . $zip_add->message);
+                    $log->error(q(Raw error: ) . $zip_add->raw_error);
+                } else {
+                    $log->info(qq(keysum: ) . $zipfile->keysum
+                        . q(; successful INSERT into DB));
+                }
+
+            }
+
+            # bump up the zipfile counter
             $zip_file_counter++;
         } else {
             $log->info(qq(Not a zip file: $filename));

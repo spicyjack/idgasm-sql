@@ -63,9 +63,9 @@ sub parse {
     if ( $@ ) {
         # no, an error occured parsing the XML
         my $error = App::WADTools::Error->new(
-            type          => q(xmlparser.parse_error),
-            message       => qq(Error parsing XML content; $@),
-            content_block => $data,
+            type      => q(xmlparser.parse_error),
+            message   => qq(Error parsing XML content; $@),
+            raw_error => $data,
         );
         return ( error => $error, api_version => $api_version );
     } else {
@@ -80,9 +80,9 @@ sub parse {
     if ( exists $parsed_data->{q(idgames-response)}->{error} ) {
         # an error was returned from the API
         my $error = App::WADTools::Error->new(
-            type          => q(xmparser.api_error),
-            message       => q(Received 'error' response to API query),
-            content_block => $parsed_data->{q(idgames-response)}->{error},
+            type      => q(xmparser.api_error),
+            message   => q(Received 'error' response to API query),
+            raw_error => $parsed_data->{q(idgames-response)}->{error},
         );
         return (error => $error, api_version => $api_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
@@ -182,9 +182,9 @@ sub parse {
         return (file => $file, api_version => $api_version);
     } else {
         my $error = App::WADTools::Error->new(
-            type          => q(xmlparser.undefined_response),
-            message       => q(Received undefined response to API query),
-            content_block => $parsed_data,
+            type      => q(xmlparser.undefined_response),
+            message   => q(Received undefined response to API query),
+            raw_error => $parsed_data,
         );
         return (error => $error, api_version => $api_version);
     }

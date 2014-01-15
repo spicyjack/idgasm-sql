@@ -30,6 +30,9 @@ use Moo;
 use Archive::Zip qw(:ERROR_CODES);
 use Log::Log4perl;
 
+### Local modules
+use App::WADTools::Error;
+
 ### Roles
 with qw(
     App::WADTools::Roles::File
@@ -48,8 +51,8 @@ this zip file.
 =cut
 
 has q(members) => (
-    is => q(rw),
-    #isa
+    is      => q(rw),
+    default => sub { [] },
 );
 
 =item last_zip_error
@@ -118,8 +121,17 @@ sub BUILD {
     # method prior to this BUILD method being run
     $self->generate_filehandle();
     $self->generate_filedir_filename();
-    $log->logdie(q(Can't read zip internal directory for ) . $self->filepath)
-        unless ( $zip->readFromFileHandle($self->filehandle) == AZ_OK );
+    if ( $zip->readFromFileHandle($self->filehandle) != AZ_OK ) {
+        $log->error(q(Problem reading zip directory for: ) . $self->filepath);
+        $log->error(q(Error message: ) . $self->last_zip_error);
+        my $error = App::WADTools::Error->new(
+            type      => q(zipfile.read_directory),
+            message   => qq(Problem reading zip directory for: )
+                . $self->filepath,
+            raw_error => $self->last_zip_error,
+        );
+        return $error;
+    }
     # store a copy of the Archive::Zip object for other methods to use
     $self->_zip_obj($zip);
     $log->debug("Calling zip->members");
@@ -191,15 +203,17 @@ sub extract_files {
     foreach my $file ( @{$args{files}} ) {
         $log->debug(qq(- extracting: $file));
         my $temp_file = $dh->dirname . q(/) . $file;
-        my $unzip_status = eval{$zip->extractMemberWithoutPaths(
-            $file, $temp_file);};
+        my $unzip_status = $zip->extractMemberWithoutPaths($file, $temp_file);
         if ( $unzip_status != AZ_OK ) {
             $log->error(qq(Could not unzip $file));
             $log->error(q(Error message from Archive::Zip;));
-            my $error_msg = $self->last_zip_error;
-            chomp($error_msg);
-            $log->error(qq('$error_msg'));
-            return undef;
+            $log->error($self->last_zip_error);
+            my $error = App::WADTools::Error->new(
+                type      => q(zipfile.extract_member_without_paths),
+                message   => qq(Problem extracting member for: $file),
+                raw_error => $self->last_zip_error,
+            );
+            return $error;
         }
         $log->debug(q(- done extracting: ) . $file);
     }
@@ -235,6 +249,7 @@ sub handle_zip_error {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $log->debug(q(Received error message from Archive::Zip:));
+    chomp($error_msg);
     $log->debug($error_msg);
     $self->last_zip_error($error_msg);
 }

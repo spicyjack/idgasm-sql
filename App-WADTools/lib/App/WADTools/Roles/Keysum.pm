@@ -162,7 +162,7 @@ sub generate_keysum {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     $self->keysum($self->generate_base36_checksum(
-        data => $self->dir . $self->filename . q(:) . $self->size)
+        data => $self->filename . q(:) . $self->size)
     );
     $log->debug(qq(Created keysum: ) . $self->keysum);
     return $self->keysum;

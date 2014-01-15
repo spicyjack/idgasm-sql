@@ -31,8 +31,12 @@ has q(message) => (
 
 =item type
 
-A text string that indicates what "type" of error this is.  There is no set
-list of error types, so use this attribute with some discretion.
+A text string that indicates what "type" of error this is.  The attribute
+types are determined by the objects that create this L<Error> object, there is
+no set "master" list of attributes.
+
+A general naming convention is
+C<E<lt>objectE<gt>.E<lt>method or actionE<gt>.E<lt>action_in_methodE<gt>>.
 
 =cut
 
@@ -40,14 +44,14 @@ has q(type) => (
     is  => q(rw),
 );
 
-=item content_block
+=item raw_error
 
-The raw content block received from the C<idGames API> server that caused the
-error, if the error occured while using the C<idGames API>.
+The raw content of the error message, as received by the caller or created by
+the object that created the L<Erorr> object.
 
 =cut
 
-has q(content_block) => (
+has q(raw_error) => (
     is => q(rw),
 );
 
@@ -60,7 +64,7 @@ has q(content_block) => (
 =item BUILD() (aka 'new')
 
 Creates the L<App::WADTools::Error> object, pass with C<error_msg> and
-C<content_block> in order to populate those attributes, or populate those
+C<raw_error> in order to populate those attributes, or populate those
 attributes once the C<Error> object has been created.
 
 =cut

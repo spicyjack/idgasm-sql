@@ -228,7 +228,7 @@ sub create_schema {
                 return $error;
             }
         } else {
-            $log->error(qq(Block '$block_name' has no SQL key));
+            $log->error(qq(Block '$block_name' has no 'sql' key));
             $log->error(qq(Skipping to next SQL block));
             next SQL_BLOCK;
         }

@@ -320,71 +320,11 @@ has q(attributes) => (
 
 =over
 
-=item BUILD() (aka 'new')
+=item new() (aka BUILD)
 
-Creates the L<App::WADTools::idGamesFile> object.
-
-=item populate()
-
-Populate the L<idGamesFile> object based on the schema block passed in as the
-argument C<data>.
-
-Required arguments:
-
-=over
-
-=item data
-
-The data structure retrieved either from parsing XML or JSON.
-
-=item parse_module
-
-The name of the module that was used to parse the data.  Different modules
-will parse out data and create the object passed in as the C<data> argument in
-different ways.
-
-=back
-
-=cut
-
-sub populate {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    $log->logdie(q|Missing data to be parsed (as 'data')|)
-        unless ( exists $args{data} );
-    $log->logdie(q(Missing name of module that parsed data )
-        . q|(as 'parse_module'|)
-        unless ( exists $args{parse_module} );
-
-    my $parse_module = $args{parse_module};
-    my $data = $args{data};
-    $log->debug(qq(Data parsed with $parse_module));
-    #$log->warn(qq(Dumping data:\n) . Dumper($data));
-    if ( $parse_module eq q(XML::Fast) ) {
-        if ( exists $data->{q(idgames-response)}->{content} ) {
-            my $content = $data->{q(idgames-response)}->{content};
-            #$log->warn(qq(Dumping content:\n) . Dumper($content));
-            # go through all of the attributes in the content object, copy
-            # them to the same attributes in this idGamesFile object
-            my @attribs = @{$self->file_attributes};
-            foreach my $key ( @attribs ) {
-                $self->{$key} = $content->{$key};
-                next if ( $key eq q(textfile) );
-                $log->debug(qq(Populating file attribute '$key'; )
-                    . $content->{$key});
-            }
-        } else {
-            my $error = App::WADTools::Error->new();
-            $error->error_msg(q(Received 'error' response to API query));
-            return $error;
-        }
-    }
-
-    # assume parsing of the content block was successful
-    return 1;
-}
+Creates the L<App::WADTools::idGamesFile> object.  You can populate individual
+attributes in the object by passing them as part of the object constructor.
+See the L<SYNOPSIS> section for an example.
 
 =back
 

@@ -191,8 +191,8 @@ sub index_wad {
         $log->logdie(q(Header size is ) . WAD_HEADER_SIZE . q( bytes));
         my $error = App::WADTools::Error->new(
             type      => q(wadindexer.index_wad.read_header),
-            message   => qq(Read $bytes_read bytes from WAD header),
-            raw_error => $self->last_zip_error,
+            message   => qq(Read only $bytes_read bytes from WAD header),
+            raw_error => q(Expected WAD header size: ) . WAD_HEADER_SIZE,
         );
         return $error;
     }
@@ -208,6 +208,13 @@ sub index_wad {
     $log->debug(sprintf(q(WAD directory start offset: +%8u bytes),
         $dir_offset));
     if ( $dir_offset > $wadfile->size ) {
+        my $error = App::WADTools::Error->new(
+            type      => q(wadindexer.index_wad.dir_offset_larger_than_file),
+            message   => qq|Directory offset is larger than WAD file size|,
+            raw_error => qq|Directory offset: $dir_offset; |
+                . qq|WAD file size: | . $wadfile->size,
+        );
+        return $error;
     }
     for (my $i = 0; $i <= ($num_lumps - 1); $i++) {
         my $lump_entry;

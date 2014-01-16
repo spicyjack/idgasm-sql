@@ -32,6 +32,7 @@ use Log::Log4perl;
 use Moo;
 
 ### Local modules
+use App::WADTools::Error;
 use App::WADTools::WADFile;
 
 use constant {
@@ -122,7 +123,9 @@ sub index_wad_list {
 
 Indexes the contents of a WAD file, and displays the information on the
 screen.  Returns an L<App::WADTools::WADFile> object if the WAD file argument
-could be read and parsed, returns C<undef> otherwise.
+could be read and parsed, returns C<undef>, if the file is not parseable (file
+is a "dotfile" for example), or an L<App::WADTools::Error> object if there was
+an error indexing the WAD file.
 
 Required arguments:
 
@@ -153,40 +156,59 @@ sub index_wad {
 
     # skip dotfiles
     if ( $filename =~ m!/\.\w+! ) {
-        $log->debug(qq(Skipping dotfile '$filename'));
+        $log->info(qq(Skipping dotfile '$filename'));
         return undef;
     }
-
-    $log->info(qq(Reading WAD info from '$filename'));
-    open(my $WAD, qq(<$wad_path))
-        or $log->logdie(qq(Failed to open WAD file '$wad_path': $!));
-    my $header;
-    # read the header from the WAD file
-    my $bytes_read = read( $WAD,$header, WAD_HEADER_SIZE );
-    $log->logdie(qq(Failed to read header: $!))
-        unless (defined $bytes_read);
-    if ( $bytes_read != WAD_HEADER_SIZE ) {
-        $log->error(qq(Only read $bytes_read bytes from header));
-        $log->logdie(q(Header size is ) . WAD_HEADER_SIZE . q( bytes));
-    }
-    my ($wad_id,$num_lumps,$dir_offset) = unpack("a4VV",$header);
-    $log->info(qq(WAD ID: $wad_id));
 
     # create the WADFile object here
     my $wadfile = App::WADTools::WADFile->new(
         filepath     => $wad_path,
-        wad_id       => $wad_id,
-        num_of_lumps => $num_lumps,
+
     );
     # generate_filehandle() and generate_dirname_basename() is already called
     # in the BUILD method
     $wadfile->gen_md5_checksum();
     $wadfile->gen_sha_checksum();
 
-    $log->info(sprintf(q(Number of lumps in the WAD:  %u lumps),
-        $num_lumps));
-    $log->debug(sprintf(q(WAD directory start offset: +%u bytes),
+    $log->info(qq(Reading WAD info from '$filename'));
+    my $status = open(my $WAD, qq(<$wad_path));
+
+    if ( ! defined $status ) {
+        $log->logdie(qq(Failed to open WAD file '$wad_path': $!));
+        my $error = App::WADTools::Error->new(
+            type      => q(wadindexer.index_wad.opening_file),
+            message   => qq(Can't open file: $wad_path),
+            raw_error => qq(Error code: $!),
+        );
+    }
+    my $header;
+    # read the header from the WAD file
+    my $bytes_read = read( $WAD, $header, WAD_HEADER_SIZE );
+    $log->logdie(qq(Failed to read header: $!))
+        unless (defined $bytes_read);
+    if ( $bytes_read != WAD_HEADER_SIZE ) {
+        $log->error(qq(Only read $bytes_read bytes from header));
+        $log->logdie(q(Header size is ) . WAD_HEADER_SIZE . q( bytes));
+        my $error = App::WADTools::Error->new(
+            type      => q(wadindexer.index_wad.read_header),
+            message   => qq(Read $bytes_read bytes from WAD header),
+            raw_error => $self->last_zip_error,
+        );
+        return $error;
+    }
+
+    # Unpack the header and add to the wadfile object
+    my ($wad_id,$num_lumps,$dir_offset) = unpack("a4VV",$header);
+    $wadfile->wad_id($wad_id);
+    $wadfile->num_of_lumps($num_lumps);
+
+    $log->info(q(WAD ID: ) . $wadfile->wad_id);
+    $log->info(sprintf(q(Number of lumps in the WAD:  %8u lumps),
+        $wadfile->num_of_lumps));
+    $log->debug(sprintf(q(WAD directory start offset: +%8u bytes),
         $dir_offset));
+    if ( $dir_offset > $wadfile->size ) {
+    }
     for (my $i = 0; $i <= ($num_lumps - 1); $i++) {
         my $lump_entry;
         # reset bytes read
@@ -195,17 +217,31 @@ sub index_wad {
         $log->debug(q(Reading directory entry at offset: )
             . ($dir_offset + ( $i * WAD_DIRECTORY_ENTRY_SIZE )));
         $log->logdie(qq(Can't seek WAD directory entry: $!))
-            unless (seek($WAD,
+            unless (
+        my $seek_status = seek($WAD,
                 ($dir_offset
                 + ( $i * WAD_DIRECTORY_ENTRY_SIZE )),
                 SEEK_SET));
+        # check the status of the seek
+        if ( ! $seek_status ) {
+            my $error = App::WADTools::Error->new(
+                type      => q(wadindexer.index_wad.seek_directory_entry),
+                message   => qq(Could not seek to directory entry # $i),
+                raw_error => qq(Error code: $!),
+            );
+            return $error;
+        }
+
         $bytes_read = read($WAD, $lump_entry, WAD_DIRECTORY_ENTRY_SIZE);
-        $log->logdie(qq(Failed to read WAD directory entry: $!))
-            unless ( defined $bytes_read );
-        $log->logdie(qq(Only read $bytes_read out of )
-            . WAD_DIRECTORY_ENTRY_SIZE
-            . q( bytes in header))
-            unless ( $bytes_read == WAD_DIRECTORY_ENTRY_SIZE );
+        # check for a successful read
+        if ( ! defined $bytes_read || $bytes_read < WAD_DIRECTORY_ENTRY_SIZE ) {
+            my $error = App::WADTools::Error->new(
+                type      => q(wadindexer.index_wad.read_directory_entry),
+                message   => qq(Read $bytes_read bytes from WAD directory),
+                raw_error => qq(Error code: $!),
+            );
+            return $error;
+        }
         # use split to parse the output of a hexdump with a special format
         my ($hex_chars, $data) = split(/::/,
             hexdump(

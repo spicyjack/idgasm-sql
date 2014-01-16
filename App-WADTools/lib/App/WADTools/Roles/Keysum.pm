@@ -161,11 +161,29 @@ sub generate_keysum {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $self->keysum($self->generate_base36_checksum(
-        data => $self->filename . q(:) . $self->size)
-    );
-    $log->debug(qq(Created keysum: ) . $self->keysum);
-    return $self->keysum;
+    if ( defined $self->filename && defined $self->size ) {
+        $self->keysum($self->generate_base36_checksum(
+            data => $self->filename . q(:) . $self->size)
+        );
+        $log->debug(qq(Created keysum: ) . $self->keysum);
+        return $self->keysum;
+    } else {
+        # chances are, if anything is going to be undefined, it will be
+        # $self->filename, as anything that consumes the File role won't exist
+        # without a valid filepath argument (filepath gets the '-f' test when
+        # it's set)
+        # But check them both just for completeness...
+        my $raw_error = q(Filename: );
+        $raw_error .= (defined $self->filename) ? $self->filename : q(undef);
+        $raw_error .= q(; File size: );
+        $raw_error .= (defined $self->size) ? $self->size : q(undef);
+        my $error = App::WADTools::Error->new(
+            type      => q(keysum.generate_keysum.undefined_args),
+            message   => qq('keysum' called while filename/size undefined),
+            raw_error => $raw_error,
+        );
+        return $error;
+    }
 }
 
 =back

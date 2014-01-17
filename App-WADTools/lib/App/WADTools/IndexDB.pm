@@ -136,17 +136,18 @@ sub add_wadfile {
         return $error;
     }
     foreach my $level ( @{$wadfile->levels} ) {
-        $sth_wads->bind_param(1, $wadfile->keysum);
-        $sth_wads->bind_param(2, $zip_keysum );
+        $sth_level->bind_param(1, $wadfile->keysum);
+        $sth_level->bind_param(2, $level);
+        $log->debug(sprintf(q(keysum: %8s; ), $wadfile->keysum)
+            . qq(Adding level to DB: $level));
         $rv = $sth_level->execute();
         # $rv should be anything but 'undef' if the operation was successful
         if ( ! defined $rv ) {
-            $log->error(q(INSERT keysum/level ')
-                . $wadfile->keysum . q(/) . $level
-                . q(' returned an error: ) . $sth_wads->errstr);
+            $log->error(q(INSERT keysum/level returned an error: )
+                . $sth_level->errstr);
             my $error = App::WADTools::Error->new(
                 type    => q(index-db.levels_to_wads-insert.execute),
-                message => $sth_wads->errstr
+                message => $sth_level->errstr
             );
             return $error;
         } else {

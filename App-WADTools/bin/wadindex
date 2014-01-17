@@ -422,13 +422,13 @@ use constant {
                             );
                             if ( $wad_add->can(q(is_error)) ) {
                                 $log->error(qq(keysum: ) . $wadfile->keysum
-                                    . q(; unsuccessful INSERT into DB));
+                                    . q(; INSERT -> 'wads' unsuccessful));
                                 $log->error(q(Error type: ) . $wad_add->type);
                                 $log->error(q(Error message: )
                                     . $wad_add->message);
                             } else {
                                 $log->info(qq(keysum: ) . $wadfile->keysum
-                                    . q(; successful INSERT into DB));
+                                    . q(; INSERT -> 'wads' successful));
                             }
                         }
                     }
@@ -446,13 +446,13 @@ use constant {
                 my $zip_add = $idx_db->add_zipfile(zipfile => $zipfile);
                 if ( $zip_add->can(q(is_error)) ) {
                     $log->error(qq(keysum: ) . $zipfile->keysum
-                        . q(; unsuccessful INSERT into DB));
+                        . q(; INSERT -> 'zipfiles' unsuccessful));
                     $log->error(q(Error type: ) . $zip_add->type);
                     $log->error(q(Error message: ) . $zip_add->message);
                     $log->error(q(Raw error: ) . $zip_add->raw_error);
                 } else {
                     $log->info(qq(keysum: ) . $zipfile->keysum
-                        . q(; successful INSERT into DB));
+                        . q(; INSERT -> 'zipfiles' successful));
                 }
 
             }

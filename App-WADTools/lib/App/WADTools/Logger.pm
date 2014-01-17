@@ -25,32 +25,14 @@ C<my $log = Log::Log4perl-E<gt>get_logger("");>
 =cut
 
 ### System modules
-# 'Moo' calls 'strictures', which is 'strict' + 'warnings'
-use Moo;
+use strictures 1; # strict + warnings
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
 
-=head2 Attributes
-
-=over
-
-=item config
-
-The L<App::WADTools::Config> object created by the caller.  This config object
-is used to configure the L<Log::Log4perl> module when it is instantiated.
-
-=cut
-
-has q(config) => (
-    is      => q(ro),
-    isa => sub { ref($_[0]) eq q(App::WADTools::Config) },
-);
-
-=back
 =head2 Methods
 
 =over
 
-=item new(config => $config) (aka BUILD)
+=item new(config => $config)
 
 Creates a L<App::WADTools::Logger> object.  The required
 L<App::WADTools::Config> object is used to to determine how to configure the
@@ -70,10 +52,14 @@ object that is created by this method.
 
 =cut
 
-sub BUILD {
+sub new {
     my $self = shift;
+    my %args = @_;
 
-    my $cfg = $self->config;
+    die q(Missing required argument 'config') unless ( exists $args{config} );
+    my $cfg = $args{config};
+    die q(Required argument 'config' not an App::WADTools::Config object)
+        unless ( ref($cfg) eq q(App::WADTools::Config) );
 
     my $log_conf;
     # Default log level

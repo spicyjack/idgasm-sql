@@ -147,8 +147,12 @@ sub read_ini_config {
         #$self->db_schema($db_schema);
         return $db_schema;
     } else {
-        my $error = App::WADTools::Error->new();
-        $error->error_msg(qq(Can't read INI file!));
+        my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
+            type    => q(inifile.read_ini_config.file_not_found),
+            message => qq(Can't read INI file!),
+        );
+
     }
 }
 
@@ -206,13 +210,21 @@ sub write_ini_config {
     if ( -w $write_filename ) {
         eval { write_config($db_schema => $write_filename); };
         if ( $@ ) {
-            my $error = App::WADTools::Error->new(error_msg => $@);
+            my $error = App::WADTools::Error->new(
+                caller    => __PACKAGE__ . q(.) . __LINE__,
+                type      => q(inifile.write_ini_config.error_writing_config),
+                message   => q(Error encountered in write_config call),
+                raw_error => $@,
+            );
             return $error;
         }
         $filesize = (-s $write_filename);
     } else {
         my $error = App::WADTools::Error->new(
-            error_msg => q(Can't write INI file!)
+            caller    => __PACKAGE__ . q(.) . __LINE__,
+            type      => q(inifile.write_ini_config.file_not_writeable),
+            message   => q(INI file not writeable!),
+            raw_error => $@,
         );
         return $error;
     }

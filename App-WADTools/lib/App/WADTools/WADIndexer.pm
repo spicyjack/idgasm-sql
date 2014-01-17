@@ -176,6 +176,7 @@ sub index_wad {
     if ( ! defined $status ) {
         $log->logdie(qq(Failed to open WAD file '$wad_path': $!));
         my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(wadindexer.index_wad.opening_file),
             message   => qq(Can't open file: $wad_path),
             raw_error => qq(Error code: $!),
@@ -190,6 +191,7 @@ sub index_wad {
         $log->error(qq(Only read $bytes_read bytes from header));
         $log->logdie(q(Header size is ) . WAD_HEADER_SIZE . q( bytes));
         my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(wadindexer.index_wad.read_header),
             message   => qq(Read only $bytes_read bytes from WAD header),
             raw_error => q(Expected WAD header size: ) . WAD_HEADER_SIZE,
@@ -209,6 +211,7 @@ sub index_wad {
         $dir_offset));
     if ( $dir_offset > $wadfile->size ) {
         my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(wadindexer.index_wad.dir_offset_larger_than_file),
             message   => qq|Directory offset is larger than WAD file size|,
             raw_error => qq|Directory offset: $dir_offset; |
@@ -232,6 +235,7 @@ sub index_wad {
         # check the status of the seek
         if ( ! $seek_status ) {
             my $error = App::WADTools::Error->new(
+                caller    => __PACKAGE__ . q(.) . __LINE__,
                 type      => q(wadindexer.index_wad.seek_directory_entry),
                 message   => qq(Could not seek to directory entry # $i),
                 raw_error => qq(Error code: $!),
@@ -243,6 +247,7 @@ sub index_wad {
         # check for a successful read
         if ( ! defined $bytes_read || $bytes_read < WAD_DIRECTORY_ENTRY_SIZE ) {
             my $error = App::WADTools::Error->new(
+                caller    => __PACKAGE__ . q(.) . __LINE__,
                 type      => q(wadindexer.index_wad.read_directory_entry),
                 message   => qq(Read $bytes_read bytes from WAD directory),
                 raw_error => qq(Error code: $!),

@@ -178,6 +178,7 @@ sub generate_keysum {
         $raw_error .= q(; File size: );
         $raw_error .= (defined $self->size) ? $self->size : q(undef);
         my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(keysum.generate_keysum.undefined_args),
             message   => qq('keysum' called while filename/size undefined),
             raw_error => $raw_error,

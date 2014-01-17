@@ -12,7 +12,7 @@ App::WADTools::idGamesDB
  my $db = App::WADTools::idGamesDB->new(filename => q(/path/to/file.db));
  # check that the database already has a schema applied to it
  my $result = $db->connect( check_schema => 1 );
- if ( ref($result) eq q(App::WADTools::Error) ) {
+ if ( $result->can(q(is_error) ) {
      # something bad happened
  }
  # returns a App::WADTools::idGamesFile object
@@ -102,9 +102,9 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(:) . __LINE__,
-            type    => q(idgames-db.file_insert.prepare),
-            message => q('prepare' call to INSERT into 'files' failed),
+            caller    => __PACKAGE__ . q(.) . __LINE__,
+            type      => q(idgames-db.file_insert.prepare),
+            message   => q('prepare' call to INSERT into 'files' failed),
             raw_error => $dbh->errstr,
         );
         return $error;
@@ -127,6 +127,7 @@ FILESQL
         $log->error(q(INSERT for file ID ) . $file->id
             . q( returned an error: ) . $sth_file->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(idgames-db.file_insert.execute),
             message => $sth_file->errstr
         );
@@ -143,6 +144,7 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'votes' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(idgames-db.vote_insert.prepare),
             message => $dbh->errstr
         );
@@ -169,6 +171,7 @@ FILESQL
             $log->error(q(INSERT for file ID ) . $file->id
                 . q( returned an error: ) . $sth_vote->errstr);
             my $error = App::WADTools::Error->new(
+                caller  => __PACKAGE__ . q(.) . __LINE__,
                 type    => q(idgames-db.vote_insert.execute),
                 message => $sth_vote->errstr
             );
@@ -234,6 +237,7 @@ sub get_file_by_id {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(idgames-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
@@ -251,6 +255,7 @@ sub get_file_by_id {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(idgames-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
@@ -322,6 +327,7 @@ sub get_file_by_path  {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(idgames-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
@@ -341,6 +347,7 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(idgames-db.get_file_by_path.execute),
             message => $dbh->errstr
         );

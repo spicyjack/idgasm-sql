@@ -94,6 +94,7 @@ sub add_wadfile {
         $log->error(q('prepare' call to INSERT into 'wads' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.wads-insert.prepare),
             message => $dbh->errstr
         );
@@ -114,7 +115,7 @@ sub add_wadfile {
         $log->error(q(INSERT for keysum ') . $wadfile->keysum
             . q(' returned an error: ) . $sth_wads->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(:) . __LINE__,
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.wads-insert.execute),
             message => $sth_wads->errstr
         );
@@ -131,6 +132,7 @@ sub add_wadfile {
         $log->error(q('prepare' call to INSERT into 'levels_to_wads' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.levels_to_wads-insert.prepare),
             message => $dbh->errstr
         );
@@ -147,6 +149,7 @@ sub add_wadfile {
             $log->error(q(INSERT keysum/level returned an error: )
                 . $sth_level->errstr);
             my $error = App::WADTools::Error->new(
+                caller  => __PACKAGE__ . q(.) . __LINE__,
                 type    => q(index-db.levels_to_wads-insert.execute),
                 message => $sth_level->errstr
             );
@@ -205,6 +208,7 @@ sub add_zipfile {
         $log->error(q('prepare' call to INSERT into 'zipfiles' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.zipfiles-insert.prepare),
             message => $dbh->errstr
         );
@@ -224,6 +228,7 @@ sub add_zipfile {
         $log->error(q(INSERT for keysum ') . $zipfile->keysum
             . q(' returned an error: ) . $sth_wads->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.zipfiles-insert.execute),
             message => $sth_wads->errstr
         );
@@ -280,6 +285,7 @@ sub get_file_by_id {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
@@ -297,6 +303,7 @@ sub get_file_by_id {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
@@ -368,6 +375,7 @@ sub get_file_by_path  {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
@@ -386,6 +394,7 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(index-db.get_file_by_path.execute),
             message => $dbh->errstr
         );

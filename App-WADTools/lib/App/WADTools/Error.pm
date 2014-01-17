@@ -22,7 +22,9 @@ The caller that created this L<Error> object.  You can use the C<__FILE__>,
 C<__PACKAGE__> and C<__LINE__> "special literals" from L<perldata> to quickly
 get the information about the caller;
 
-  my $error = App::WADTools::Error->new(caller => __PACKAGE__ . q(.) __LINE__);
+  my $error = App::WADTools::Error->new(
+    caller => __PACKAGE__ . q(.) . __LINE__
+  );
 
 =cut
 

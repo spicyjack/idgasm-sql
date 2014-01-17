@@ -125,9 +125,9 @@ sub BUILD {
         $log->error(q(Problem reading zip directory for: ) . $self->filepath);
         $log->error(q(Error message: ) . $self->last_zip_error);
         my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(zipfile.read_directory),
-            message   => qq(Problem reading zip directory for: )
-                . $self->filepath,
+            message   => qq(Can't read zip 'directory': ) . $self->filepath,
             raw_error => $self->last_zip_error,
         );
         return $error;
@@ -209,6 +209,7 @@ sub extract_files {
             $log->error(q(Error message from Archive::Zip;));
             $log->error($self->last_zip_error);
             my $error = App::WADTools::Error->new(
+                caller    => __PACKAGE__ . q(.) . __LINE__,
                 type      => q(zipfile.extract_member_without_paths),
                 message   => qq(Problem extracting member for: $file),
                 raw_error => $self->last_zip_error,

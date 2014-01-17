@@ -140,6 +140,7 @@ sub connect {
         $dbh->{PrintError} = 0;
         if ( defined $dbh->err ) {
             my $error = App::WADTools::Error->new(
+                caller  => __PACKAGE__ . q(.) . __LINE__,
                 type    => q(database.connect),
                 message => $dbh->errstr,
             );
@@ -222,6 +223,7 @@ sub create_schema {
                 $log->error(qq(Execution of block '$block_name' failed));
                 $log->error(q(Error message: ) . $dbh->errstr);
                 my $error = App::WADTools::Error->new(
+                    caller  => __PACKAGE__ . q(.) . __LINE__,
                     type    => q(database.block_execute),
                     message => $dbh->errstr
                 );
@@ -241,6 +243,7 @@ sub create_schema {
             $log->error(q('prepare' call to INSERT into 'schema' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
             my $error = App::WADTools::Error->new(
+                caller  => __PACKAGE__ . q(.) . __LINE__,
                 type    => q(database.schema_insert.prepare),
                 message => $dbh->errstr
             );
@@ -330,6 +333,7 @@ sub is_connected {
     my $dbh = $self->dbh;
     if ( ! defined $dbh ) {
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(database.no_connection),
             message => q|connect() never called to set up database handle|,
         );

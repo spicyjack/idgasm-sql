@@ -214,6 +214,7 @@ use constant {
     $log->warn(qq(Starting $my_name, version '$VERSION'));
     $log->warn($copyright);
     $log->warn(qq(My PID is $$));
+    $log->info(qq(Command line: $0 ) . $cfg->args);
     $log->warn(qq(Searching for ZIP files in path:));
     $log->warn(qq(-> $wad_path));
 

@@ -17,6 +17,18 @@ use Moo;
 
 =over
 
+=item args
+
+A scalar containing the command line that was used to call this program.
+Meant to be used with logging so that the exact command that was run can be
+seen and duplicated
+
+=cut
+
+has q(args) => (
+    is  => q(rw),
+);
+
 =item options
 
 An C<ArrayRef> to an array containing script options, in L<Getopt::Long> format.
@@ -50,6 +62,9 @@ sub BUILD {
     # can't continue without script options in Getopt::Long format
     die qq(Missing 'options' array to Config object)
         unless ( defined $self->options );
+
+    # save a copy of the command line arguments so they can be displayed
+    $self->args(join(q( ), @ARGV));
 
     # script arguments
     my %args;

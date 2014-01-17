@@ -16,6 +16,22 @@ use Moo;
 
 =over
 
+=item caller
+
+The caller that created this L<Error> object.  You can use the C<__FILE__>,
+C<__PACKAGE__> and C<__LINE__> "special literals" from L<perldata> to quickly
+get the information about the caller;
+
+  my $error = App::WADTools::Error->new(caller => __FILE__ . q(:) __LINE__);
+
+=cut
+
+has q(caller) => (
+    is      => q(rw),
+    default => sub { 1 },
+);
+
+
 =item is_error
 
 A read-only boolean flag that's set to C<1>.  Meant to be used to test to see
@@ -46,6 +62,17 @@ has q(message) => (
     is  => q(rw),
 );
 
+=item raw_error
+
+The raw content of the error message, as received by the caller or created by
+the object that created the L<Erorr> object.
+
+=cut
+
+has q(raw_error) => (
+    is => q(rw),
+);
+
 =item type
 
 A text string that indicates what "type" of error this is.  The attribute
@@ -59,17 +86,6 @@ C<E<lt>objectE<gt>.E<lt>method or actionE<gt>.E<lt>action_in_methodE<gt>>.
 
 has q(type) => (
     is  => q(rw),
-);
-
-=item raw_error
-
-The raw content of the error message, as received by the caller or created by
-the object that created the L<Erorr> object.
-
-=cut
-
-has q(raw_error) => (
-    is => q(rw),
 );
 
 =back

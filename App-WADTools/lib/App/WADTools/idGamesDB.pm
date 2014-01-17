@@ -77,7 +77,7 @@ sub add_file {
 
     # check for an existing database connection
     my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
+    return $error if ( $error->can(q(is_error)));
     my $dbh = $self->dbh;
 
     $log->logdie(q(Missing 'file' argument))
@@ -100,8 +100,10 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(:) . __LINE__,
             type    => q(idgames-db.file_insert.prepare),
-            message => $dbh->errstr
+            message => q('prepare' call to INSERT into 'files' failed),
+            raw_error => $dbh->errstr,
         );
         return $error;
     }

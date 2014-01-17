@@ -114,6 +114,7 @@ sub add_wadfile {
         $log->error(q(INSERT for keysum ') . $wadfile->keysum
             . q(' returned an error: ) . $sth_wads->errstr);
         my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(:) . __LINE__,
             type    => q(index-db.wads-insert.execute),
             message => $sth_wads->errstr
         );

@@ -77,7 +77,9 @@ sub add_file {
 
     # check for an existing database connection
     my $error = $self->is_connected;
-    return $error if ( $error->can(q(is_error)));
+    # can't use $error->can(q(is_error)) here, since $error is only an Error
+    # object when there's an issue, otherwise, it's a blank scalar
+    return $error if ( ref($error) eq q(App::WADTools::Error) );
     my $dbh = $self->dbh;
 
     $log->logdie(q(Missing 'file' argument))

@@ -119,7 +119,7 @@ sub add_wadfile {
         );
         return $error;
     } else {
-        $log->debug(sprintf(q(keysum: %8s; INSERT into 'wads' successful!),
+        $log->debug(sprintf(q(keysum: %8s; INSERT -> 'wads' successful!),
             $wadfile->keysum));
     }
 
@@ -151,8 +151,10 @@ sub add_wadfile {
             );
             return $error;
         } else {
-            $log->debug(sprintf(q(keysum/level: %8s/%4s; INSERT successful),
-                $wadfile->keysum, $level));
+            $log->debug(sprintf(q(keysum/level: %8s/%4s; ),
+                $wadfile->keysum, $level)
+                . q(INSERT -> 'levels_to_wads' successful),
+            );
         }
     }
     # return 'true'
@@ -226,7 +228,7 @@ sub add_zipfile {
         );
         return $error;
     } else {
-        $log->debug(sprintf(q(keysum: %8s; INSERT into 'zipfiles' successful!),
+        $log->debug(sprintf(q(keysum: %8s; INSERT -> 'zipfiles' successful!),
             $zipfile->keysum));
     }
 

@@ -125,6 +125,7 @@ $Data::Dumper::Terse = 1;
 use App::WADTools; # for $VERSION
 use App::WADTools::Config;
 use App::WADTools::idGamesDB;
+use App::WADTools::Logger;
 use App::WADTools::JSONParser;
 use App::WADTools::XMLParser;
 use App::WADTools::Views::CLI::idGamesDbDump;
@@ -166,43 +167,7 @@ use constant {
         exit 1;
     }
 
-    # Start setting up the Log::Log4perl object
-    my $log4perl_conf = qq(log4perl.rootLogger = WARN, Screen\n);
-    if ( $cfg->defined(q(verbose)) && $cfg->defined(q(debug)) ) {
-        die(q(Script called with --debug and --verbose; choose one!));
-    } elsif ( $cfg->defined(q(debug)) ) {
-        $log4perl_conf = qq(log4perl.rootLogger = DEBUG, Screen\n);
-    } elsif ( $cfg->defined(q(verbose)) ) {
-        $log4perl_conf = qq(log4perl.rootLogger = INFO, Screen\n);
-    }
-
-    # Use color when outputting directly to a terminal, or when --colorize was
-    # used
-    if ( -t STDOUT || $cfg->get(q(colorize)) ) {
-        $log4perl_conf .= q(log4perl.appender.Screen )
-            . qq(= Log::Log4perl::Appender::ScreenColoredLevels\n);
-    } else {
-        $log4perl_conf .= q(log4perl.appender.Screen )
-            . qq(= Log::Log4perl::Appender::Screen\n);
-    }
-
-    $log4perl_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
-        . qq(log4perl.appender.Screen.utf8 = 1\n)
-        . qq(log4perl.appender.Screen.layout = PatternLayout\n)
-        . q(log4perl.appender.Screen.layout.ConversionPattern )
-        # %r: number of milliseconds elapsed since program start
-        # %p{1}: first letter of event priority
-        # %4L: line number where log statement was used, four numbers wide
-        # %M{1}: Name of the method name where logging request was issued
-        # %m: message
-        # %n: newline
-        . qq|= [%8r] %p{1} %4L (%M{1}) %m%n\n|;
-        #. qq( = %d %p %m%n\n)
-        #. qq(= %d{HH.mm.ss} %p -> %m%n\n);
-
-    # create a logger object, and prime the logfile for this session
-    Log::Log4perl::init( \$log4perl_conf );
-    my $log = get_logger("");
+    my $log = App::WADTools::Logger->new(config => $cfg);
 
     # check for the database file if --database was used
     if ( $cfg->defined(q(database)) ) {

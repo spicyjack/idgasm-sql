@@ -125,6 +125,7 @@ use Pod::Usage;
 use App::WADTools::Config;
 use App::WADTools::idGamesDB;
 use App::WADTools::IndexDB;
+use App::WADTools::Logger;
 use App::WADTools::Timer;
 use App::WADTools::WADIndexer;
 use App::WADTools::ZipFile;
@@ -167,42 +168,11 @@ use constant {
             $cfg->set(q(tempdir), q(/dev/shm));
         }
     }
-    # set up the logger
-    my $log_conf;
-    if ( $cfg->defined(q(debug)) ) {
-        $log_conf = qq(log4perl.rootLogger = DEBUG, Screen\n);
-    } elsif ( $cfg->defined(q(verbose)) ) {
-        $log_conf = qq(log4perl.rootLogger = INFO, Screen\n);
-    } else {
-        $log_conf = qq(log4perl.rootLogger = WARN, Screen\n);
-    }
 
-    if ( -t STDOUT || $cfg->defined(q(colorize)) ) {
-        $log_conf .= qq(log4perl.appender.Screen = )
-            . qq(Log::Log4perl::Appender::ScreenColoredLevels\n);
-    } else {
-       $log_conf .= qq(log4perl.appender.Screen = )
-            . qq(Log::Log4perl::Appender::Screen\n);
-    }
+    App::WADTools::Logger->new(config => $cfg);
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
-        . qq(log4perl.appender.Screen.utf8 = 1\n)
-        . qq(log4perl.appender.Screen.layout = PatternLayout\n)
-        . q(log4perl.appender.Screen.layout.ConversionPattern )
-        # %r: number of milliseconds elapsed since program start
-        # %p{1}: first letter of event priority
-        # %4L: line number where log statement was used, four numbers wide
-        # %M{1}: Name of the method name where logging request was issued
-        # %m: message
-        # %n: newline
-        . qq|= [%6r] %p{1} %4L (%M{1}) %m%n\n|;
-        #. qq( = %d %p %m%n\n)
-        #. qq(= %d{HH.mm.ss} %p -> %m%n\n);
-
-    # create a logger object, and prime the logfile for this session
-    Log::Log4perl::init( \$log_conf );
-    my $log = get_logger(""); # "" = root logger
-
+    warn (q(log is ) . ref($log));
     $log->logdie(qq(Missing '--path' directory argument))
         unless ( $cfg->defined(q(path)) );
     my $wad_path = $cfg->get(q(path));

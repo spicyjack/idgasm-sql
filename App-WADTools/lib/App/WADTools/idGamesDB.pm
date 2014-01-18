@@ -229,7 +229,7 @@ sub get_file_by_id {
 
     my $sql = q(SELECT * FROM files WHERE id = ?);
     $log->debug(q(Prepare: querying for file from file ID));
-    $log->debug(qq(Prepare: SQL: $sql));
+    #$log->debug(qq(Prepare: SQL: $sql));
 
     # prepare the SQL
     my $sth = $dbh->prepare($sql);

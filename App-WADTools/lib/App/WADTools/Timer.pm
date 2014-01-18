@@ -12,21 +12,22 @@ App::WADTools::Timer
  my $timer = App::WADTools::Timer->new();
 
  my $start_time = $timer->start(name => q(foo));
- # $start_time should now be seconds.milliseconds from epoch
+ # $start_time is now a L<Time::HiRes> object
 
  my $stop_time = $timer->stop(name => q(foo));
- # $stop_time should now be seconds.milliseconds from epoch
+ # $stop_time is now a L<Time::HiRes> object
 
  my $time_diff = $timer->time_value_difference(name => q(foo));
- # $time_diff should be seconds.milliseconds between 'start' and 'stop'
+ # $time_diff is now 'seconds.milliseconds' between 'start' and 'stop'
 
- # delete the time
+ # delete the timer
  $timer->delete(name => q(foo));
 
 =head1 DESCRIPTION
 
-Create timers that can be used by different blocks of code, in order to time
-the execution of those blocks.
+L<App::WADTools::Timer> keeps track of time.   Once a timer object is created,
+different blocks of code can use it to measure how much time operations in
+that block takes to execute.
 
 =cut
 

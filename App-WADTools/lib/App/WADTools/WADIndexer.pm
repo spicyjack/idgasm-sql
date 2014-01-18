@@ -40,7 +40,7 @@ use constant {
     WAD_HEADER_SIZE          => 12,
 };
 
-my $lump_level_regex = qr/MAP[0-4][0-9]|E[1-4]M[1-9]/;
+my $lump_level_regex = qr/^MAP[0-4][0-9]$|^E[1-4]M[1-9]$/;
 
 =head2 Attributes
 
@@ -279,7 +279,7 @@ sub index_wad {
             $log->debug(qq(Lump name matched regex; lump name: $lump_name));
             my @levels = @{$wadfile->levels};
             push(@levels, $lump_name);
-            $log->debug(q(Retrieved wadfile levels; )
+            $log->debug(q(Total levels for this WAD; )
                 . scalar(@levels) . q( levels));
             $log->debug(join(q(, ), @levels));
             $wadfile->levels(\@levels);

@@ -171,6 +171,8 @@ use constant {
 
     App::WADTools::Logger->new(config => $cfg);
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => $my_name);
 
     warn (q(log is ) . ref($log));
     $log->logdie(qq(Missing '--path' directory argument))
@@ -241,8 +243,6 @@ use constant {
     my $total_file_counter = 0;
     #my $indexer = App::WADTools::WADIndexer->new( idx_db => $idx_db );
     my $indexer = App::WADTools::WADIndexer->new();
-    # use a timer for measuring checksum generation times
-    my $timer = App::WADTools::Timer->new();
 
     # get a list of files underneath $wad_path
     my @files = File::Find::Rule
@@ -374,7 +374,7 @@ use constant {
                         $wadfile->generate_keysum();
                         $log->info(q(WAD keysum/filename: )
                             . $wadfile->keysum . q(/) . $wad_filename);
-                        $log->info(q(Total Number of lumps: )
+                        $log->info(q(Total Number of lumps indexed: )
                             . $wadfile->num_of_lumps);
                         $log->info(q(WAD levels: )
                             . join(q(, ), @{$wadfile->levels}));
@@ -435,6 +435,10 @@ use constant {
         }
         $log->warn(qq(~~~~ End: $file_path ~~~~));
     }
+
+    $timer->stop(name => $my_name);
+    my $prog_execution_time = $timer->time_value_difference(name => $my_name);
+    $log->warn(qq(Total script execution time: $prog_execution_time seconds));
 
 =head1 AUTHOR
 

@@ -376,8 +376,10 @@ use constant {
                             . $wadfile->keysum . q(/) . $wad_filename);
                         $log->info(q(Total Number of lumps indexed: )
                             . $wadfile->num_of_lumps);
-                        $log->info(q(WAD levels: )
-                            . join(q(, ), @{$wadfile->levels}));
+                        if ( defined $wadfile->levels ) {
+                            $log->info(q(WAD levels: )
+                                . join(q(, ), @{$wadfile->levels}));
+                        }
                         $log->info(q(WAD MD5 checksum: )
                             . $wadfile->md5_checksum);
                         $log->info(q(WAD SHA checksum: )

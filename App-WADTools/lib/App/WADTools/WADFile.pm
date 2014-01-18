@@ -48,7 +48,8 @@ A list of level lumps (levels) that this C<WAD> file provides.
 has q(levels) => (
     is      => q(rw),
     isa     => sub { ref($_[0]) =~ /ARRAY/ },
-    default => sub { [] },
+    #default => sub { [] },
+    default => sub { },
 );
 
 =item lumps
@@ -62,7 +63,8 @@ inside the C<WAD> file.
 has q(lumps) => (
     is      => q(rw),
     isa     => sub { ref($_[0]) =~ /ARRAY/ },
-    default => sub { [] },
+    #default => sub { [] },
+    default => sub { },
 );
 
 =item num_of_lumps

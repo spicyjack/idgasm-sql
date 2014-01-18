@@ -50,9 +50,11 @@ with q(App::WADTools::Roles::Database);
 
 =item add_wadfile(wadfile => $wadfile)
 
-Add an L<App::WADTools::WADFile> object to the database.  Returns true C<1> if
-the insert was successful, or an L<App::WADTools::Error> object if there was a
-problem inserting the L<App::WADTools::WADFile> object into the database.
+Add an L<App::WADTools::WADFile> object to the database, specifically, adding
+information about the WAD file itself, along with any levels that the WAD file
+provides to the appropriate database tables.  Returns true C<1> if the insert
+was successful, or an L<App::WADTools::Error> object if there was a problem
+inserting the WAD file object into the database.
 
 Required arguments:
 
@@ -138,6 +140,11 @@ sub add_wadfile {
         );
         return $error;
     }
+
+    # exit here if there are no levels to add to the database
+    return 1 if ( ! defined $wadfile->levels );
+
+    # there are levels in this WAD file; add them to the database
     foreach my $level ( @{$wadfile->levels} ) {
         $sth_level->bind_param(1, $wadfile->keysum);
         $sth_level->bind_param(2, $level);

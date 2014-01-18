@@ -277,7 +277,10 @@ sub index_wad {
         # - add level lumps to WADFile
         if ( $lump_name =~ $lump_level_regex ) {
             $log->debug(qq(Lump name matched regex; lump name: $lump_name));
-            my @levels = @{$wadfile->levels};
+            my @levels;
+            if ( defined $wadfile->levels ) {
+                @levels = @{$wadfile->levels};
+            }
             push(@levels, $lump_name);
             $log->debug(q(Total levels for this WAD; )
                 . scalar(@levels) . q( levels));

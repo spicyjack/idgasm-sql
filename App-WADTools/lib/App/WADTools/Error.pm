@@ -22,15 +22,19 @@ The caller that created this L<Error> object.  You can use the C<__FILE__>,
 C<__PACKAGE__> and C<__LINE__> "special literals" from L<perldata> to quickly
 get the information about the caller;
 
-  my $error = App::WADTools::Error->new(
+  my $error1 = App::WADTools::Error->new(
     caller => __PACKAGE__ . q(.) . __LINE__
+  );
+
+  my $error2 = App::WADTools::Error->new(
+    caller => __FILE__ . q( +) . __LINE__
   );
 
 =cut
 
 has q(caller) => (
     is      => q(rw),
-    default => sub { 1 },
+    default => sub { q() },
 );
 
 
@@ -61,7 +65,8 @@ object is created by:
 =cut
 
 has q(message) => (
-    is  => q(rw),
+    is      => q(rw),
+    default => sub { q() },
 );
 
 =item raw_error
@@ -72,7 +77,8 @@ the object that created the L<Erorr> object.
 =cut
 
 has q(raw_error) => (
-    is => q(rw),
+    is      => q(rw),
+    default => sub { q() },
 );
 
 =item type
@@ -87,7 +93,8 @@ C<E<lt>objectE<gt>.E<lt>method or actionE<gt>.E<lt>action_in_methodE<gt>>.
 =cut
 
 has q(type) => (
-    is  => q(rw),
+    is      => q(rw),
+    default => sub { q() },
 );
 
 =back
@@ -102,6 +109,27 @@ Creates the L<App::WADTools::Error> object, pass with C<error_msg> and
 C<raw_error> in order to populate those attributes, or populate those
 attributes once the C<Error> object has been created.
 
+=item log_error
+
+Causes the L<App::WADTools::Error> object to log itself using the
+L<Log::Log4perl> object created by the L<App::WADTools::Logger> object.  This
+means that the error will be logged either to the console, or to a log file,
+depending on what options the user passes in to the script from the command
+line.  Always returns C<1> for C<true>, unless there's some kind of error
+writing to the L<Log::Log4perl>  object.
+
 =cut
+
+sub log_error {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    foreach my $attrib ( qw(caller type message raw_error) ) {
+        if ( length($self->$attrib) > 0 ) {
+            $log->error($self->$attrib);
+        }
+    }
+    return 1;
+}
 
 1;

@@ -124,7 +124,6 @@ sub log_error {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->error(q(Error: an Error object is logging an error;));
     foreach my $attrib ( qw(caller type message raw_error) ) {
         # all of the attributes by default are empty strings; if the attribute
         # is longer than zero bytes, log it

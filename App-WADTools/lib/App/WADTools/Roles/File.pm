@@ -41,7 +41,7 @@ The dirname part of the filepath.  Defaults to C<undef>.
 =cut
 
 has q(filedir) => (
-    is => q(rw),
+    is      => q(rw),
     default => sub { undef; },
 );
 
@@ -66,7 +66,7 @@ The filename part of the filepath.  Defaults to C<undef>.
 =cut
 
 has q(filename) => (
-    is => q(rw),
+    is      => q(rw),
     default => sub { undef; },
 );
 
@@ -77,7 +77,7 @@ The name of the file as it exists on the filesystem.
 =cut
 
 has q(filepath) => (
-    is => q(rw),
+    is  => q(rw),
     # check that the file exists
     isa => sub { -f $_[0] },
 );
@@ -89,9 +89,8 @@ The file's MD5 checksum.  Defaults to C<undef>.
 =cut
 
 has q(md5_checksum) => (
-    is => q(rw),
+    is      => q(rw),
     default => sub{ undef },
-    #isa
 );
 
 =item md5_checksum_gen_time
@@ -101,7 +100,7 @@ The time, in seconds, that was required to generate file's MD5 checksum.
 =cut
 
 has q(md5_checksum_gen_time) => (
-    is => q(rw),
+    is      => q(rw),
     default => sub{ 0 },
 );
 
@@ -112,9 +111,8 @@ The file's SHA1 checksum.  Defaults to C<undef>.
 =cut
 
 has q(sha_checksum) => (
-    is => q(rw),
+    is      => q(rw),
     default => sub{ undef },
-    #isa
 );
 
 =item sha_checksum_gen_time
@@ -124,7 +122,7 @@ The time, in seconds, that was required to generate file's SHA checksum.
 =cut
 
 has q(sha_checksum_gen_time) => (
-    is => q(rw),
+    is      => q(rw),
     default => sub{ 0 },
 );
 

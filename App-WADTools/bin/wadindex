@@ -203,9 +203,9 @@ use constant {
         # schema blocks that have been applied to the database
         my $idg_db_connect = $idg_db->connect( check_schema => 1 );
         if ( $idg_db_connect->can(q(is_error)) ) {
-            $log->error(q(Recieved error connecting to idgames-db));
-            $log->error(q(Error type: ) . $idg_db->type);
-            $log->logdie(q(Error message: ) . $idg_db->message);
+            # $idg_db_connect is an App::WADTools::Error object
+            $log->error(q(Recieved error connecting to idgames-db;));
+            $idg_db_connect->log_error();
         } else {
             $log->debug(qq(idgames-db has $idg_db_connect schema entries));
         }
@@ -225,9 +225,9 @@ use constant {
         # of schema entries if there are no errors
         my $idx_db_connect = $idx_db->connect( check_schema => 1 );
         if ( $idx_db_connect->can(q(is_error)) ) {
+            # $idx_db_connect is an App::WADTools::Error object
             $log->error(q(Recieved error connecting to idgames-db));
-            $log->error(q(Error type: ) . $idx_db->type);
-            $log->logdie(q(Error message: ) . $idx_db->message);
+            $idx_db_connect->log_error();
         } else {
             $log->debug(qq(index-db has $idx_db_connect schema entries));
         }
@@ -291,11 +291,9 @@ use constant {
             # filepath will be verified via an '-f' test in Roles/File
             my $zipfile = App::WADTools::ZipFile->new(filepath => $filepath);
             if ( $zipfile->can(q(is_error))  ) {
-                # something went wrong reading the zipfile
+                # $zipfile is an App::WADTools::Error object
                 $log->error(qq(Error creating/reading ZipFile object:));
-                $log->error(q(Error type: ) . $zipfile->type);
-                $log->error(q(Error message: ) . $zipfile->message);
-                $log->error(q(Raw error: ) . $zipfile->raw_error);
+                $zipfile->log_error();
                 next FILE_LOOP;
             }
 
@@ -328,23 +326,21 @@ use constant {
             if ( scalar(@wads_in_zip) > 0 ) {
                 $log->info(q(Extracting ) . scalar(@wads_in_zip)
                     . qq( WADs from zipfile '$filename'));
-                # FIXME add a timer to time extracting of WADs
                 my $unzip_dir = $zipfile->extract_files(
                     files   => \@wads_in_zip,
                     tempdir => $cfg->get(q(tempdir)),
                 );
                 if ( $unzip_dir->can(q(is_error)) ) {
+                    # $zipfile is an App::WADTools::Error object
+                    $log->error(q(Received error unzipping file;));
                     $log->error(sprintf(q(keysum: %8s;), $zipfile->keysum)
                         . q(; filename: ) . $zipfile->filename);
-                    $log->error(q(Error type: ) . $unzip_dir->type);
-                    $log->error(q(Error message: ) . $unzip_dir->message);
-                    $log->error(q(Raw error: ) . $unzip_dir->raw_error);
+                    $unzip_dir->log_error();
                     $unzip_error_counter++;
                     next FILE_LOOP;
                 } else {
                     # loop over each WAD in the zipfile, and index it
                     WAD_FILE: foreach my $wad_filename ( @wads_in_zip ) {
-                        # FIXME add a timer for indexing WAD files
                         # passing in path/wad_filename means the indexer
                         # doesn't have to separate the path or use basename()
                         $log->info(qq(---- Indexing $wad_filename ----));
@@ -353,11 +349,11 @@ use constant {
                             filename => $wad_filename,
                         );
                         if ( defined $wadfile && $wadfile->can(q(is_error)) ) {
-                            $log->error(q(Error type: ) . $wadfile->type);
-                            $log->error(q(Error message: ) . $wadfile->message);
-                            $log->error(q(Raw error: ) . $wadfile->raw_error);
+                            # $zipfile is an App::WADTools::Error object
+                            $log->error(q(Received error indexing WAD file;));
                             $log->error(qq(ZIP filename: $filename));
                             $log->error(qq(WAD filename: $wad_filename));
+                            $wadfile->log_error();
                             next WAD_FILE;
                         } elsif ( ! defined $wadfile ) {
                             # if $wad_filename is a dotfile, $wadfile is
@@ -379,21 +375,25 @@ use constant {
                             . $wadfile->md5_checksum);
                         $log->info(q(WAD SHA checksum: )
                             . $wadfile->sha_checksum);
+
                         #push(@indexed_wads, $wadfile);
-                        # FIXME add a timer for adding the WAD to the index
-                        # database
                         # add the WADFile object to the database
+
+                        # don't add WADs to the index database unless there
+                        # actually is an index database to add them to
                         if ( defined $idx_db && defined $wadfile ) {
                             my $wad_add = $idx_db->add_wadfile(
                                 zip_keysum => $zipfile->keysum,
                                 wadfile    => $wadfile
                             );
                             if ( $wad_add->can(q(is_error)) ) {
+                                # $wad_add is an App::WADTools::Error object
+                                $log->error(q(Received error adding WAD to DB));
                                 $log->error(qq(keysum: ) . $wadfile->keysum
                                     . q(; INSERT -> 'wads' unsuccessful));
-                                $log->error(q(Error type: ) . $wad_add->type);
-                                $log->error(q(Error message: )
-                                    . $wad_add->message);
+                                $log->error(qq(ZIP filename: $filename));
+                                $log->error(qq(WAD filename: $wad_filename));
+                                $wad_add->log_error();
                             } else {
                                 $log->info(qq(keysum: ) . $wadfile->keysum
                                     . q(; INSERT -> 'wads' successful));
@@ -413,16 +413,16 @@ use constant {
             if ( defined $idx_db ) {
                 my $zip_add = $idx_db->add_zipfile(zipfile => $zipfile);
                 if ( $zip_add->can(q(is_error)) ) {
+                    # $zip_add is an App::WADTools::Error object
+                    $log->error(q(Received error adding Zip file to DB;));
+                    $log->error(qq(ZIP filename: $filename));
                     $log->error(qq(keysum: ) . $zipfile->keysum
                         . q(; INSERT -> 'zipfiles' unsuccessful));
-                    $log->error(q(Error type: ) . $zip_add->type);
-                    $log->error(q(Error message: ) . $zip_add->message);
-                    $log->error(q(Raw error: ) . $zip_add->raw_error);
+                    $zip_add->log_error();
                 } else {
                     $log->info(qq(keysum: ) . $zipfile->keysum
                         . q(; INSERT -> 'zipfiles' successful));
                 }
-
             }
 
             # bump up the zipfile counter

@@ -382,24 +382,25 @@ use constant {
                         # don't add WADs to the index database unless there
                         # actually is an index database to add them to
                         if ( defined $idx_db && defined $wadfile ) {
-                            my $wad_add = $idx_db->add_wadfile(
+                            my $wad_add_status = $idx_db->add_wadfile(
                                 zip_keysum => $zipfile->keysum,
                                 wadfile    => $wadfile
                             );
-                            if ( $wad_add->can(q(is_error)) ) {
-                                # $wad_add is an App::WADTools::Error object
+                            if ( $wad_add_status->can(q(is_error)) ) {
+                                # $wad_add_status is an App::WADTools::Error
+                                # object
                                 $log->error(q(Received error adding WAD to DB));
                                 $log->error(qq(keysum: ) . $wadfile->keysum
                                     . q(; INSERT -> 'wads' unsuccessful));
                                 $log->error(qq(ZIP filename: $filename));
                                 $log->error(qq(WAD filename: $wad_filename));
-                                $wad_add->log_error();
+                                $wad_add_status->log_error();
                             } else {
                                 $log->info(qq(keysum: ) . $wadfile->keysum
                                     . q(; INSERT -> 'wads' successful));
                                 $log->info(
                                     sprintf(q(INSERT took %0.6f seconds),
-                                        $wad_add->add_wadfile_time)
+                                        $idx_db->add_wadfile_time)
                                 );
                             }
                         }
@@ -415,19 +416,19 @@ use constant {
 
             # add the zipfile to the database
             if ( defined $idx_db ) {
-                my $zip_add = $idx_db->add_zipfile(zipfile => $zipfile);
-                if ( $zip_add->can(q(is_error)) ) {
-                    # $zip_add is an App::WADTools::Error object
+                my $zip_add_status = $idx_db->add_zipfile(zipfile => $zipfile);
+                if ( $zip_add_status->can(q(is_error)) ) {
+                    # $zip_add_status is an App::WADTools::Error object
                     $log->error(q(Received error adding Zip file to DB;));
                     $log->error(qq(ZIP filename: $filename));
                     $log->error(qq(keysum: ) . $zipfile->keysum
                         . q(; INSERT -> 'zipfiles' unsuccessful));
-                    $zip_add->log_error();
+                    $zip_add_status->log_error();
                 } else {
                     $log->info(qq(keysum: ) . $zipfile->keysum
                         . q(; INSERT -> 'zipfiles' successful));
                     $log->info(sprintf(q(INSERT took %0.6f seconds),
-                            $zip_add->add_zipfile_time)
+                            $idx_db->add_zipfile_time)
                     );
                 }
             }

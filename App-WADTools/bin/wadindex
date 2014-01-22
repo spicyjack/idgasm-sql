@@ -397,6 +397,10 @@ use constant {
                             } else {
                                 $log->info(qq(keysum: ) . $wadfile->keysum
                                     . q(; INSERT -> 'wads' successful));
+                                $log->info(
+                                    sprintf(q(INSERT took %0.6f seconds),
+                                        $wad_add->add_wadfile_time)
+                                );
                             }
                         }
                     }
@@ -422,6 +426,9 @@ use constant {
                 } else {
                     $log->info(qq(keysum: ) . $zipfile->keysum
                         . q(; INSERT -> 'zipfiles' successful));
+                    $log->info(sprintf(q(INSERT took %0.6f seconds),
+                            $zip_add->add_zipfile_time)
+                    );
                 }
             }
 

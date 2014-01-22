@@ -40,9 +40,44 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
+### Local modules
+use App::WADTools::Timer;
+
 ### Roles
 # contains App::WADTools::Error
 with q(App::WADTools::Roles::Database);
+
+=head2 Attributes
+
+=over
+
+=item add_wadfile_time
+
+The time, in seconds, that was required to add the WAD file to the database.
+This parameter is set during the L<add_wadfile()> method call, and can be read
+immediately after program control returns from that method.
+
+=cut
+
+has q(add_wadfile_time) => (
+    is      => q(rw),
+    default => sub{ 0 },
+);
+
+=item add_zipfile_time
+
+The time, in seconds, that was required to add the ZIP file to the database.
+This parameter is set during the L<add_zipfile()> method call, and can be read
+immediately after program control returns from that method.
+
+=cut
+
+has q(add_zipfile_time) => (
+    is      => q(rw),
+    default => sub{ 0 },
+);
+
+=back
 
 =head2 Methods
 
@@ -90,6 +125,10 @@ sub add_wadfile {
     $log->debug(q|(Filepath: | . $wadfile->filepath . q|)|);
 
     ### INSERT WAD file into 'wads'
+    # start the timer
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => q(add_wadfile));
+    # set up the SQL
     my $wad_sql = q|INSERT INTO wads VALUES (?, ?, ?, ?, ?, ?, ?)|;
     my $sth_wads = $dbh->prepare($wad_sql);
     if ( defined $dbh->err ) {
@@ -142,7 +181,14 @@ sub add_wadfile {
     }
 
     # exit here if there are no levels to add to the database
-    return 1 if ( ! defined $wadfile->levels );
+    if ( ! defined $wadfile->levels ) {
+        # stop the timer, get the elapsed time
+        $timer->stop(name => q(add_wadfile));
+        $self->add_wadfile_time(
+            $timer->time_value_difference(name => q(add_wadfile))
+        );
+        return 1;
+    }
 
     # there are levels in this WAD file; add them to the database
     foreach my $level ( @{$wadfile->levels} ) {
@@ -168,6 +214,13 @@ sub add_wadfile {
             );
         }
     }
+
+    # stop the timer, get the elapsed time
+    $timer->stop(name => q(add_wadfile));
+    $self->add_wadfile_time(
+        $timer->time_value_difference(name => q(add_wadfile))
+    );
+
     # return 'true'
     return 1;
 }
@@ -209,6 +262,10 @@ sub add_zipfile {
     $log->debug(q|(Filepath: | . $zipfile->filepath . q|)|);
 
     ### INSERT WAD file into 'zipfiles'
+    # set up the timer
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => q(add_zipfile));
+    # set up the SQL
     my $wad_sql = q|INSERT INTO zipfiles VALUES (?, ?, ?, ?, ?, ?)|;
     my $sth_wads = $dbh->prepare($wad_sql);
     if ( defined $dbh->err ) {
@@ -244,6 +301,12 @@ sub add_zipfile {
         $log->debug(sprintf(q(keysum: %8s; INSERT -> 'zipfiles' successful!),
             $zipfile->keysum));
     }
+
+    # stop the timer, get the elapsed time
+    $timer->stop(name => q(add_zipfile));
+    $self->add_zipfile_time(
+        $timer->time_value_difference(name => q(add_zipfile))
+    );
 
     # return 'true'
     return 1;

@@ -27,6 +27,9 @@ use Digest::SHA;
 use File::Basename;
 use Log::Log4perl;
 
+### Local modules
+use App::WADTools::Timer;
+
 =head2 Attributes
 
 =over
@@ -91,6 +94,16 @@ has q(md5_checksum) => (
     #isa
 );
 
+=item md5_checksum_gen_time
+
+The time, in seconds, that was required to generate file's MD5 checksum.
+
+=cut
+
+has q(md5_checksum_gen_time) => (
+    is => q(rw),
+    default => sub{ 0 },
+);
 
 =item sha_checksum
 
@@ -102,6 +115,17 @@ has q(sha_checksum) => (
     is => q(rw),
     default => sub{ undef },
     #isa
+);
+
+=item sha_checksum_gen_time
+
+The time, in seconds, that was required to generate file's SHA checksum.
+
+=cut
+
+has q(sha_checksum_gen_time) => (
+    is => q(rw),
+    default => sub{ 0 },
 );
 
 =back
@@ -143,11 +167,13 @@ sub generate_filehandle {
     $self->filehandle->binmode;
 }
 
-=item gen_md5_checksum([no_pad => 1])
+=item gen_md5_checksum()
 
-Generates the MD5 checksum of the file stored in the C<file> attribute, stores
-the checksum in the C<md5_checksum> attribute, and also returns it to the
-caller.
+Generates a Base64 MD5 checksum of the file using the filehandle that was
+created when the L<generate_filehandle()> method was called.  The checksum is
+stored in the object's C<md5_checksum> attribute.  This method will also
+populate the attribute L<md5_checksum_gen_time> with the elapsed time required
+to generate the checksum.  Returns the generated checksum to the caller.
 
 =cut
 
@@ -155,18 +181,27 @@ sub gen_md5_checksum {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name=> q(generate_md5_checksum));
     my $md5 = Digest::MD5->new();
     $md5->addfile($self->filehandle);
     my $digest = $md5->b64digest;
+    $timer->stop(name=> q(generate_md5_checksum));
     $self->md5_checksum($digest);
+    $self->md5_checksum_gen_time(
+        $timer->time_value_difference(name => q(generate_md5_checksum))
+    );
+
     return $digest;
 }
 
-=item gen_sha_checksum([no_pad => 1])
+=item gen_sha_checksum()
 
-Generates the SHA checksum of the file stored in the C<file> attribute, stores
-the checksum in the C<sha_checksum> attribute, and also returns it to the
-caller.
+Generates a Base64 SHA1 checksum of the file using the filehandle that was
+created when the L<generate_filehandle()> method was called.  The checksum is
+stored in the object's C<sha_checksum> attribute.  This method will also
+populate the attribute L<sha_checksum_gen_time> with the elapsed time required
+to generate the checksum.  Returns the generated checksum to the caller.
 
 =cut
 
@@ -174,10 +209,17 @@ sub gen_sha_checksum {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name=> q(generate_sha_checksum));
     my $sha = Digest::SHA->new(q(sha1));
     $sha->addfile($self->filehandle);
     my $digest = $sha->b64digest;
+    $timer->stop(name=> q(generate_sha_checksum));
     $self->sha_checksum($digest);
+    $self->sha_checksum_gen_time(
+        $timer->time_value_difference(name => q(generate_sha_checksum))
+    );
+
     return $digest;
 }
 

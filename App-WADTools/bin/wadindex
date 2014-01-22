@@ -301,22 +301,18 @@ use constant {
 
             # valid zipfile? generate checksums
             # MD5 checksum first
-            $timer->start(name => q(md5));
             my $md5 = $zipfile->gen_md5_checksum;
-            $timer->stop(name => q(md5));
-            my $gen_time = $timer->time_value_difference(name => q(md5));
             $log->info(qq(Zip MD5 checksum: $md5));
-            $log->info(sprintf(q(MD5 generated in %0.6f seconds), $gen_time));
-            $timer->delete(name => q(md5));
+            $log->info(sprintf(q(MD5 generated in %0.6f seconds),
+                $zipfile->md5_checksum_gen_time));
 
             # now the SHA checksum
-            $timer->start(name => q(sha));
             my $sha = $zipfile->gen_sha_checksum;
-            $timer->stop(name => q(sha));
-            $gen_time = $timer->time_value_difference(name => q(sha));
             $log->info(qq(Zip SHA checksum: $sha));
-            $log->info(sprintf(q(SHA generated in %0.6f seconds), $gen_time));
-            $timer->delete(name => q(sha));
+            $log->info(sprintf(q(SHA generated in %0.6f seconds),
+                $zipfile->sha_checksum_gen_time));
+
+            # generate the keysum
             $zipfile->keysum($zipfile->generate_base36_checksum(
                     data => $filename . q(:) . $zipfile->size
                 ),

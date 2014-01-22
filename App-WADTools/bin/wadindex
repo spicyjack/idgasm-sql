@@ -174,7 +174,6 @@ use constant {
     my $timer = App::WADTools::Timer->new();
     $timer->start(name => $my_name);
 
-    warn (q(log is ) . ref($log));
     $log->logdie(qq(Missing '--path' directory argument))
         unless ( $cfg->defined(q(path)) );
     my $wad_path = $cfg->get(q(path));

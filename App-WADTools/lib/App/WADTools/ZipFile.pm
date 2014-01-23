@@ -32,6 +32,7 @@ use Log::Log4perl;
 
 ### Local modules
 use App::WADTools::Error;
+use App::WADTools::Timer;
 
 ### Roles
 with qw(
@@ -42,6 +43,30 @@ with qw(
 =head2 Attributes
 
 =over
+
+=item extract_files_time
+
+The time required to extract all of the WAD files inside of a ZIP file.  This
+attribute is set at the end of the L<extract_files()> method.
+
+=cut
+
+has q(extract_files_time) => (
+    is => q(rw),
+);
+
+=item last_zip_error
+
+The default behaivor of L<Archive::Zip> is to use the L<Carp> module to output
+any error messages.  This module changes that behavior by telling
+L<Archive::Zip> to call this module when there are any zip errors.  Once this
+module recieves the error text, it stores the error into this attribute.
+
+=cut
+
+has q(last_zip_error) => (
+    is => q(rw),
+);
 
 =item members
 
@@ -55,28 +80,11 @@ has q(members) => (
     default => sub { [] },
 );
 
-=item last_zip_error
-
-The default behaivor of L<Archive::Zip> is to use the L<Carp> module to output
-any error messages.  This module changes that behavior by telling
-L<Archive::Zip> to call this module when there are any zip errors.  Once this
-module recieves the error text, it stores the error into this attribute.
-
-=back
-
-=cut
-
-has q(last_zip_error) => (
-    is => q(rw),
-);
-
 =item _zip_obj
 
 An internal attribute meant to store a reference to the L<Archive::Zip> object
 that is created when this object is instantiated.  Use this attribute at your
 own risk, it may change purpose without any notice.
-
-=back
 
 =cut
 
@@ -84,6 +92,8 @@ has q(_zip_obj) => (
     is => q(rw),
     #isa
 );
+
+=back
 
 =head2 Methods
 
@@ -186,6 +196,11 @@ sub extract_files {
     my $tempdir = $args{tempdir};
 
     my %file_temp_opts;
+
+    # create a timer and start it
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => q(extract_files));
+
     if ( defined $tempdir ) {
         %file_temp_opts = (
             DIR         => $tempdir,
@@ -214,10 +229,25 @@ sub extract_files {
                 message   => qq(Problem extracting member for: $file),
                 raw_error => $self->last_zip_error,
             );
+            # stop the timer
+            $timer->stop(name => q(extract_files));
+            # calculate the time difference
+            $self->extract_files_time(
+                $timer->time_value_difference(name => q(extract_files))
+            );
+            # return the error object
             return $error;
         }
         $log->debug(q(- done extracting: ) . $file);
     }
+
+    # stop the timer
+    $timer->stop(name => q(extract_files));
+    # calculate the time difference
+    $self->extract_files_time(
+        $timer->time_value_difference(name => q(extract_files))
+    );
+
     return $dh;
 }
 

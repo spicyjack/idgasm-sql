@@ -339,6 +339,9 @@ use constant {
                     $unzip_error_counter++;
                     next FILE_LOOP;
                 } else {
+                    $log->info(sprintf(q|Extracting WAD(s) took %0.6f seconds|,
+                        $zipfile->extract_files_time)
+                    );
                     # loop over each WAD in the zipfile, and index it
                     WAD_FILE: foreach my $wad_filename ( @wads_in_zip ) {
                         # passing in path/wad_filename means the indexer

@@ -365,6 +365,9 @@ use constant {
                         $wadfile->generate_keysum();
                         $log->info(q(WAD keysum/filename: )
                             . $wadfile->keysum . q(/) . $wad_filename);
+                        $log->info( sprintf(q(WAD indexing took %0.6f seconds),
+                            $indexer->wad_index_time)
+                        );
                         $log->info(q(Total Number of lumps indexed: )
                             . $wadfile->num_of_lumps);
                         if ( defined $wadfile->levels ) {

@@ -44,24 +44,20 @@ my $lump_level_regex = qr/^MAP[0-4][0-9]$|^E[1-4]M[1-9]$/;
 
 =head2 Attributes
 
-No object attributes (currently).
-
 =over
 
-=item foo
+=item wad_index_time
 
-A bogus object attribute.
-
-=back
+The time required to index the WAD file.
 
 =cut
 
-#has foo => (
-#    is      => q(rw),
-#    default => sub{ undef; },
-    # returns true if the argument is a DBI object
-    #isa => sub { (ref($_[0]) eq q(DBI)) ? 1 : 0 },
-#);
+has q(wad_index_time) => (
+    is      => q(rw),
+    default => sub{ 0 },
+);
+
+=back
 
 =head2 Methods
 
@@ -171,6 +167,9 @@ sub index_wad {
     $wadfile->gen_sha_checksum();
 
     $log->info(qq(Reading WAD info from '$filename'));
+    # start the timer
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => q(index_wad));
     my $status = open(my $WAD, qq(<$wad_path));
 
     if ( ! defined $status ) {
@@ -181,8 +180,18 @@ sub index_wad {
             message   => qq(Can't open file: $wad_path),
             raw_error => qq(Error code: $!),
         );
+        # stop the timer
+        $timer->stop(name => q(index_wad));
+        # calculate the time difference
+        $self->wad_index_time(
+            $timer->time_value_difference(name => q(index_wad))
+        );
+        return $error;
     }
     my $header;
+
+
+
     # read the header from the WAD file
     my $bytes_read = read( $WAD, $header, WAD_HEADER_SIZE );
     $log->logdie(qq(Failed to read header: $!))
@@ -195,6 +204,12 @@ sub index_wad {
             type      => q(wadindexer.index_wad.read_header),
             message   => qq(Read only $bytes_read bytes from WAD header),
             raw_error => q(Expected WAD header size: ) . WAD_HEADER_SIZE,
+        );
+        # stop the timer
+        $timer->stop(name => q(index_wad));
+        # calculate the time difference
+        $self->wad_index_time(
+            $timer->time_value_difference(name => q(index_wad))
         );
         return $error;
     }
@@ -216,6 +231,12 @@ sub index_wad {
             message   => qq|Directory offset is larger than WAD file size|,
             raw_error => qq|Directory offset: $dir_offset; |
                 . qq|WAD file size: | . $wadfile->size,
+        );
+        # stop the timer
+        $timer->stop(name => q(index_wad));
+        # calculate the time difference
+        $self->wad_index_time(
+            $timer->time_value_difference(name => q(index_wad))
         );
         return $error;
     }
@@ -240,6 +261,12 @@ sub index_wad {
                 message   => qq(Could not seek to directory entry # $i),
                 raw_error => qq(Error code: $!),
             );
+            # stop the timer
+            $timer->stop(name => q(index_wad));
+            # calculate the time difference
+            $self->wad_index_time(
+                $timer->time_value_difference(name => q(index_wad))
+            );
             return $error;
         }
 
@@ -251,6 +278,12 @@ sub index_wad {
                 type      => q(wadindexer.index_wad.read_directory_entry),
                 message   => qq(Read $bytes_read bytes from WAD directory),
                 raw_error => qq(Error code: $!),
+            );
+            # stop the timer
+            $timer->stop(name => q(index_wad));
+            # calculate the time difference
+            $self->wad_index_time(
+                $timer->time_value_difference(name => q(index_wad))
             );
             return $error;
         }
@@ -292,6 +325,14 @@ sub index_wad {
             $i + 1, $lump_name, $lump_size, $lump_start));
     }
     close($WAD);
+
+    # stop the timer
+    $timer->stop(name => q(index_wad));
+    # calculate the time difference
+    $self->wad_index_time(
+        $timer->time_value_difference(name => q(index_wad))
+    );
+
     return $wadfile;
 }
 

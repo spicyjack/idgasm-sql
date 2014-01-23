@@ -99,6 +99,7 @@ sub index_wad_list {
         unless ( defined $args{files} );
 
     my @wadlist;
+    my $total_wad_index_time = 0;
     FILE: foreach my $filename ( @{$args{files}} ) {
         # skip dotfiles
         if ( $filename =~ m!/\.\w+! ) {
@@ -106,12 +107,21 @@ sub index_wad_list {
             next FILE;
         }
         my $wadpath = $args{unzip_dir} . q(/) . $filename;
-        my $wadfile_obj = $self->index_wad(
+        my $wadfile = $self->index_wad(
             path         => $args{path},
             wad_filename => $filename
         );
-        push(@wadlist, $wadfile_obj);
+        if ( $wadfile->can(q(is_error)) ) {
+            $log->error("Error indexing WAD file;");
+            $wadfile->log_error();
+        } else {
+            $total_wad_index_time += $self->wad_index_time;
+            # push the indexed WAD onto the list of WADs
+            push(@wadlist, $wadfile);
+        }
     }
+    # set the total accumulated time required to index all of the WADs
+    $self->wad_index_time($total_wad_index_time);
     return @wadlist;
 }
 

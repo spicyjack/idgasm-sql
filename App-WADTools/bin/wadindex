@@ -57,7 +57,6 @@ wadindex>.
 
 our @options = (
     # script options
-    q(debug|d),
     q(verbose|v),
     q(version),
     q(help|h),
@@ -71,8 +70,10 @@ our @options = (
     q(index-db|idxdb|x=s),
 
     # debug options
+    q(debug|d),
     q(debug-noexit),
     q(debug-requests=i),
+    q(logfile|log|l=s),
 );
 
 =head1 DESCRIPTION

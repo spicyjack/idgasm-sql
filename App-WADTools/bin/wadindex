@@ -17,20 +17,21 @@ our $copyright = qq|Copyright (c) 2013-2014 by Brian Manning|;
  perl wadindex [OPTIONS]
 
  Script options:
- -h|--help          Shows this help text
- -d|--debug         Debug script execution (tons of output)
- -c|--colorize      Always colorize script output
- -v|--verbose       Verbose script execution
  --version          Print script version and copyright, then exit
+ -h|--help          Shows this help text
+ -v|--verbose       Verbose script execution
 
  Path/database options:
  -p|--path          Path to WAD files/directories with WAD files
- --strip-path       Strip this string out of log output
+ --strip-path       Strip this path string out of log output
  -t|--tempdir       Temporary directory to use when unzipping WAD files
  -i|--idgames-db    Database created with 'idg_db_dump' schema
  -x|--index-db      Database created with 'wadindex' schema
 
  Debug options:
+ -d|--debug         Debug script execution (tons of output)
+ -c|--colorize      Always colorize script output
+ -l|--logfile       Write verbose/debug output to a file instead of screen
  --debug-noexit     Don't exit script when --debug is used
  --debug-requests   Exit after this many files when --debug used
 

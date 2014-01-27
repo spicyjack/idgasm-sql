@@ -62,13 +62,14 @@ sub new {
         unless ( ref($cfg) eq q(App::WADTools::Config) );
 
     my $log_conf;
-    # Default log level
+    # Set the default log level; the Logfile/Screen appenders will add their
+    # bits to this directive, so don't use a newline (\n) here
     if ( $cfg->defined(q(debug)) ) {
-        $log_conf = qq(log4perl.rootLogger = DEBUG, Screen\n);
+        $log_conf = qq(log4perl.rootLogger = DEBUG, );
     } elsif ( $cfg->defined(q(verbose)) ) {
-        $log_conf = qq(log4perl.rootLogger = INFO, Screen\n);
+        $log_conf = qq(log4perl.rootLogger = INFO, );
     } else {
-        $log_conf = qq(log4perl.rootLogger = WARN, Screen\n);
+        $log_conf = qq(log4perl.rootLogger = WARN, );
     }
 
     my $log_conversion_pattern =  qq|[%6r] %p{1} %4L (%M{1}) %m%n|;
@@ -84,6 +85,9 @@ sub new {
     #. qq(= %d{HH.mm.ss} %p -> %m%n\n);
 
     if ( $cfg->defined(q(logfile)) ) {
+        # tell the root logger which appender to use by appending it to the
+        # existing contents of $log_conf
+        $log_conf .= qq( Logfile\n);
         $log_conf .= qq(log4perl.appender.Logfile = )
             . qq(Log::Log4perl::Appender::File\n);
         $log_conf .= qq(log4perl.appender.Logfile.filename = )
@@ -94,7 +98,11 @@ sub new {
             . qq(= $log_conversion_pattern\n);
 
     } else {
-        # Log output
+        # tell the root logger which appender to use by appending it to the
+        # existing contents of $log_conf
+        $log_conf .= qq( Screen\n);
+
+        # Check for log colorization
         if ( -t STDOUT || $cfg->defined(q(colorize)) ) {
             $log_conf .= qq(log4perl.appender.Screen = )
                 . qq(Log::Log4perl::Appender::ScreenColoredLevels\n);
@@ -103,7 +111,7 @@ sub new {
                 . qq(Log::Log4perl::Appender::Screen\n);
         }
 
-        # More log4perl.appender options
+        # More log4perl.appender.Screen options
         $log_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
             . qq(log4perl.appender.Screen.utf8 = 1\n)
             . qq(log4perl.appender.Screen.layout = PatternLayout\n)

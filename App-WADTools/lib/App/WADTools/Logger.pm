@@ -71,21 +71,7 @@ sub new {
         $log_conf = qq(log4perl.rootLogger = WARN, Screen\n);
     }
 
-    # Log output
-    if ( -t STDOUT || $cfg->defined(q(colorize)) ) {
-        $log_conf .= qq(log4perl.appender.Screen = )
-            . qq(Log::Log4perl::Appender::ScreenColoredLevels\n);
-    } else {
-       $log_conf .= qq(log4perl.appender.Screen = )
-            . qq(Log::Log4perl::Appender::Screen\n);
-    }
-
-    # More log4perl.appender options
-    $log_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
-        . qq(log4perl.appender.Screen.utf8 = 1\n)
-        . qq(log4perl.appender.Screen.layout = PatternLayout\n)
-        . q(log4perl.appender.Screen.layout.ConversionPattern )
-        . qq|= [%6r] %p{1} %4L (%M{1}) %m%n\n|;
+    my $log_conversion_pattern =  qq|[%6r] %p{1} %4L (%M{1}) %m%n|;
     # Explanation of log output pattern options:
     # - %r: number of milliseconds elapsed since program start
     # - %p{1}: first letter of event priority
@@ -96,6 +82,34 @@ sub new {
     # old log output patterns:
     #. qq( = %d %p %m%n\n)
     #. qq(= %d{HH.mm.ss} %p -> %m%n\n);
+
+    if ( $cfg->defined(q(logfile)) ) {
+        $log_conf .= qq(log4perl.appender.Logfile = )
+            . qq(Log::Log4perl::Appender::File\n);
+        $log_conf .= qq(log4perl.appender.Logfile.filename = )
+            . $cfg->get(q(logfile)) . qq(\n);
+        $log_conf .= qq(log4perl.appender.Logfile.utf8 = 1\n)
+            . qq(log4perl.appender.Logfile.layout = PatternLayout\n)
+            . q(log4perl.appender.Logfile.layout.ConversionPattern )
+            . qq(= $log_conversion_pattern\n);
+
+    } else {
+        # Log output
+        if ( -t STDOUT || $cfg->defined(q(colorize)) ) {
+            $log_conf .= qq(log4perl.appender.Screen = )
+                . qq(Log::Log4perl::Appender::ScreenColoredLevels\n);
+        } else {
+           $log_conf .= qq(log4perl.appender.Screen = )
+                . qq(Log::Log4perl::Appender::Screen\n);
+        }
+
+        # More log4perl.appender options
+        $log_conf .= qq(log4perl.appender.Screen.stderr = 1\n)
+            . qq(log4perl.appender.Screen.utf8 = 1\n)
+            . qq(log4perl.appender.Screen.layout = PatternLayout\n)
+            . q(log4perl.appender.Screen.layout.ConversionPattern )
+            . qq(= $log_conversion_pattern\n);
+    }
 
     # create a logger object, and prime the logfile for this session
     Log::Log4perl::init( \$log_conf );

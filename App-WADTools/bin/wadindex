@@ -239,10 +239,22 @@ use constant {
         $log->warn(q(about files that are indexed by the script));
     }
 
-    my $zip_file_counter = 0;
-    my $unzip_error_counter = 0;
+    # counters for different different script statistics
+    my $total_script_execution_time = 0;
+    my $total_zip_extract_counter = 0;
+    my $total_zip_extract_time = 0;
+    my $total_wadfile_counter = 0;
+    my $total_wadfile_index_time = 0;
+    my $total_wad_lumps_indexed = 0;
+    my $total_wadfile_checksum_counter = 0;
+    my $total_md5_checksum_counter = 0;
+    my $total_md5_checksum_time = 0;
+    my $total_sha_checksum_counter = 0;
+    my $total_sha_checksum_time = 0;
+    my $total_unzip_error_counter = 0;
     my $total_file_counter = 0;
-    #my $indexer = App::WADTools::WADIndexer->new( idx_db => $idx_db );
+
+    # create a new Indexer object
     my $indexer = App::WADTools::WADIndexer->new();
 
     # get a list of files underneath $wad_path
@@ -305,12 +317,16 @@ use constant {
             $log->info(qq(Zip MD5 checksum: $md5));
             $log->info(sprintf(q(MD5 generated in %0.6f seconds),
                 $zipfile->md5_checksum_gen_time));
+            # update MD5 checksum time
+            $total_md5_checksum_time += $zipfile->md5_checksum_gen_time;
 
             # now the SHA checksum
             my $sha = $zipfile->gen_sha_checksum;
             $log->info(qq(Zip SHA checksum: $sha));
             $log->info(sprintf(q(SHA generated in %0.6f seconds),
                 $zipfile->sha_checksum_gen_time));
+            # update SHA checksum time
+            $total_sha_checksum_time += $zipfile->sha_checksum_gen_time;
 
             # generate the keysum
             $zipfile->keysum($zipfile->generate_base36_checksum(
@@ -338,12 +354,16 @@ use constant {
                     $log->error(sprintf(q(keysum: %8s;), $zipfile->keysum)
                         . q(; filename: ) . $zipfile->filename);
                     $unzip_dir->log_error();
-                    $unzip_error_counter++;
+                    $total_unzip_error_counter++;
                     next FILE_LOOP;
                 } else {
                     $log->info(sprintf(q|Extracting WAD(s) took %0.6f seconds|,
                         $zipfile->extract_files_time)
                     );
+                    # bump up the zipfile counter
+                    $total_zip_extract_counter++;
+                    # update total zip time
+                    $total_zip_extract_time += $zipfile->extract_files_time;
                     # loop over each WAD in the zipfile, and index it
                     WAD_FILE: foreach my $wad_filename ( @wads_in_zip ) {
                         # passing in path/wad_filename means the indexer
@@ -366,6 +386,9 @@ use constant {
                             next WAD_FILE;
                         }
 
+                        # update the WADfile counter
+                        $total_wadfile_counter++;
+
                         # generate the keysum
                         $wadfile->generate_keysum();
                         $log->info(q(WAD keysum/filename: )
@@ -373,8 +396,16 @@ use constant {
                         $log->info( sprintf(q(WAD indexing took %0.6f seconds),
                             $indexer->wad_index_time)
                         );
+
+                        # update the indexing time
+                        $total_wadfile_index_time += $indexer->wad_index_time;
+
                         $log->info(q(Total Number of lumps indexed: )
                             . $wadfile->num_of_lumps);
+
+                        # update the lumps index counter
+                        $total_wad_lumps_indexed += $wadfile->num_of_lumps;
+
                         if ( defined $wadfile->levels ) {
                             $log->info(q(WAD levels: )
                                 . join(q(, ), @{$wadfile->levels}));
@@ -441,8 +472,7 @@ use constant {
                 }
             }
 
-            # bump up the zipfile counter
-            $zip_file_counter++;
+
         } else {
             $log->info(qq(Not a zip file: $filename));
         }
@@ -450,8 +480,26 @@ use constant {
     }
 
     $timer->stop(name => $my_name);
-    my $prog_execution_time = $timer->time_value_difference(name => $my_name);
-    $log->warn(qq(Total script execution time: $prog_execution_time seconds));
+    $total_script_execution_time =
+        $timer->time_value_difference(name => $my_name);
+    $log->warn(q(Total script execution time: )
+        . $total_script_execution_time . q( seconds));
+    $log->warn(q(Total zipfiles touched: ) . $total_zip_extract_counter);
+    $log->warn(q(Total zip errors: ) . $total_unzip_error_counter);
+    $log->warn(q(Total zip extraction time: ) . $total_zip_extract_time
+        . q(seconds));
+    $log->warn(q(Total WAD files indexed: ) . $total_wadfile_counter);
+    $log->warn(q(Total WAD lumps indexed: ) . $total_wad_lumps_indexed);
+    $log->warn(q(Total WAD index time: ) . $total_wadfile_index_time
+        . q(seconds));
+    $log->warn(q(Total MD5 checksums computed: )
+        . $total_md5_checksum_counter);
+    $log->warn(q(Total time spent computing MD5 checksums: )
+        . $total_md5_checksum_time . q( seconds));
+    $log->warn(q(Total SHA checksums computed: )
+        . $total_sha_checksum_counter);
+    $log->warn(q(Total time spent computing SHA checksums: )
+        . $total_sha_checksum_time . q( seconds));
 
 =head1 AUTHOR
 

@@ -319,6 +319,7 @@ use constant {
                 $zipfile->md5_checksum_gen_time));
             # update MD5 checksum time
             $total_md5_checksum_time += $zipfile->md5_checksum_gen_time;
+            $total_md5_checksum_counter++;
 
             # now the SHA checksum
             my $sha = $zipfile->gen_sha_checksum;
@@ -327,6 +328,7 @@ use constant {
                 $zipfile->sha_checksum_gen_time));
             # update SHA checksum time
             $total_sha_checksum_time += $zipfile->sha_checksum_gen_time;
+            $total_sha_checksum_counter++;
 
             # generate the keysum
             $zipfile->keysum($zipfile->generate_base36_checksum(
@@ -412,8 +414,15 @@ use constant {
                         }
                         $log->info(q(WAD MD5 checksum: )
                             . $wadfile->md5_checksum);
+                        $total_md5_checksum_time
+                            += $wadfile->md5_checksum_gen_time;
+                        $total_md5_checksum_counter++;
+
                         $log->info(q(WAD SHA checksum: )
                             . $wadfile->sha_checksum);
+                        $total_sha_checksum_time
+                            += $wadfile->sha_checksum_gen_time;
+                        $total_sha_checksum_counter++;
 
                         #push(@indexed_wads, $wadfile);
                         # add the WADFile object to the database
@@ -483,23 +492,23 @@ use constant {
     $total_script_execution_time =
         $timer->time_value_difference(name => $my_name);
     $log->warn(q(Total script execution time: )
-        . $total_script_execution_time . q( seconds));
+        . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
     $log->warn(q(Total zipfiles touched: ) . $total_zip_extract_counter);
     $log->warn(q(Total zip errors: ) . $total_unzip_error_counter);
-    $log->warn(q(Total zip extraction time: ) . $total_zip_extract_time
-        . q(seconds));
+    $log->warn(q(Total zip extraction time: )
+        . sprintf(q(%0.2f), $total_zip_extract_time) . q( seconds));
     $log->warn(q(Total WAD files indexed: ) . $total_wadfile_counter);
     $log->warn(q(Total WAD lumps indexed: ) . $total_wad_lumps_indexed);
-    $log->warn(q(Total WAD index time: ) . $total_wadfile_index_time
-        . q(seconds));
+    $log->warn(q(Total WAD index time: )
+        . sprintf(q(%0.2f), $total_wadfile_index_time) . q( seconds));
     $log->warn(q(Total MD5 checksums computed: )
         . $total_md5_checksum_counter);
     $log->warn(q(Total time spent computing MD5 checksums: )
-        . $total_md5_checksum_time . q( seconds));
+        . sprintf(q(%0.2f), $total_md5_checksum_time) . q( seconds));
     $log->warn(q(Total SHA checksums computed: )
         . $total_sha_checksum_counter);
     $log->warn(q(Total time spent computing SHA checksums: )
-        . $total_sha_checksum_time . q( seconds));
+        . sprintf(q(%0.2f), $total_sha_checksum_time) . q( seconds));
 
 =head1 AUTHOR
 

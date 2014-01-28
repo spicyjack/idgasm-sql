@@ -9,7 +9,7 @@ The CLI "view" object for the script C<idgames_db_dump>.  Displays updates
 from the C<idgames_db_dump> script, as well as runtime statistics at the end
 of script execution.
 
-The following ѕtatistics are displayed:
+The following statistics are displayed:
 
 =over
 

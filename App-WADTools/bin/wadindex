@@ -320,6 +320,12 @@ use constant {
             # update MD5 checksum time
             $total_md5_checksum_time += $zipfile->md5_checksum_gen_time;
             $total_md5_checksum_counter++;
+            $log->info(q(Last MD5 checksum time: )
+                . sprintf(q(%0.8f),
+                $zipfile->md5_checksum_gen_time));
+
+            $log->info(q(Current total MD5 checksum total time: )
+                . sprintf(q(%0.8f), $total_md5_checksum_time));
 
             # now the SHA checksum
             my $sha = $zipfile->gen_sha_checksum;
@@ -329,6 +335,12 @@ use constant {
             # update SHA checksum time
             $total_sha_checksum_time += $zipfile->sha_checksum_gen_time;
             $total_sha_checksum_counter++;
+
+            $log->info(q(Last SHA checksum time: )
+                . sprintf(q(%0.8f), $zipfile->sha_checksum_gen_time));
+
+            $log->info(q(Current total SHA checksum total time: )
+                . sprintf(q(%0.8f), $total_sha_checksum_time));
 
             # generate the keysum
             $zipfile->keysum($zipfile->generate_base36_checksum(
@@ -395,34 +407,49 @@ use constant {
                         $wadfile->generate_keysum();
                         $log->info(q(WAD keysum/filename: )
                             . $wadfile->keysum . q(/) . $wad_filename);
+
+                        # display and update the WAD indexing time
                         $log->info( sprintf(q(WAD indexing took %0.6f seconds),
                             $indexer->wad_index_time)
                         );
-
-                        # update the indexing time
                         $total_wadfile_index_time += $indexer->wad_index_time;
 
+                        # display and update the number of lumps indexed
                         $log->info(q(Total Number of lumps indexed: )
                             . $wadfile->num_of_lumps);
-
-                        # update the lumps index counter
                         $total_wad_lumps_indexed += $wadfile->num_of_lumps;
 
+                        # Show what levels were contained inside the WAD (if
+                        # any)
                         if ( defined $wadfile->levels ) {
                             $log->info(q(WAD levels: )
                                 . join(q(, ), @{$wadfile->levels}));
                         }
+
+                        # show checksum info
                         $log->info(q(WAD MD5 checksum: )
                             . $wadfile->md5_checksum);
+                        $total_md5_checksum_counter++;
                         $total_md5_checksum_time
                             += $wadfile->md5_checksum_gen_time;
-                        $total_md5_checksum_counter++;
+                        $log->info(q(Last MD5 checksum time: )
+                            . sprintf(q(%0.8f),
+                            $wadfile->md5_checksum_gen_time));
+
+                        $log->info(q(Current total MD5 checksum total time: )
+                            . sprintf(q(%0.8f), $total_md5_checksum_time));
 
                         $log->info(q(WAD SHA checksum: )
                             . $wadfile->sha_checksum);
+                        $total_sha_checksum_counter++;
                         $total_sha_checksum_time
                             += $wadfile->sha_checksum_gen_time;
-                        $total_sha_checksum_counter++;
+                        $log->info(q(Last SHA checksum time: )
+                            . sprintf(q(%0.8f),
+                            $wadfile->sha_checksum_gen_time));
+
+                        $log->info(q(Current total SHA checksum total time: )
+                            . sprintf(q(%0.8f), $total_sha_checksum_time));
 
                         #push(@indexed_wads, $wadfile);
                         # add the WADFile object to the database

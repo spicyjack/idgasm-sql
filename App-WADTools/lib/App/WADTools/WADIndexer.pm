@@ -166,15 +166,13 @@ sub index_wad {
         return undef;
     }
 
+    # generate_filehandle() and generate_dirname_basename() is already called
+    # in the BUILD method
     # create the WADFile object here
     my $wadfile = App::WADTools::WADFile->new(
         filepath     => $wad_path,
 
     );
-    # generate_filehandle() and generate_dirname_basename() is already called
-    # in the BUILD method
-    $wadfile->gen_md5_checksum();
-    $wadfile->gen_sha_checksum();
 
     $log->info(qq(Reading WAD info from '$filename'));
     # start the timer
@@ -199,8 +197,6 @@ sub index_wad {
         return $error;
     }
     my $header;
-
-
 
     # read the header from the WAD file
     my $bytes_read = read( $WAD, $header, WAD_HEADER_SIZE );
@@ -342,6 +338,10 @@ sub index_wad {
     $self->wad_index_time(
         $timer->time_value_difference(name => q(index_wad))
     );
+
+    # generate checksums here, after the file has already been read once
+    $wadfile->gen_sha_checksum();
+    $wadfile->gen_md5_checksum();
 
     return $wadfile;
 }

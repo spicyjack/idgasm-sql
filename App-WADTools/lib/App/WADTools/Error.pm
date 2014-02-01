@@ -3,14 +3,39 @@
 ################################
 package App::WADTools::Error;
 
-=head1 App::WADTools::Error
-
-Object used to return success/error status to other objects for a given method
-call.
-
-=cut
-
+### System modules
 use Moo;
+
+=head1 NAME
+
+App::WADTools::Error
+
+=head1 SYNOPSIS
+
+ # in an object method somewhere, an error occurs...
+ my $error = App::WADTools::Error->new(
+    caller    => __PACKAGE__ . q(.) . __LINE__,
+    type      => q(object.method_name.error_type),
+    message   => qq(Something bad happened! error:) . $obj->parsed_error,
+    raw_error => $obj->raw_unparsed_error,
+ );
+
+ # return this error object to the caller
+ return $error
+
+ # in the calling method/function
+ my $new_object = $object->do_something_that_fails();
+ # "->can()" method is from UNIVERSAL
+ if ( $new_object->can(q(is_error)) ) {
+    # $new_object is an error, handle the error
+ } else {
+    # $new_object is not an error object, continue processing
+ }
+
+=head1 DESCRIPTION
+
+A generic "error" object, that is used to return error status and messages to
+other objects when a method call generates an error of some sort.
 
 =head2 Attributes
 
@@ -133,5 +158,33 @@ sub log_error {
     }
     return 1;
 }
+
+=back
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::IndexDB
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
 
 1;

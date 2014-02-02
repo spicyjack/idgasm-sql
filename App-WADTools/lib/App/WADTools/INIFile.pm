@@ -3,7 +3,23 @@
 ##################################
 package App::WADTools::INIFile;
 
-# system modules
+=head1 NAME
+
+App::WADTools::Error
+
+=head1 SYNOPSIS
+
+ # in an object method somewhere, an error occurs...
+ my $error = App::WADTools::Error->new(
+    caller    => __PACKAGE__ . q(.) . __LINE__,
+    type      => q(object.method_name.error_type),
+    message   => qq(Something bad happened! error:) . $obj->parsed_error,
+    raw_error => $obj->raw_unparsed_error,
+ );
+
+=cut
+
+### System modules
 use Config::Std;
 use Date::Format;
 use Digest::MD5;
@@ -14,12 +30,13 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-# local modules
+### Local modules
 use App::WADTools::Error;
 
-=head1 App::WADTools::INIFile
+=head1 DESCRIPTION
 
-INIFileure/manage script options using L<Getopt::Long>.
+Read in database "transactions" from C<INI> format files, use those
+the data structures from those transactions to create database(s).
 
 =head2 Attributes
 
@@ -269,6 +286,30 @@ sub dump_schema {
 }
 
 =back
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::INIFile
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 

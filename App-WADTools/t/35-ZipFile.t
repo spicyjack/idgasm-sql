@@ -4,12 +4,14 @@
 # For support with this file, please file an issue on the GitHub issue tracker
 # for this project: https://github.com/spicyjack/wadtools/issues
 
+use strictures 1; # strict + warnings
 use Test::More tests => 1;
 
 BEGIN {
     use_ok( q(App::WADTools::ZipFile) );
 }
 
+my $VERSION = $App::WADTools::ZipFile::VERSION || q(git-dev);
 diag( qq(\nTesting App::WADTools::ZipFile )
     . $App::WADTools::ZipFile::VERSION
     . qq(,\n)

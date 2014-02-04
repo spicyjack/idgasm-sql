@@ -4,20 +4,23 @@
 # For support with this file, please file an issue on the GitHub issue tracker
 # for this project: https://github.com/spicyjack/wadtools/issues
 
-use Test::More tests => 1;
+use strictures 1; # strict + warnings
+use Test::More tests => 2;
 
 BEGIN {
     use_ok( q(App::WADTools::idGamesDB) );
 }
 
+my $VERSION = $App::WADTools::idGamesDB::VERSION || q(git-dev);
+
 diag( qq(\nTesting App::WADTools::idGamesDB )
-    . $App::WADTools::idGamesDB::VERSION
+    . $VERSION
     . qq(,\n)
     . qq(Perl $], $^X)
 );
 
 my $db = App::WADTools::idGamesDB->new();
-ok(ref($timer) eq q(App::WADTools::idGamesDB),
+ok(ref($db) eq q(App::WADTools::idGamesDB),
     q(Successfully created App::WADTools::idGamesDB object));
 
 # Test ideas:

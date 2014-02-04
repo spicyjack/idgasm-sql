@@ -3,12 +3,38 @@
 ######################################
 package App::WADTools::idGamesFile;
 
-=head1 App::WADTools::idGamesFile
+=head1 NAME
 
-An individual file in C<idGames Archive>.  The information in this object is
-taken from the C<*.txt> file that is uploaded with each file to C<idGames
+App::WADTools::idGamesFile
+
+=head1 SYNOPSIS
+
+
+ my $file = App::WADTools::idGamesFile->new();
+
+ # the idGamesFile object keeps a list of it's attributes in the
+ # "attributes" attribute
+ my @attribs = @{$file->attributes};
+
+ # go through all of the attributes in the $content object, copy
+ # them to the same attributes in this File object
+ # $content is a data structure representing a JSON or XML idGames API
+ # response, parsed by one of the parsers provided by WADTools;
+
+ foreach my $key ( @attribs ) {
+    $file->{$key} = $content->{$key};
+ }
+
+=head1 DESCRIPTION
+
+Information about an individual file in C<idGames Archive>.  The information in
+this object was obtained by making API requests against the C<idGames Archive
+API> (C</idgames>).  The information in the C<idGames Archive> was obtained by
+parsing the C<*.txt> file that is uploaded with each file to C<idGames
 Archive>.  Any issues/inaccuracies are most likely because the C<*.txt> file
-was parsed incorrectly or was not parseable.
+was parsed incorrectly or was not in a parseable format, meaning the WAD
+author did not use the C<idGames Archive> template file when he/she uploaded
+their WAD.
 
 =cut
 
@@ -289,7 +315,7 @@ has q(idgamesurl) => (
 =item reviews
 
 An array reference that contains all reviews for this file (as
-L<App::WADTools::Vote objects).
+L<App::WADTools::Vote> objects).
 
 =cut
 
@@ -327,6 +353,30 @@ attributes in the object by passing them as part of the object constructor.
 See the L<SYNOPSIS> section for an example.
 
 =back
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::idGamesFile
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 

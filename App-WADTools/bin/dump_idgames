@@ -1,0 +1,262 @@
+#!/usr/bin/env perl
+
+# For support with this file, please file an issue on the GitHub issue tracker
+# for this project: https://github.com/spicyjack/wadtools/issues
+
+=head1 NAME
+
+B<dump_idgames> - Create databases for use with tests
+
+=cut
+
+our $copyright = qq|Copyright (c) 2014 by Brian Manning|;
+
+=head1 SYNOPSIS
+
+ perl dump_idgames [OPTIONS]
+
+ Script options:
+ --version          Print script version and copyright, then exit
+ -h|--help          Shows this help text
+ -v|--verbose       Verbose script execution
+
+ Path/database options:
+ --idgames-db       Database generated with 'idgames_db_dump' tool
+ -f|--format        Output format; one of "csv" or "ini"
+
+ Debug options:
+ -d|--debug         Debug script execution (tons of output)
+ -c|--colorize      Always colorize script output
+ -l|--logfile       Write verbose/debug output to a file instead of screen
+ --debug-noexit     Don't exit script when --debug is used
+ --debug-requests   Exit after this many files when --debug used
+
+ Example usage:
+
+ # dump the WAD Search database to a CSV file
+ dump_idgames --idgames-db /path/to/idgames_db_dump.db \
+    --format csv \
+    -- 12671 12849 12747 12430 12782 12363 \
+       12835 12349 13024 12815 12415 12371
+
+ # dump the WAD Search database to an INI file
+ dump_idgames --idgames-db /path/to/idgames_db_dump.db \
+    --format ini \
+    -- 12671 12849 12747 12430 12782 12363 \
+       12835 12349 13024 12815 12415 12371
+
+ # dump the WAD Search database to a CSV file
+ dump_idgames --idgames-db /path/to/idgames_db_dump.db \
+    --format csv \
+    -- levels/doom2/Ports/g-i/grove.zip \
+       levels/doom2/Ports/a-c/action.zip
+
+You can view the full C<POD> documentation of this file by calling C<perldoc
+dump_idgames>.
+
+=cut
+
+our @options = (
+    # script options
+    q(verbose|v),
+    q(version),
+    q(help|h),
+    q(colorize|c), # ignore '-t' test and always colorize output
+
+    # path/db options
+    q(idgames-db|idgdb|i=s),
+    q(format|f=s),
+
+    # debug options
+    q(debug|d),
+    q(debug-noexit),
+    q(debug-requests=i),
+    q(logfile|log|l=s),
+);
+
+=head1 DESCRIPTION
+
+Dump records from a database created with C<idgames_db_dump>.  Multiple
+records are specified by placing them after "double dashes", which would
+separate script options from the request IDs or file paths to dump records
+for.  Different output formats can be specified on the command line; the
+current output formats supported are Windows-style C<INI>, and comma-separated
+values, better known as C<CSV>.
+
+=cut
+
+################
+# package main #
+################
+package main;
+use 5.010;
+use strict;
+use warnings;
+use utf8;
+
+### System modules
+use Data::Dumper;
+$Data::Dumper::Indent = 1;
+$Data::Dumper::Sortkeys = 1;
+$Data::Dumper::Terse = 1;
+use File::Basename;
+use File::Temp;
+use Log::Log4perl qw(get_logger :no_extra_logdie_message);
+use Log::Log4perl::Level;
+use Pod::Usage;
+
+### Local modules
+use App::WADTools::Config;
+use App::WADTools::idGamesDB;
+use App::WADTools::INIFile;
+use App::WADTools::Logger;
+use App::WADTools::Timer;
+
+    # create a variable with the current name of the script
+    my $my_name = basename($0);
+    # provide a version string if dzil hasn't populated modules with $VERSION
+    # scalars
+    my $VERSION = $App::WADTools::VERSION || q(git-dev);
+
+    # allow UTF-8 output
+    binmode(STDOUT, ":utf8");
+
+    # create a logger object
+    my $cfg = App::WADTools::Config->new(options => \@options);
+
+    # dump and bail if we get called with --help
+    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+
+    if ( $cfg->defined(q(version)) ) {
+        print STDERR qq($my_name: version '$VERSION'\n);
+        print STDERR qq($my_name: $copyright\n);
+        exit 0;
+    }
+
+    App::WADTools::Logger->new(config => $cfg);
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->logdie(qq(Missing '--idgames-db' database argument))
+        unless ( $cfg->defined(q(idgames-db)) );
+    my $idgames_db_file = $cfg->get(q(idgames-db));
+    if ( ! -r $idgames_db_file ) {
+        $log->fatal(qq(Path: $idgames_db_file));
+        $log->logdie(q(File specified with --idgames-db not found/available;));
+    }
+
+    # start the script timer
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => $my_name);
+    # print a nice banner before checking for optional arguments
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn($copyright);
+    $log->warn(qq(My PID is $$));
+    $log->info(qq(Command line: $0 ) . $cfg->args);
+    $log->warn(qq(--idgames-db database file::));
+    $log->warn(qq(-> $idgames_db_file));
+
+    # we already checked that $idgames_db_file exists
+    my $idg_db = App::WADTools::idGamesDB->new(filename => $idgames_db_file);
+    # When check_schema => 1 is passed to 'db_connect()', the return value is
+    # the number of rows in the schema table, aka how many schema blocks that
+    # have been applied to the database
+    my $idg_db_connect = $idg_db->connect( check_schema => 1 );
+    if ( $idg_db_connect->can(q(is_error)) ) {
+        # $idg_db_connect is an App::WADTools::Error object
+        $idg_db_connect->log_error();
+        $log->logdie(q(Recieved error connecting to idgames-db;));
+    } else {
+        $log->debug(qq(idgames-db has $idg_db_connect schema entries));
+    }
+
+    # counters for different different script statistics
+    my $total_script_execution_time = 0;
+    my $total_db_records_counter = 0;
+
+    # loop over each path or file ID in the command line
+    FILE_LOOP: foreach my $id_arg ( @ARGV ) {
+        $total_db_records_counter++;
+        my ($file, $filename, $dirname, $file_id);
+        if ( $id_arg =~ /\d+/ ) {
+            $file_id = $id_arg;
+            $log->warn(qq(==== Begin file ID: $id_arg ====));
+            $file = $idg_db->get_file_by_id(id => $id_arg);
+        } else {
+            $filename = basename($id_arg);
+            $dirname = dirname($id_arg);
+            $log->warn(qq(==== Begin path: $id_arg ====));
+            $file = $idg_db->get_file_by_path(
+                # the trailing slash exists in API requests from idGames API
+                path     => $dirname . q(/),
+                filename => $filename,
+            );
+        }
+
+
+        if ( ! defined $file ) {
+            $log->info(qq(No match in db: $dirname/$filename));
+        } elsif ( $file->can(q(is_error)) ) {
+            $log->error(q(Received error from database));
+            $file->log_error();
+        } else {
+            $log->info(qq(idgames-db match: file ID/keysum ')
+                . $file->id . q(/) . $file->keysum);
+        }
+        $log->warn(qq(~~~~ End: $id_arg ~~~~));
+    }
+
+    $timer->stop(name => $my_name);
+    $total_script_execution_time =
+        $timer->time_value_difference(name => $my_name);
+    $log->warn(q(Total script execution time: )
+        . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
+
+=begin COMMENT
+
+    $log->warn(q(Total zipfiles touched: ) . $total_zip_extract_counter);
+    $log->warn(q(Total zip errors: ) . $total_unzip_error_counter);
+    $log->warn(q(Total zip extraction time: )
+        . sprintf(q(%0.2f), $total_zip_extract_time) . q( seconds));
+    $log->warn(q(Total WAD files indexed: ) . $total_wadfile_counter);
+    $log->warn(q(Total WAD lumps indexed: ) . $total_wad_lumps_indexed);
+    $log->warn(q(Total WAD index time: )
+        . sprintf(q(%0.2f), $total_wadfile_index_time) . q( seconds));
+    $log->warn(q(Total MD5 checksums computed: )
+        . $total_md5_checksum_counter);
+    $log->warn(q(Total time spent computing MD5 checksums: )
+        . sprintf(q(%0.2f), $total_md5_checksum_time) . q( seconds));
+    $log->warn(q(Total SHA checksums computed: )
+        . $total_sha_checksum_counter);
+    $log->warn(q(Total time spent computing SHA checksums: )
+        . sprintf(q(%0.2f), $total_sha_checksum_time) . q( seconds));
+
+=end COMMENT
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadsearch-ios/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc dump_idgames
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2014 Brian Manning, all rights reserved.
+
+This program is copyrighted software.  Distribution is limited to
+licenseholders only.
+
+=cut
+
+# fin!
+# vim: set shiftwidth=4 tabstop=4

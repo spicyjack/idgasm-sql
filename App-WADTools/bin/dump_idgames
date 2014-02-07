@@ -22,6 +22,8 @@ our $copyright = qq|Copyright (c) 2014 by Brian Manning|;
 
  Path/database options:
  --idgames-db       Database generated with 'idgames_db_dump' tool
+ -o|--output        Output filename
+ --overwrite        Overwrite output file if it already exists
  -f|--format        Output format; one of "csv" or "ini"
 
  Debug options:
@@ -65,6 +67,8 @@ our @options = (
 
     # path/db options
     q(idgames-db|idgdb|i=s),
+    q(output|o=s),
+    q(overwrite),
     q(format|f=s),
 
     # debug options
@@ -99,6 +103,7 @@ use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
+use DateTime;
 use File::Basename;
 use File::Temp;
 use Log::Log4perl qw(get_logger :no_extra_logdie_message);
@@ -139,9 +144,19 @@ use App::WADTools::Timer;
     $log->logdie(qq(Missing '--idgames-db' database argument))
         unless ( $cfg->defined(q(idgames-db)) );
     my $idgames_db_file = $cfg->get(q(idgames-db));
+    # check to see if the file exists
     if ( ! -r $idgames_db_file ) {
         $log->fatal(qq(Path: $idgames_db_file));
         $log->logdie(q(File specified with --idgames-db not found/available;));
+    }
+
+    $log->logdie(qq(Missing '--output' output filename))
+        unless ( $cfg->defined(q(output)) );
+    my $output_file = $cfg->get(q(output));
+    # don't overwrite an existing file
+    if ( -e $output_file && ! $cfg->defined(q(overwrite)) ) {
+        $log->fatal(q(Output file ) . $cfg->get(q(output)) . q(exists!));
+        $log->logdie(q|(Will not overwrite file without '--overwrite')|);
     }
 
     # start the script timer
@@ -154,6 +169,31 @@ use App::WADTools::Timer;
     $log->info(qq(Command line: $0 ) . $cfg->args);
     $log->warn(qq(--idgames-db database file::));
     $log->warn(qq(-> $idgames_db_file));
+
+    # set up the output filehandle
+    $log->logdie(q(Can't open output file ) . $cfg->get(q(output)) . qq(: $!))
+        unless open( my $out_fh, q(>), $cfg->get(q(output)) );
+
+    # print the header to the file
+    my $tz = DateTime::TimeZone->new( name => 'local' );
+    my $dt = DateTime->now( time_zone => $tz );
+    my $dump_year = $dt->year;
+    # Mon Jan  6 16:43:45 PST 2014
+    my $strftime = $dt->strftime(q(%a %b %e %H:%M:%S %Z %Y));
+    my $epoch = $dt->epoch;
+    print $out_fh <<HEADER;
+[default]
+# INI file with file records dumped from the idGames API
+
+# Copyright (c) $dump_year Brian Manning <brian at xaoc dot org>
+
+# some keys for the 'default' block
+schema_date: $strftime
+schema_epoch: $epoch
+schema_notes: Created with 'dump_idgames', part of WADTools
+            : (https://github.com/spicyjack/wadtools.git)
+
+HEADER
 
     # we already checked that $idgames_db_file exists
     my $idg_db = App::WADTools::idGamesDB->new(filename => $idgames_db_file);
@@ -192,15 +232,15 @@ use App::WADTools::Timer;
             );
         }
 
-
         if ( ! defined $file ) {
-            $log->info(qq(No match in db: $dirname/$filename));
+            $log->error(qq(No match in db: $dirname/$filename));
         } elsif ( $file->can(q(is_error)) ) {
             $log->error(q(Received error from database));
             $file->log_error();
         } else {
-            $log->info(qq(idgames-db match: file ID/keysum ')
+            $log->warn(qq(idgames-db match: file ID/keysum ')
                 . $file->id . q(/) . $file->keysum);
+            print $out_fh $file->dump_ini_block;
         }
         $log->warn(qq(~~~~ End: $id_arg ~~~~));
     }
@@ -241,7 +281,7 @@ Brian Manning, C<< <brian at xaoc dot org> >>
 Please report any bugs or feature requests to the GitHub issue tracker for
 this project:
 
-C<< <https://github.com/spicyjack/wadsearch-ios/issues> >>.
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 =head1 SUPPORT
 

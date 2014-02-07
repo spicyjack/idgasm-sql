@@ -25,6 +25,9 @@ App::WADTools::idGamesFile
     $file->{$key} = $content->{$key};
  }
 
+ # dump the contents of this 'file' object as an INI-format SQL schema block
+ my $ini_schema = $file->dump_ini_block;
+
 =head1 DESCRIPTION
 
 Information about an individual file in C<idGames Archive>.  The information in
@@ -351,6 +354,19 @@ has q(attributes) => (
 Creates the L<App::WADTools::idGamesFile> object.  You can populate individual
 attributes in the object by passing them as part of the object constructor.
 See the L<SYNOPSIS> section for an example.
+
+=item dump_ini_block()
+
+Dumps the current C<App::WADTools::idGamesFile> object as an "INI-block", or a
+block of text in C<INI> format that can be read by other modules/scripts in
+the C<WADTools> suite.
+
+=cut
+
+sub dump_ini_block {
+    my $self = shift;
+    return Dumper $self;
+}
 
 =back
 

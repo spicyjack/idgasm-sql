@@ -337,6 +337,9 @@ attrubtes.
 
 has q(attributes) => (
     is  => q(ro),
+    # 'reviews' is in the attribute list even though it's an array; when the
+    # File object is added to the database, the 'reviews' array is stripped
+    # out and added to a different table in the database
     default => sub { [qw(
         keysum id title dir filename size age date author email description
         credits base buildtime editors bugs textfile rating votes reviews )]
@@ -365,7 +368,40 @@ the C<WADTools> suite.
 
 sub dump_ini_block {
     my $self = shift;
-    return Dumper $self;
+
+    # note that the 'reviews' attribute is not used below, as 'reviews' are in
+    # their own table
+    my $return = q|description: File object for file ID |
+        . $self->id . qq|\n|
+        . qq|notes: This is a file object that has been converted to INI\n|
+        . qq|     : format by App::WADTools::idGamesFile->dump_ini_block\n|
+        . qq|sql: INSERT INTO files VALUES (\n|;
+    my @dont_quote = qw(id size age rating votes);
+    foreach my $field ( @{$self->attributes} ) {
+        # skip the fields we don't want to dump, because they're either too
+        # hard to escape (textfile), or in a different table (reviews)
+        next if ( $field =~ /reviews|textfile/ );
+        # decide whether or not to quote the field; if the field needs to be
+        # quoted, make sure you escape the existing quotes first
+        if ( defined $self->$field ) {
+            if ( scalar(grep(/$field/, @dont_quote)) > 0 ) {
+                $return .= q(   : ) . $self->$field . qq(,\n);
+            } else {
+                my $field_contents = $self->$field;
+                $field_contents =~ s/"/\\"/g;
+                $return .= q(   : ") . $field_contents . qq(",\n);
+            }
+        } else {
+            $return .= qq(   : "",\n);
+        }
+    }
+
+    my $digest = Digest::MD5->new();
+    # we want to checksum only 'description', 'notes', and 'sql'
+    $digest->add($return);
+    $return .= q(checksum: ) . $digest->b64digest . qq(\n\n);
+    $return = q([) . $self->id . qq(]\n) . $return;
+    return $return;
 }
 
 =back

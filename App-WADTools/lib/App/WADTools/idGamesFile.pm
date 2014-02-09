@@ -377,22 +377,33 @@ sub dump_ini_block {
         . qq|     : format by App::WADTools::idGamesFile->dump_ini_block\n|
         . qq|sql: INSERT INTO files VALUES (\n|;
     my @dont_quote = qw(id size age rating votes);
-    foreach my $field ( @{$self->attributes} ) {
-        # skip the fields we don't want to dump, because they're either too
-        # hard to escape (textfile), or in a different table (reviews)
-        next if ( $field =~ /reviews|textfile/ );
-        # decide whether or not to quote the field; if the field needs to be
-        # quoted, make sure you escape the existing quotes first
-        if ( defined $self->$field ) {
+    my @attribs = @{$self->attributes};
+    for (my $i = 0; $i <= (scalar(@attribs) - 1); $i++ ) {
+        my $field = $attribs[$i];
+        # don't copy over the fields we don't want to dump, because they're
+        # either too hard to escape (textfile), or in a different table
+        # (reviews)
+        if ( defined $self->$field && $field !~ /reviews|textfile/ ) {
+            # decide whether or not to quote the field; if the field needs to
+            # be quoted, make sure you escape the existing quotes first
             if ( scalar(grep(/$field/, @dont_quote)) > 0 ) {
-                $return .= q(   : ) . $self->$field . qq(,\n);
+                $return .= q(   : ) . $self->$field;
             } else {
                 my $field_contents = $self->$field;
                 $field_contents =~ s/"/\\"/g;
-                $return .= q(   : ") . $field_contents . qq(",\n);
+                $return .= q(   : ") . $field_contents . q(");
             }
         } else {
-            $return .= qq(   : "",\n);
+            $return .= qq(   : "");
+        }
+
+        # check to see if we are working with the last element in @attribs
+        if ( $i == (scalar(@attribs) - 1) ) {
+            # yes; newline, then close parenthesis
+            $return .= qq|\n   : )\n|;
+        } else {
+            # no, comma then newline
+            $return .= qq|,\n|;
         }
     }
 

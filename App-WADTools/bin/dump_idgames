@@ -219,12 +219,12 @@ HEADER
         my ($file, $filename, $dirname, $file_id);
         if ( $id_arg =~ /\d+/ ) {
             $file_id = $id_arg;
-            $log->warn(qq(==== Begin file ID: $id_arg ====));
+            $log->warn(qq(Dumping file ID: $id_arg));
             $file = $idg_db->get_file_by_id(id => $id_arg);
         } else {
             $filename = basename($id_arg);
             $dirname = dirname($id_arg);
-            $log->warn(qq(==== Begin path: $id_arg ====));
+            $log->warn(qq(Dumping file path: $id_arg));
             $file = $idg_db->get_file_by_path(
                 # the trailing slash exists in API requests from idGames API
                 path     => $dirname . q(/),
@@ -233,16 +233,15 @@ HEADER
         }
 
         if ( ! defined $file ) {
-            $log->error(qq(No match in db: $dirname/$filename));
+            $log->error(qq(No match in db: $id_arg));
         } elsif ( $file->can(q(is_error)) ) {
             $log->error(q(Received error from database));
             $file->log_error();
         } else {
-            $log->warn(qq(idgames-db match: file ID/keysum ')
+            $log->warn(qq(File ID/keysum in database; ')
                 . $file->id . q(/) . $file->keysum);
             print $out_fh $file->dump_ini_block;
         }
-        $log->warn(qq(~~~~ End: $id_arg ~~~~));
     }
 
     $timer->stop(name => $my_name);

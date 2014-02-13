@@ -391,6 +391,8 @@ sub dump_ini_block {
             } else {
                 my $field_contents = $self->$field;
                 $field_contents =~ s/"/\\"/g;
+                # remove CR/LF from Windows editors
+                $field_contents =~ s/\r\n//g;
                 $return .= q(   : ") . $field_contents . q(");
             }
         } else {

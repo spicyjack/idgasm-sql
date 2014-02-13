@@ -51,9 +51,9 @@ my $ini = App::WADTools::INIFile->new(
 ok(ref($ini) eq q(App::WADTools::INIFile),
     q(Successfully created App::WADTools::INIFile object));
 
-# - Create a schema using 'create_schema'
+# - Create a schema using 'apply_schema'
 my $db_schema = $ini->read_ini_config();
-$db->create_schema(schema => $db_schema);
+$db->apply_schema(schema => $db_schema);
 
 # - Insert some records, make sure callbacks for record insertion are received
 my $test_ini = App::WADTools::INIFile->new(
@@ -63,7 +63,7 @@ ok(ref($ini) eq q(App::WADTools::INIFile),
 my $test_blocks = $test_ini->read_ini_config();
 ok(ref($test_blocks) eq q(Config::Std::Hash),
     qq(Config::Std::Hash object created from INI file));
-$db->create_schema(schema => $test_blocks);
+$db->apply_schema(schema => $test_blocks);
 # - use get_file_by_path to retrieve records
 # - see code in 'db_tool' for ideas of how you can quickly create databases
 

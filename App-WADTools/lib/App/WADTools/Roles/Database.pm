@@ -164,9 +164,13 @@ sub connect {
     }
 }
 
-=item create_schema()
+=item apply_schema()
 
-Creates a database with a schema as determined by the C<schema> argument.
+Applies the schema as determined by the C<schema> argument to the database
+file.  It's up to the caller to set up the C<schema> argument correctly, by
+using the L<App::WADTools::INIFile> object to read in schema info from an
+C<INI> file, which gets converted to the correct data structure for this
+method to apply to the database.
 
 Required arguments:
 
@@ -181,7 +185,7 @@ commands to run in order to create a database.
 
 =cut
 
-sub create_schema {
+sub apply_schema {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
@@ -268,7 +272,7 @@ sub create_schema {
 =item has_schema()
 
 Determines if the database specified with the C<filename> attribute has
-already had a schema applied to it via L<create_schema>.  Returns ? if the
+already had a schema applied to it via L<apply_schema>.  Returns ? if the
 schema has been applied, and ? if the schema has not been applied.
 
 =cut

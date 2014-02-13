@@ -202,8 +202,8 @@ use App::WADTools::Logger;
                 $log->warn(q|(Note: errors checking for schema are harmless)|);
                 my $schema_entries = $db->has_schema;
                 if ( $schema_entries == 0 ) {
-                    $log->warn(q(DB schema empty, calling 'create_schema'));
-                    $db->create_schema(schema => $db_schema);
+                    $log->warn(q(DB schema empty, calling 'apply_schema'));
+                    $db->apply_schema(schema => $db_schema);
                 } else {
                     $log->warn(q(DB schema has already been populated;));
                     $log->warn(qq(Schema has $schema_entries entries));

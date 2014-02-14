@@ -78,7 +78,7 @@ has dbh => (
 Creates the L<App::WADTools::Roles::Database> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
-Required arguments:
+Optional arguments:
 
 =over
 
@@ -99,7 +99,7 @@ Optional arguments:
 
 =item check_schema
 
-Checks to see if the schema has already been applied to this database.
+Checks to see if a schema has already been applied to this database.
 
 =back
 
@@ -172,6 +172,9 @@ using the L<App::WADTools::INIFile> object to read in schema info from an
 C<INI> file, which gets converted to the correct data structure for this
 method to apply to the database.
 
+Returns either C<1> if all of the SQL calls were successful, or an
+L<App::WADTools::Error> object if any of the SQL calls failed.
+
 Required arguments:
 
 =over
@@ -224,11 +227,11 @@ sub apply_schema {
             # create the table
             $dbh->do($block->{sql});
             if ( defined $dbh->err ) {
-                $log->error(qq(Execution of block '$block_name' failed));
+                $log->error(qq(Execution of schema block '$block_name' failed));
                 $log->error(q(Error message: ) . $dbh->errstr);
                 my $error = App::WADTools::Error->new(
                     caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.block_execute),
+                    type    => q(database.schema_block.execute),
                     message => $dbh->errstr
                 );
                 return $error;
@@ -262,11 +265,17 @@ sub apply_schema {
         if ( ! defined $rv ) {
             $log->error(qq(INSERT for schema ID $block_name returned an error: )
                 . $sth->errstr);
-            return undef;
+            my $error = App::WADTools::Error->new(
+                caller  => __PACKAGE__ . q(.) . __LINE__,
+                type    => q(database.schema_insert.execute),
+                message => $dbh->errstr
+            );
+            return $error;
         } else {
             $log->debug(qq(INSERT for schema ID $block_name changed $rv row));
         }
     }
+    return 1;
 }
 
 =item has_schema()

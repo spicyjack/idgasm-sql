@@ -36,13 +36,15 @@ our $copyright = qq|Copyright (c) 2014 by Brian Manning|;
  Example usage:
 
  # dump the WAD Search database to a CSV file
- dump_idgames --idgames-db /path/to/idgames_db_dump.db \
+ dump_idgames --output /path/to/output_file.ini \
+    --idgames-db /path/to/idgames_db_dump.db \
     --format csv \
     -- 12671 12849 12747 12430 12782 12363 \
        12835 12349 13024 12815 12415 12371
 
  # dump the WAD Search database to an INI file
- dump_idgames --idgames-db /path/to/idgames_db_dump.db \
+ dump_idgames --output /path/to/output_file.ini \
+    --idgames-db /path/to/idgames_db_dump.db \
     --format ini \
     -- 12671 12849 12747 12430 12782 12363 \
        12835 12349 13024 12815 12415 12371

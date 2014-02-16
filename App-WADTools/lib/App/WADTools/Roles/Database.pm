@@ -48,12 +48,14 @@ file will be created.
 =cut
 
 has filename => (
-    is  => q(rw),
+    is      => q(rw),
+    default => sub { q() },
 #    isa => sub {
 #                my $self = shift;
 #                die "$self is not a valid filename"
 #                    unless (-r $self);
 #            },
+
 );
 
 =item dbh
@@ -103,15 +105,23 @@ Checks to see if a schema has already been applied to this database.
 
 =back
 
-If the C<check_schema> param B<was used>, then this method returns the number
-of schema blocks applied if the database connection was successful and has had
-a schema applied to it, or an L<App::WADTools::Error> object if there was an
-error.
+Return values:
 
-If the C<check_schema> param B<was not used>, then this method returns true
-(C<1>) if the database connection was successful, or an
-L<App::WADTools::Error> object if there was a problem connecting to
-the database.
+=over
+
+=item if C<check_schema> was used...
+
+Then this method returns the number of schema blocks applied if the database
+connection was successful and has had a schema applied to it, or an
+L<App::WADTools::Error> object if there was an error.
+
+=item if C<check_schema> was not used...
+
+Then this method returns true (C<1>) if the database connection was
+successful, or an L<App::WADTools::Error> object if there was a problem
+connecting to the database.
+
+=back
 
 =cut
 
@@ -129,7 +139,12 @@ sub connect {
         }
     }
     $log->debug(q(Connecting to/reading database...));
-    $log->debug(q(Database filename: ) . $self->filename);
+    if ( length($self->filename) == 0 ) {
+        $log->warn(q|Creating temp database ('filename' attribute is empty)|);
+    } else {
+        $log->debug(q(Database filename: ) . $self->filename);
+    }
+
     if ( ! defined $dbh ) {
         $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
         # turn on unicode handling
@@ -221,7 +236,7 @@ sub apply_schema {
     SQL_BLOCK: foreach my $block_name ( @schema_blocks ) {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
-        #$log->debug(q(Dumping schema block: ) . Dumper($block));
+        $log->debug(q(Dumping schema block: ) . Dumper($block));
         $log->info(qq(Executing SQL schema block: $block_name));
         if ( defined $block->{sql} ) {
             # create the table
@@ -281,8 +296,9 @@ sub apply_schema {
 =item has_schema()
 
 Determines if the database specified with the C<filename> attribute has
-already had a schema applied to it via L<apply_schema>.  Returns ? if the
-schema has been applied, and ? if the schema has not been applied.
+already had a schema applied to it via L<apply_schema>.  Returns C<0> if the
+schema has not been applied, and the number of rows in the C<schema> table if
+the schema has been applied.
 
 =cut
 
@@ -330,7 +346,7 @@ SQL
 =item is_connected()
 
 Determines if the database has already been connected to (the C<connect()>
-method has already been called successfully). Returns an empty string if the
+method has already been called successfully). Returns a C<1> for "true" if the
 database has already been connected to successfully, and an
 L<App::WADTools::Error> object if the database connection was never set up (by
 calling the C<connect()> method).
@@ -352,7 +368,7 @@ sub is_connected {
         );
         return $error;
     } else {
-        return q();
+        return 1;
     }
 }
 

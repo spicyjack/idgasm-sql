@@ -394,8 +394,7 @@ sub unserialize_file {
     $log->logdie(q(Missing 'db_row' parameter))
         unless ( exists $args{db_row} );
 
-    my $db_row = $args{db_row};
-    my @row = @{$db_row};
+    my @row = @{$args{db_row}};
     # create the $file object that will be returned after it is unserialized
     my $file = App::WADTools::idGamesFile->new();
     # bind params; bind params start counting at '1'

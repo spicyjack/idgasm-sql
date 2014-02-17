@@ -390,7 +390,10 @@ sub dump_ini_block {
                 $return .= q(   : ) . $self->$field;
             } else {
                 my $field_contents = $self->$field;
-                $field_contents =~ s/"/\\"/g;
+                # 2014-02-14; it seems DBI does this already, so quotes are
+                # being escaped twice; commented out for now
+                # escape quotes
+                $field_contents =~ s/"/'/g;
                 # remove CR/LF from Windows editors
                 $field_contents =~ s/\r\n//g;
                 $return .= q(   : ") . $field_contents . q(");

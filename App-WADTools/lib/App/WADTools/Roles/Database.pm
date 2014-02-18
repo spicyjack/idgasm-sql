@@ -246,8 +246,52 @@ sub apply_schema {
                 $log->error(q(Error message: ) . $dbh->errstr);
                 my $error = App::WADTools::Error->new(
                     caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute),
+                    type    => q(database.schema_block.execute_sql),
                     message => $dbh->errstr
+                );
+                return $error;
+            }
+        } elsif ( defined $block->{params} ) {
+            # verify the SQL predicate exists
+            my $sql_predicate = $block->{sql_predicate};
+            if ( ! defined $sql_predicate ) {
+                $log->error(qq(Missing SQL predicate from block '$block_name'));
+                my $error = App::WADTools::Error->new(
+                    caller  => __PACKAGE__ . q(.) . __LINE__,
+                    type    => q(database.schema_block.execute_params),
+                    message =>
+                        qq(Missing SQL predicate from block '$block_name'),
+                );
+                return $error;
+            }
+            # "cast" params to an array
+            my @params = @{$block->{params}};
+            if ( scalar(@params) == 0 ) {
+                $log->error(qq(Missing SQL params from block '$block_name'));
+                my $error = App::WADTools::Error->new(
+                    caller  => __PACKAGE__ . q(.) . __LINE__,
+                    type    => q(database.schema_block.execute_params),
+                    message => qq(Missing SQL params from block '$block_name'),
+                );
+                return $error;
+            }
+            my @bind_placeholders;
+            for (my $i = 0; $i < scalar(@params); $i++) {
+                push(@bind_placeholders, q(?));
+            }
+            my $sql = qq|$sql_predicate (|
+                . join(q(, ), @bind_placeholders) . q|)|;
+            $log->debug(q(Dumping SQL statement for predicate/params;));
+            $log->debug($sql);
+            # create the table
+            $dbh->do($sql, undef, @params);
+            if ( defined $dbh->err ) {
+                $log->error(qq(Execution of schema block '$block_name' failed));
+                $log->error(q(Error message: ) . $dbh->errstr);
+                my $error = App::WADTools::Error->new(
+                    caller  => __PACKAGE__ . q(.) . __LINE__,
+                    type    => q(database.schema_block.execute),
+                    message => $dbh->errstr,
                 );
                 return $error;
             }

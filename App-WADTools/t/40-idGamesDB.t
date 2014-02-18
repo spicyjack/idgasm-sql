@@ -104,6 +104,10 @@ my $test_blocks = $test_ini->read_ini_config();
 ok(ref($test_blocks) eq q(Config::Std::Hash),
     qq(Config::Std::Hash object created from INI file));
 $rv = $db->apply_schema(schema => $test_blocks);
+# sql_params is an @array
+#$rv = $db->run_sql_insert(sql_predicate => undef, sql_params => undef);
+#$rv = $db->run_sql_insert(table => undef, sql_params => undef);
+#$rv = $db->insert_data(table => undef, sql_params => undef);
 
 # - use get_file_by_path to retrieve records
 foreach my $file_id ( @test_ids ) {
@@ -120,7 +124,7 @@ foreach my $file_path ( @test_paths ) {
     my ($filename, $path) = fileparse($file_path);
     my $file = $db->get_file_by_path(path => $path, filename => $filename);
     ok($file->dir eq $path && $file->filename eq $filename,
-        qq|Retrieved File object by file path (path=$file_path)|);
+        qq|Retrieved File object by path ($file_path)|);
 }
 
 

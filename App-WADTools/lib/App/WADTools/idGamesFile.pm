@@ -51,6 +51,7 @@ $Data::Dumper::Terse = 1;
 
 ### Local modules
 use App::WADTools::Error;
+use App::WADTools::Logger;
 
 ### Roles consumed
 with qw(App::WADTools::Roles::Keysum);
@@ -368,6 +369,7 @@ the C<WADTools> suite.
 
 sub dump_ini_block {
     my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     # note that the 'reviews' attribute is not used below, as 'reviews' are in
     # their own table
@@ -375,40 +377,24 @@ sub dump_ini_block {
         . $self->id . qq|\n|
         . qq|notes: This is a file object that has been converted to INI\n|
         . qq|     : format by App::WADTools::idGamesFile->dump_ini_block\n|
-        . qq|sql: INSERT INTO files VALUES (\n|;
-    my @dont_quote = qw(id size age rating votes);
+        . qq|sql_predicate: INSERT INTO files VALUES\n|;
     my @attribs = @{$self->attributes};
-    for (my $i = 0; $i <= (scalar(@attribs) - 1); $i++ ) {
+    for (my $i = 0; $i < (scalar(@attribs) - 1); $i++ ) {
         my $field = $attribs[$i];
         # don't copy over the fields we don't want to dump, because they're
         # either too hard to escape (textfile), or in a different table
         # (reviews)
-        if ( defined $self->$field && $field !~ /reviews|textfile/ ) {
-            # decide whether or not to quote the field; if the field needs to
-            # be quoted, make sure you escape the existing quotes first
-            if ( scalar(grep(/$field/, @dont_quote)) > 0 ) {
-                $return .= q(   : ) . $self->$field;
+        $log->debug(qq(Checking for field $field));
+        if ( $field !~ /reviews/ ) {
+            # use an empty param element for an undefined field, or the
+            # 'textfile' attribute, which we don't want
+            if ( ! defined $field || $field =~ /textfile/ ) {
+                $return .= qq(params :\n);
             } else {
                 my $field_contents = $self->$field;
-                # 2014-02-14; it seems DBI does this already, so quotes are
-                # being escaped twice; commented out for now
-                # escape quotes
-                $field_contents =~ s/"/'/g;
-                # remove CR/LF from Windows editors
                 $field_contents =~ s/\r\n//g;
-                $return .= q(   : ") . $field_contents . q(");
+                $return .= q(params : ) . $field_contents . qq(\n);
             }
-        } else {
-            $return .= qq(   : "");
-        }
-
-        # check to see if we are working with the last element in @attribs
-        if ( $i == (scalar(@attribs) - 1) ) {
-            # yes; newline, then close parenthesis
-            $return .= qq|\n   : )\n|;
-        } else {
-            # no, comma then newline
-            $return .= qq|,\n|;
         }
     }
 

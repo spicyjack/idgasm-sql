@@ -236,7 +236,7 @@ sub apply_schema {
     SQL_BLOCK: foreach my $block_name ( @schema_blocks ) {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
-        $log->debug(q(Dumping schema block: ) . Dumper($block));
+        #$log->debug(q(Dumping schema block: ) . Dumper($block));
         $log->info(qq(Executing SQL schema block: $block_name));
         if ( defined $block->{sql} ) {
             # create the table
@@ -281,8 +281,8 @@ sub apply_schema {
             }
             my $sql = qq|$sql_predicate (|
                 . join(q(, ), @bind_placeholders) . q|)|;
-            $log->debug(q(Dumping SQL statement for predicate/params;));
-            $log->debug($sql);
+            #$log->debug(q(Dumping SQL statement for predicate/params;));
+            #$log->debug($sql);
             # create the table
             $dbh->do($sql, undef, @params);
             if ( defined $dbh->err ) {
@@ -331,7 +331,8 @@ sub apply_schema {
             );
             return $error;
         } else {
-            $log->debug(qq(INSERT for schema ID $block_name changed $rv row));
+            $log->debug(qq(INSERT of ID $block_name into 'schema' )
+                 . qq(changed $rv row));
         }
     }
     return 1;

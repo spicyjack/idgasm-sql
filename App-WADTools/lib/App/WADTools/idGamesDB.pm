@@ -199,7 +199,7 @@ Queries the database for a L<App::WADTools::idGamesFile> object in the
 database with the ID passed in as the argument.  Returns a
 L<App::WADTools::idGamesFile> object if the file ID was found in the database,
 or an L<App::WADTools::Error> object with the C<error_type> of
-C<file_id_not_found>.
+C<idgames-db.get_file_by_id.file_id_not_found>.
 
 Required arguments:
 
@@ -264,8 +264,21 @@ sub get_file_by_id {
 
     $log->debug(q(Retrieving row via fetchrow_arrayref));
     my $row = $sth->fetchrow_arrayref;
-    # return $row as an undefined value if there are no rows returned from the
-    # database query
+    # return an error object if there are no rows returned from the database
+    # query
+    if ( ! defined $row ) {
+        $log->warn(qq(File ID $file_id not in database));
+        if ( defined $sth->err ) {
+            $log->warn(qq(Database error: ) . $sth->err);
+        }
+        my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
+            type    => q(idgames-db.get_file_by_id.file_id_not_found),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
+
     return $row unless ( defined $row );
     #$log->debug(q(dump: ) . Dumper $row);
     my $file = $self->unserialize_file(db_row => $row);
@@ -282,7 +295,7 @@ file path is the path from the root of the idGames Archive file tree, i.e. the
 directory containing the folders C<combos>, C<deathmatch>, C<historic>,
 C<idstuff>, etc.  Returns a L<App::WADTools::idGamesFile> object if the file
 was found in the database, or an L<App::WADTools::Error> object with the error
-C<type> of C<file_not_found>.
+C<type> of C<idgames-db.get_file_by_path.file_path_not_found>.
 
 Required arguments:
 
@@ -356,9 +369,20 @@ sub get_file_by_path  {
 
     $log->debug(q(Retrieving row via fetchrow_arrayref));
     my $row = $sth->fetchrow_arrayref;
-    # return $row as an undefined value if there are no rows returned from the
-    # database query
-    return $row unless ( defined $row );
+    # return an error object if there are no rows returned from the database
+    # query
+    if ( ! defined $row ) {
+        $log->warn(qq(File path $path/$filename not in database));
+        if ( defined $sth->err ) {
+            $log->warn(qq(Database error: ) . $sth->err);
+        }
+        my $error = App::WADTools::Error->new(
+            caller  => __PACKAGE__ . q(.) . __LINE__,
+            type    => q(idgames-db.get_file_by_path.file_path_not_found),
+            message => $dbh->errstr
+        );
+        return $error;
+    }
     #$log->debug(q(dump: ) . Dumper $row);
     my $file = $self->unserialize_file(db_row => $row);
     $log->debug(qq(File ID for ) . $file->dir . $file->filename

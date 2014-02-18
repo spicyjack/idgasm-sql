@@ -4,6 +4,11 @@
 # For support with this file, please file an issue on the GitHub issue tracker
 # for this project: https://github.com/spicyjack/wadtools/issues
 
+# Ideas for more tests:
+# - Create a schema that has blocks with no SQL key
+#   - Verify that there are no errors, the block should be skipped, and a
+#   warning message shown to the user
+
 use strictures 1; # strict + warnings
 use Test::File;
 #use Test::More tests => 11;
@@ -60,7 +65,8 @@ Log::Log4perl->init_once(qq($dirname/tests.log4perl.cfg));
 my $log = Log::Log4perl->get_logger();
 isa_ok($log, q(Log::Log4perl::Logger));
 
-my $rv; # return value
+my $file; # a test App::WADTools::File object
+my $rv; # generic return value
 
 ### Create App::WADTools::idGamesDB object
 my $db = App::WADTools::idGamesDB->new();
@@ -104,14 +110,28 @@ my $test_blocks = $test_ini->read_ini_config();
 ok(ref($test_blocks) eq q(Config::Std::Hash),
     qq(Config::Std::Hash object created from INI file));
 $rv = $db->apply_schema(schema => $test_blocks);
-# sql_params is an @array
-#$rv = $db->run_sql_insert(sql_predicate => undef, sql_params => undef);
-#$rv = $db->run_sql_insert(table => undef, sql_params => undef);
-#$rv = $db->insert_data(table => undef, sql_params => undef);
 
-# - use get_file_by_path to retrieve records
+# other possible ways to do this...
+#$rv = $db->run_sql_insert(sql_predicate => $scalar, sql_params => @array);
+#$rv = $db->run_sql_insert(table => $scalar, sql_params => @array);
+#$rv = $db->insert_data(table => $scalar, sql_params => @array);
+
+# check the schema table again, it should now have 5 + scalar(@test_ids)
+$rv = $db->has_schema();
+my $total_schema_entries = 5 + scalar(@test_ids);
+ok($rv == $total_schema_entries,
+    qq(Schema table now has $total_schema_entries entries));
+
+# negative test case
+$file = $db->get_file_by_id(id => 1);
+ok($file->can(q(is_error)),
+    q(Request for non-existant file ID returns Error object));
+ok($file->type =~ /file_id_not_found/,
+    q(Error 'type' returned includes 'file_id_not_found' string));
+
+# - use get_file_by_id to retrieve records
 foreach my $file_id ( @test_ids ) {
-    my $file = $db->get_file_by_id(id => $file_id);
+    $file = $db->get_file_by_id(id => $file_id);
     if ( ref($file) eq q(App::WADTools::Error) ) {
         die $file->log_error;
     }
@@ -119,17 +139,19 @@ foreach my $file_id ( @test_ids ) {
         qq|Retrieved File object by ID (id=$file_id)|);
 }
 
+# negative test case
+$file = $db->get_file_by_path(path => q(/path/to), filename => q(⁄foo.wad));
+ok($file->can(q(is_error)),
+    q(Request for non-existant file ID returns Error object));
+ok($file->type =~ /file_path_not_found/,
+    q(Error 'type' returned includes 'file_path_not_found' string));
+
 # - use get_file_by_path to retrieve records
 foreach my $file_path ( @test_paths ) {
     my ($filename, $path) = fileparse($file_path);
-    my $file = $db->get_file_by_path(path => $path, filename => $filename);
+    $file = $db->get_file_by_path(path => $path, filename => $filename);
     ok($file->dir eq $path && $file->filename eq $filename,
         qq|Retrieved File object by path ($file_path)|);
 }
-
-
-# - Create a schema that has blocks with no SQL key
-#   - Verify that there are no errors, the block should be skipped, and a
-#   warning message shown to the user
 
 done_testing();

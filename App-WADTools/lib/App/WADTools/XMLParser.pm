@@ -3,12 +3,32 @@
 ####################################
 package App::WADTools::XMLParser;
 
-=head1 App::WADTools::XMLParser
+=head1 NAME
 
-Parse XML text downloaded via HTTP request to C<idGames Archive API>.
+App::WADTools::XMLParser
 
-Inherits from L<App::WADTools::Role::Parser>, see that module for additional
-methods/attributes.
+=head1 SYNOPSIS
+
+ my $parser = App::WADTools::XMLParser->new(
+     # save the 'textfile' field in the API request to the parsed object?
+     save_textfile => $cfg->defined(q(save-textfile))
+ );
+
+ # $data would be the content from a JSON HTTP request...
+ my %parser_return = $parser->parse(data => $data);
+
+ if ( exists $parser_return{error} ) {
+     # there was an error during the request
+ } elsif ( exists $parser_return{files} ) {
+     # the request was successful
+ }
+
+=head1 DESCRIPTION
+
+Parse text in XML format downloaded via HTTP request to C<idGames Archive API>.
+
+Consumes the L<App::WADTools::Role::Parser> role, see that module for
+additional methods/attributes.
 
 =cut
 
@@ -23,6 +43,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 ### Roles
+# has 'save_textfile' attribute
 with q(App::WADTools::Roles::Parser);
 
 ### Local modules
@@ -196,4 +217,32 @@ sub parse {
     $log->logdie(q(XMLParser reached end of parse block without branching));
 }
 
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::XMLParser
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
+
+# fin!
+# vim: set shiftwidth=4 tabstop=4
 1;

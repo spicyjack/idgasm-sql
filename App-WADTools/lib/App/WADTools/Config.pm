@@ -3,7 +3,23 @@
 #################################
 package App::WADTools::Config;
 
-=head1 App::WADTools::Config
+=head1 NAME
+
+App::WADTools::Config
+
+=head1 SYNOPSIS
+
+ # @options is an array of Getopt::Long options
+ my @options = (q(foo=s), q(bar), q(baz=i));
+ my $cfg = App::WADTools::Config->new(options => \@options);
+
+ # see if 'foo' was passed in on the command line
+ if ( $cfg->defined(q(foo)) ) {
+    # do something...
+ }
+
+=head1 DESCRIPTION
+
 
 Configure/manage script options using L<Getopt::Long>.
 
@@ -50,7 +66,7 @@ has q(options) => (
 
 =over
 
-=item BUILD() (aka 'new')
+=item new() (aka 'BUILD')
 
 Creates the L<App::WADTools::Config> object, parses options from the
 command line via L<Getopt::Long>, and returns the object to the caller.
@@ -169,5 +185,31 @@ sub defined {
     }
     return 0;
 }
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::Config
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
 
 1;

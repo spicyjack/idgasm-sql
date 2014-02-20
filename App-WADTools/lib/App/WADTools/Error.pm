@@ -3,9 +3,6 @@
 ################################
 package App::WADTools::Error;
 
-### System modules
-use Moo;
-
 =head1 NAME
 
 App::WADTools::Error
@@ -36,6 +33,11 @@ App::WADTools::Error
 
 A generic "error" object, that is used to return error status and messages to
 other objects when a method call generates an error of some sort.
+
+=cut
+
+### System modules
+use Moo;
 
 =head2 Attributes
 
@@ -176,7 +178,7 @@ C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 You can find documentation for this script with the perldoc command.
 
-    perldoc App::WADTools::IndexDB
+    perldoc App::WADTools::Error
 
 =head1 COPYRIGHT & LICENSE
 

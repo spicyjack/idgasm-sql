@@ -9,7 +9,6 @@ App::WADTools::idGamesFile
 
 =head1 SYNOPSIS
 
-
  my $file = App::WADTools::idGamesFile->new();
 
  # the idGamesFile object keeps a list of it's attributes in the

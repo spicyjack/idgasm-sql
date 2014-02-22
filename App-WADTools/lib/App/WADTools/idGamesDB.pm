@@ -45,15 +45,79 @@ use App::WADTools::idGamesFile;
 
 ### Roles
 # contains App::WADTools::Error
-with q(App::WADTools::Roles::Database);
+with qw(App::WADTools::Roles::Database);
+
+=head2 Attributes
+
+=over
+
+=item callback
+
+An object that will receive callbacks from this object (L<idGamesDB>) for
+the following events:
+
+=over
+
+=item db_request_success
+
+The database request has finished successfully.
+
+=item db_request_failure
+
+The database request failed for some reason.  A L<App::WADTools::Error> object
+will be returned in the callback request.
+
+=item db_request_update
+
+The database request which is still processing wants to update the status of
+the request.
+
+=back
+
+=back
 
 =head2 Methods
 
 =over
 
-=item new() (aka 'BUILD')
+=item new() (AKA BUILD)
 
-Creates the L<App::WADTools::idGamesDB> object.
+Creates the L<App::WADTools::idGamesDB> object.  A check is also made to see
+if required attribute C<callback> was set by the caller; if the attribute was
+not set, then the method will return an C<App::WADTools::Error> object to the
+caller, otherwise, returns the L<App::WADTools::idGamesDB> object to the
+caller.
+
+=cut
+
+sub BUILD {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    if ( ! defined $self->callback ) {
+        $log->error(q(idGamesDB missing required callback object));
+        my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
+            type      => q(idgames-db.build.missing_callback_object),
+            message   => q(Missing 'callback' object),
+            raw_error => q(Need an object to handle callbacks),
+        );
+        return $error;
+    } else {
+        my $cb = $self->callback;
+        if ( ! ($cb->can(q(db_request_update))
+            && $cb->can(q(db_request_success))
+            && $cb->can(q(db_request_failure)) ) ) {
+            my $error = App::WADTools::Error->new(
+                caller    => __PACKAGE__ . q(.) . __LINE__,
+                type      => q(idgames-db.build.missing_callback_methods),
+                message   => q('callback' object missing required methods),
+                raw_error => q(Provide all of the required callback methods),
+            );
+            return $error;
+        }
+    }
+}
 
 =item add_file(file => $file)
 

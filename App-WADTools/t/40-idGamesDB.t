@@ -11,8 +11,8 @@
 
 use strictures 1; # strict + warnings
 use Test::File;
-#use Test::More tests => 11;
-use Test::More; # using done_testing() at the end of this test
+use Test::More tests => 43;
+#use Test::More; # using done_testing() at the end of this test
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
@@ -21,9 +21,11 @@ $Data::Dumper::Terse = 1;
 BEGIN {
     use_ok( q(Log::Log4perl), qw(:no_extra_logdie_message));
     use_ok( q(File::Basename)); # used to find test config, and for test files
-    use_ok( q(Moo) );
+    #use_ok( q(Moo) );
     use_ok( q(App::WADTools::idGamesDB) );
     use_ok( q(App::WADTools::INIFile) );
+    # local test object for testing callbacks from idGamesDB
+    #use_ok( q(WADToolsTest::DBCallback) );
 }
 
 my @test_ids = qw(
@@ -68,8 +70,11 @@ isa_ok($log, q(Log::Log4perl::Logger));
 my $file; # a test App::WADTools::File object
 my $rv; # generic return value
 
+my $db_cb = Test::DBCallback->new();
+
 ### Create App::WADTools::idGamesDB object
-my $db = App::WADTools::idGamesDB->new();
+#my $db = App::WADTools::idGamesDB->new(callback => $db_cb);
+my $db = App::WADTools::idGamesDB->new(callback => sub { &db_request_update });
 ok(ref($db) eq q(App::WADTools::idGamesDB),
     q(Successfully created App::WADTools::idGamesDB object));
 
@@ -154,4 +159,22 @@ foreach my $file_path ( @test_paths ) {
         qq|Retrieved File object by path ($file_path)|);
 }
 
-done_testing();
+sub db_request_update {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    $log->warn(q(received 'db_request_update' callback call));
+}
+
+sub db_request_success {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    $log->warn(q(received 'db_request_success' callback call));
+}
+
+sub db_request_failure {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    $log->warn(q(received 'db_request_failure' callback call));
+}
+
+#done_testing();

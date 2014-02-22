@@ -51,6 +51,10 @@ with q(App::WADTools::Roles::Database);
 
 =over
 
+=item new() (aka 'BUILD')
+
+Creates the L<App::WADTools::idGamesDB> object.
+
 =item add_file(file => $file)
 
 Add an L<App::WADTools::idGamesFile> object to the database.  Returns true

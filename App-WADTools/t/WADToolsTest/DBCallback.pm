@@ -13,16 +13,14 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-sub db_request_update {
+sub db_request_callback {
     my $self = shift;
+    my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(received 'db_request_update' callback call));
-}
-
-sub db_request_success {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(received 'db_request_success' callback call));
+    $log->info(q(DBCallback: received 'db_request_success' callback call));
+    if ( exists $args{type} ) {
+        $log->info(q(callback type: ) . $args{type});
+    }
 }
 
 sub db_request_failure {

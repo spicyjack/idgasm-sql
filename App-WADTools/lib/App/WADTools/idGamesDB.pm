@@ -103,19 +103,6 @@ sub BUILD {
             raw_error => q(Need an object to handle callbacks),
         );
         return $error;
-    } else {
-        my $cb = $self->callback;
-        if ( ! ($cb->can(q(db_request_update))
-            && $cb->can(q(db_request_success))
-            && $cb->can(q(db_request_failure)) ) ) {
-            my $error = App::WADTools::Error->new(
-                caller    => __PACKAGE__ . q(.) . __LINE__,
-                type      => q(idgames-db.build.missing_callback_methods),
-                message   => q('callback' object missing required methods),
-                raw_error => q(Provide all of the required callback methods),
-            );
-            return $error;
-        }
     }
 }
 

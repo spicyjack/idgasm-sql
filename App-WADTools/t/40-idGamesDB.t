@@ -11,7 +11,7 @@
 
 use strictures 1; # strict + warnings
 use Test::File;
-use Test::More tests => 43;
+use Test::More tests => 44;
 #use Test::More; # using done_testing() at the end of this test
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -25,7 +25,7 @@ BEGIN {
     use_ok( q(App::WADTools::idGamesDB) );
     use_ok( q(App::WADTools::INIFile) );
     # local test object for testing callbacks from idGamesDB
-    #use_ok( q(WADToolsTest::DBCallback) );
+    use_ok( q(WADToolsTest::DBCallback) );
 }
 
 my @test_ids = qw(
@@ -69,20 +69,22 @@ isa_ok($log, q(Log::Log4perl::Logger));
 
 my $file; # a test App::WADTools::File object
 my $rv; # generic return value
+our $expected_callback;
 
-my $db_cb = Test::DBCallback->new();
+my $db_cb = WADToolsTest::DBCallback->new();
 
 ### Create App::WADTools::idGamesDB object
 #my $db = App::WADTools::idGamesDB->new(callback => $db_cb);
-my $db = App::WADTools::idGamesDB->new(callback => sub { &db_request_update });
+my $db = App::WADTools::idGamesDB->new(callback => \&db_request_callback);
 ok(ref($db) eq q(App::WADTools::idGamesDB),
     q(Successfully created App::WADTools::idGamesDB object));
 
 ### Database is_connected()
 # - this should fail because 'connect()' hasn't been called yet
-$rv = $db->is_connected;
-ok(ref($rv) eq q(App::WADTools::Error),
-    q(Check for database connection fails as expected; ) . $rv->type);
+&db_request_callback(expected_callback => q(is_connected));
+$db->is_connected;
+#ok(ref($rv) eq q(App::WADTools::Error),
+#    q(Check for database connection fails as expected; ) . $rv->type);
 
 ### Database connect()
 $rv = $db->connect;
@@ -159,22 +161,23 @@ foreach my $file_path ( @test_paths ) {
         qq|Retrieved File object by path ($file_path)|);
 }
 
-sub db_request_update {
-    my $self = shift;
+sub db_request_callback {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(received 'db_request_update' callback call));
-}
+    #my $self = shift;
+    $log->debug(q(db_request_callback arguments: ) . join(q(, ), @_));
+    my %args = @_;
 
-sub db_request_success {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(received 'db_request_success' callback call));
-}
-
-sub db_request_failure {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(received 'db_request_failure' callback call));
+    if ( exists $args{expected_callback} ) {
+        $expected_callback = $args{expected_callback};
+        $log->debug(q(40-idGamesDB: received 'expected_callback' call));
+        $log->info(qq(Set expected_callback to: $expected_callback));
+    } else {
+        $log->info(q(40-idGamesDB: received 'db_request_callback' call));
+        $log->info(qq(Set expected_callback to: $expected_callback));
+        ok(defined $args{type} && $args{type} eq $expected_callback,
+            qq(Received expected callback: $expected_callback));
+        undef $expected_callback;
+    }
 }
 
 #done_testing();

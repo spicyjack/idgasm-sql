@@ -38,6 +38,19 @@ use App::WADTools::Error;
 
 =over
 
+=item callback
+
+The callback that will be called by this object while processing, or is
+finished successfuly, fails, or exits with an error before completing.
+
+=back
+
+=cut
+
+has callback => (
+    is      => q(rw),
+);
+
 =item filename
 
 A filename to the C<SQLite> database file.  If the file does not exist, a new
@@ -404,16 +417,25 @@ sub is_connected {
 
     # check that the database handle has already been set up via a call to
     # connect()
+    $log->debug(q(Checking to see if database connection is established));
     my $dbh = $self->dbh;
+    my $cb = $self->callback;
     if ( ! defined $dbh ) {
+        $log->warn(q(Database connection is NOT established));
         my $error = App::WADTools::Error->new(
             caller  => __PACKAGE__ . q(.) . __LINE__,
             type    => q(database.no_connection),
             message => q|connect() never called to set up database handle|,
         );
-        return $error;
+        &$cb (
+            error => $error,
+            type => q(is_connected),
+        );
+        #return $error;
     } else {
-        return 1;
+        #return 1;
+        $log->info(q(Database connection is established));
+        &$cb (type => q(is_connected));
     }
 }
 

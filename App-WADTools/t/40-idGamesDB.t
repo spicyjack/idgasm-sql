@@ -75,13 +75,15 @@ my $db_cb = WADToolsTest::DBCallback->new();
 
 ### Create App::WADTools::idGamesDB object
 #my $db = App::WADTools::idGamesDB->new(callback => $db_cb);
-my $db = App::WADTools::idGamesDB->new(callback => \&db_request_callback);
+my $db = App::WADTools::idGamesDB->new(callback => \&db_request_cb);
 ok(ref($db) eq q(App::WADTools::idGamesDB),
     q(Successfully created App::WADTools::idGamesDB object));
 
-### Database is_connected()
-# - this should fail because 'connect()' hasn't been called yet
-&db_request_callback(expected_callback => q(is_connected));
+### Check Database is_connected()
+# set up the callback
+&db_request_cb(expected_callback => q(is_connected));
+# - this should fail and send an Error object in the callback because
+# 'connect()' hasn't been called yet
 $db->is_connected;
 #ok(ref($rv) eq q(App::WADTools::Error),
 #    q(Check for database connection fails as expected; ) . $rv->type);
@@ -161,10 +163,10 @@ foreach my $file_path ( @test_paths ) {
         qq|Retrieved File object by path ($file_path)|);
 }
 
-sub db_request_callback {
+sub db_request_cb {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
     #my $self = shift;
-    $log->debug(q(db_request_callback arguments: ) . join(q(, ), @_));
+    $log->debug(q(db_request_cb arguments: ) . join(q(, ), @_));
     my %args = @_;
 
     if ( exists $args{expected_callback} ) {
@@ -172,10 +174,10 @@ sub db_request_callback {
         $log->debug(q(40-idGamesDB: received 'expected_callback' call));
         $log->info(qq(Set expected_callback to: $expected_callback));
     } else {
-        $log->info(q(40-idGamesDB: received 'db_request_callback' call));
-        $log->info(qq(Set expected_callback to: $expected_callback));
+        $log->info(q(40-idGamesDB: received 'db_request_cb' call));
+        $log->info(qq(Expecting callback: $expected_callback));
         ok(defined $args{type} && $args{type} eq $expected_callback,
-            qq(Received expected callback: $expected_callback));
+            qq(Received callback: $expected_callback));
         undef $expected_callback;
     }
 }

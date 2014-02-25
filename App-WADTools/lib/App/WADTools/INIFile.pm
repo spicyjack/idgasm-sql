@@ -5,17 +5,20 @@ package App::WADTools::INIFile;
 
 =head1 NAME
 
-App::WADTools::Error
+App::WADTools::INIFile
 
 =head1 SYNOPSIS
 
  # in an object method somewhere, an error occurs...
- my $error = App::WADTools::Error->new(
-    caller    => __PACKAGE__ . q(.) . __LINE__,
-    type      => q(object.method_name.error_type),
-    message   => qq(Something bad happened! error:) . $obj->parsed_error,
-    raw_error => $obj->raw_unparsed_error,
- );
+ my $ini = App::WADTools::INIFile->new(filename => $cfg->get(q(input)));
+
+ # read the INI file, turn it into a Perl data structure via Config::Std
+ my $struct = $ini->read_ini_config();
+
+ # do something here with $struct, which is now a Perl data structure
+
+ # if you make any changes to $struct and want to write them back out...
+ $ini->write_ini_cfg(db_schema => $struct);
 
 =cut
 
@@ -35,8 +38,9 @@ use App::WADTools::Error;
 
 =head1 DESCRIPTION
 
-Read in database "transactions" from C<INI> format files, use those
-the data structures from those transactions to create database(s).
+Read in an INI file, and return a data structure that can represent things
+like database schemas, database transactions, or mappings between databases
+for copying the contents of one database to another.
 
 =head2 Attributes
 

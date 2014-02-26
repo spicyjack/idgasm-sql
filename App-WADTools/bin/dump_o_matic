@@ -1,0 +1,238 @@
+#!/usr/bin/env perl
+
+# For support with this file, please file an issue on the GitHub issue tracker
+# for this project: https://github.com/spicyjack/wadtools/issues
+
+=head1 NAME
+
+B<dump_o_matic> - Dump records from multiple databases into one single
+database file.
+
+=cut
+
+our $copyright = qq|Copyright (c) 2014 by Brian Manning|;
+
+=head1 SYNOPSIS
+
+ perl dump_o_matic [OPTIONS]
+
+ Script options:
+ --version          Print script version and copyright, then exit
+ -h|--help          Shows this help text
+ -v|--verbose       Verbose script execution
+
+ Path/database options:
+ -i|--inifile       INI file describing databases/tables/columns to copy
+ -o|--output        Output filename
+ --overwrite        Overwrite output file if it already exists
+
+ Debug options:
+ -d|--debug         Debug script execution (tons of output)
+ -c|--colorize      Always colorize script output
+ -l|--logfile       Write verbose/debug output to a file instead of screen
+ -e|--examples      Show script example usage
+
+You can view the full C<POD> documentation of this file by calling C<perldoc
+dump_idgames>.
+
+=cut
+
+our $examples = <<EOE;
+ dump_o_matic Examples of usage:
+
+ # dump the databases listed in 'input.ini' to 'output.db'
+ dump_o_matic --inifile /path/to/input.ini \
+    --output /path/to/output.db
+
+ # dump the databases listed in 'input.ini' to 'output.db',
+ # only dump 20 records from each table listed in the INI file
+ dump_o_matic --inifile /path/to/input.ini \
+    --output /path/to/output.db \
+    --num-of-records=20
+
+EOE
+
+our @options = (
+    # script options
+    q(verbose|v),
+    q(version),
+    q(help|h),
+    q(examples),
+
+    # path/db options
+    q(inifile|ini|i=s),
+    q(output|o=s),
+    q(overwrite),
+    q(num-of-records|num|num-records|records=i),
+
+    # debug options
+    q(colorize|c), # ignore '-t' test and always colorize output
+    q(debug|d),
+    q(logfile|log|l=s),
+);
+
+=head1 DESCRIPTION
+
+Dump records from one or more databases into a single database.  A set of
+mappings between tables/fields in multiple input databases will map to
+tables/fields in the single output database.
+
+=cut
+
+################
+# package main #
+################
+package main;
+use 5.010;
+use strict;
+use warnings;
+use utf8;
+
+### System modules
+use Data::Dumper;
+$Data::Dumper::Indent = 1;
+$Data::Dumper::Sortkeys = 1;
+$Data::Dumper::Terse = 1;
+use DateTime;
+use File::Basename;
+use File::Temp;
+use Log::Log4perl qw(get_logger :no_extra_logdie_message);
+use Log::Log4perl::Level;
+use Pod::Usage;
+
+### Local modules
+use App::WADTools::Config;
+use App::WADTools::idGamesDB;
+use App::WADTools::INIFile;
+use App::WADTools::Logger;
+use App::WADTools::Timer;
+
+    # create a variable with the current name of the script
+    my $my_name = basename($0);
+    # provide a version string if dzil hasn't populated modules with $VERSION
+    # scalars
+    my $VERSION = $App::WADTools::VERSION || q(git-dev);
+
+    # allow UTF-8 output
+    binmode(STDOUT, ":utf8");
+
+    # create a logger object
+    my $cfg = App::WADTools::Config->new(options => \@options);
+
+    # dump and bail if we get called with --help
+    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+
+    if ( $cfg->defined(q(version)) ) {
+        print STDERR qq($my_name: version '$VERSION'\n);
+        print STDERR qq($my_name: $copyright\n);
+        exit 0;
+    }
+
+    # dump and bail if we get called with --examples
+    if ( $cfg->defined(q(examples)) ) {
+        print $examples;
+        exit 0;
+    }
+
+    App::WADTools::Logger->new(config => $cfg);
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->logdie(q|Missing '--inifile' option (an INI file with DB mappings)|)
+        unless ( $cfg->defined(q(inifile)) );
+    my $ini_file = $cfg->get(q(inifile));
+    # check to see if the file exists
+    if ( ! -r $ini_file ) {
+        $log->fatal(qq(Path: $ini_file));
+        $log->logdie(q(INI file specified by '--inifile' not found/available));
+    }
+
+    $log->logdie(qq(Missing '--output' output filename))
+        unless ( $cfg->defined(q(output)) );
+    my $output_file = $cfg->get(q(output));
+    # don't overwrite an existing file
+    if ( -e $output_file && ! $cfg->defined(q(overwrite)) ) {
+        $log->fatal(q(Output file ) . $cfg->get(q(output)) . q(exists!));
+        $log->logdie(q|(Will not overwrite file without '--overwrite')|);
+    }
+
+    # start the script timer
+    my $timer = App::WADTools::Timer->new();
+    $timer->start(name => $my_name);
+    # print a nice banner before checking for optional arguments
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn($copyright);
+    $log->warn(qq(My PID is $$));
+    $log->info(qq(Command line: $0 ) . $cfg->args);
+    $log->warn(qq(--inifile: $ini_file));
+    $log->warn(qq(--output:  $output_file));
+
+    # counters for different different script statistics
+    my $total_script_execution_time = 0;
+    my $total_db_records_counter = 0;
+
+    my $ini_obj = App::WADTools::INIFile->new(filename => $ini_file);
+    my $ini_map = $ini_obj->read_ini_config();
+
+    print Dumper $ini_map;
+    exit 0;
+    # loop over each schema block, and query the input database in order to
+    # write data into the output database
+    INI_BLOCK: foreach my $block ( @ARGV ) {
+        $total_db_records_counter++;
+    }
+
+    $timer->stop(name => $my_name);
+    $total_script_execution_time =
+        $timer->time_value_difference(name => $my_name);
+    $log->warn(q(Total script execution time: )
+        . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
+
+=begin COMMENT
+
+    $log->warn(q(Total zipfiles touched: ) . $total_zip_extract_counter);
+    $log->warn(q(Total zip errors: ) . $total_unzip_error_counter);
+    $log->warn(q(Total zip extraction time: )
+        . sprintf(q(%0.2f), $total_zip_extract_time) . q( seconds));
+    $log->warn(q(Total WAD files indexed: ) . $total_wadfile_counter);
+    $log->warn(q(Total WAD lumps indexed: ) . $total_wad_lumps_indexed);
+    $log->warn(q(Total WAD index time: )
+        . sprintf(q(%0.2f), $total_wadfile_index_time) . q( seconds));
+    $log->warn(q(Total MD5 checksums computed: )
+        . $total_md5_checksum_counter);
+    $log->warn(q(Total time spent computing MD5 checksums: )
+        . sprintf(q(%0.2f), $total_md5_checksum_time) . q( seconds));
+    $log->warn(q(Total SHA checksums computed: )
+        . $total_sha_checksum_counter);
+    $log->warn(q(Total time spent computing SHA checksums: )
+        . sprintf(q(%0.2f), $total_sha_checksum_time) . q( seconds));
+
+=end COMMENT
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc dump_idgames
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2014 Brian Manning, all rights reserved.
+
+This program is copyrighted software.  Distribution is limited to
+licenseholders only.
+
+=cut
+
+# fin!
+# vim: set shiftwidth=4 tabstop=4

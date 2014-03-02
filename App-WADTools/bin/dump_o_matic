@@ -155,9 +155,6 @@ use App::WADTools::Timer;
         $log->logdie(q|(Will not overwrite file without '--overwrite')|);
     }
 
-    # start the script timer
-    my $timer = App::WADTools::Timer->new();
-    $timer->start(name => $my_name);
     # print a nice banner before checking for optional arguments
     $log->warn(qq(Starting $my_name, version '$VERSION'));
     $log->warn($copyright);
@@ -166,48 +163,16 @@ use App::WADTools::Timer;
     $log->warn(qq(--inifile: $ini_file));
     $log->warn(qq(--output:  $output_file));
 
-    # counters for different different script statistics
-    my $total_script_execution_time = 0;
-    my $total_db_records_counter = 0;
-
     my $ini_obj = App::WADTools::INIFile->new(filename => $ini_file);
     my $ini_map = $ini_obj->read_ini_config();
 
-    # view callback methods
-    # - update_view(view name, update data)
-    # - get_view_data(view name)
-    #
-    # controller callbacks
-    # - view_changed(view name)
-    #   - calls get_view_data(view name)
-    #   - decides whether or not to call a CRUD method on the model
-    #   - if a CRUD method is called on the model, calls update_view with the
-    #   results, if any
-    #
-    # model callbacks
-    # - read(data to read from model, to update view)
-    # - update(data to update in model, from view)
-    # - delete(data to delete in model, from view)
-    #
-    # After the program starts, create a "controller" object, then pass
-    # control of the program to that controller object
-    # - $controller->run
-    #   - Controller object will then pull data from the model, and call
-    #   update_view on the view
+    # create a controller, then pass control to it
+    # - controller sets up the other objects, and passes callbacks to them as
+    # needed
+    my $controller = App::WADTools::DumpController->new(ini_map => $ini_map);
+    $controller->run();
 
-    # loop over each schema block, and query the input database in order to
-    # write data into the output database
-    INI_BLOCK: foreach my $block_key ( %{$ini_map} ) {
-        print Dumper $block_key;
-        #next if ( $block
-        $total_db_records_counter++;
-    }
     exit 0;
-    $timer->stop(name => $my_name);
-    $total_script_execution_time =
-        $timer->time_value_difference(name => $my_name);
-    $log->warn(q(Total script execution time: )
-        . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
 
 =begin COMMENT
 

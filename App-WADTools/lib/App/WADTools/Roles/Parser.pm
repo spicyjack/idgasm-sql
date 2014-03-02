@@ -3,9 +3,20 @@
 ########################################
 package App::WADTools::Roles::Parser;
 
-=head1 App::WADTools::Roles::Parser
+=head1 NAME
 
-A role for methods/attributes common to both the JSON and XML parsers.
+App::WADTools::Roles::Parser
+
+=head1 SYNOPSIS
+
+ # in another object...
+ use Moo;
+ with qw(App::WADTools::Roles::Parser);
+
+=head1 DESCRIPTION
+
+A role that provides methods/attributes that are common to both the JSON and
+XML parsers.
 
 =cut
 
@@ -37,6 +48,30 @@ has q(save_textfile) => (
 );
 
 =back
+
+=head1 AUTHOR
+
+Brian Manning, C<< <brian at xaoc dot org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the GitHub issue tracker for
+this project:
+
+C<< <https://github.com/spicyjack/wadtools/issues> >>.
+
+=head1 SUPPORT
+
+You can find documentation for this script with the perldoc command.
+
+    perldoc App::WADTools::Vote
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (c) 2013-2014 Brian Manning, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 

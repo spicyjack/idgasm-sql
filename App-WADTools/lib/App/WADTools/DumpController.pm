@@ -77,8 +77,9 @@ databases and written to the output database.
 =cut
 
 has q(total_records) => (
-    is  => q(rw),
-    isa => sub{ ref($_[0]) =~ /HASH/ },
+    is      => q(rw),
+    isa     => sub{ $_[0] =~ /\d+/; },
+    default => sub { 0 },
 );
 
 =back
@@ -100,18 +101,29 @@ Transfers control of the program to the L<DumpController> object.
 
 sub run {
     my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my $timer_name = q(program);
     # start the script timer
     my $timer = App::WADTools::Timer->new();
     $timer->start(name => $timer_name);
 
-    # loop over each schema block, and query the input database in order to
-    # write data into the output database
-    INI_BLOCK: foreach my $block_key ( %{$self->ini_map} ) {
-        print Dumper $block_key;
-        #next if ( $block
-        $self->total_records++;
+    my @input_blocks;
+    my $output_block;
+    # loop over each schema block, sort the blocks into input and output
+    INI_BLOCK: foreach my $block_key ( keys(%{$self->ini_map}) ) {
+        #print Dumper $block_key;
+        $log->debug(qq(Received: $block_key));
+        $log->debug(q(dump: ) . Dumper($self->ini_map->{$block_key}));
+        next if ( $block_key =~ /default/ );
+        if ( $block_key =~ /^input/ ) {
+            push(@input_blocks, $self->ini_map->{$block_key});
+        } elsif ( $block_key =~ /^input/ ) {
+            $output_block = $self->ini_map->{$block_key};
+        } else {
+            $log->warn(qq(Unrecognized block: $block_key));
+        }
+        $self->total_records($self->total_records + 1);
     }
 
     $timer->stop(name => $timer_name);

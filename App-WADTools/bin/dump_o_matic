@@ -102,6 +102,7 @@ use Pod::Usage;
 
 ### Local modules
 use App::WADTools::Config;
+use App::WADTools::DumpController;
 use App::WADTools::idGamesDB;
 use App::WADTools::INIFile;
 use App::WADTools::Logger;

@@ -103,7 +103,7 @@ sub run {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    my $timer_name = q(program);
+    my $timer_name = q(dump_controller);
     # start the script timer
     my $timer = App::WADTools::Timer->new();
     $timer->start(name => $timer_name);
@@ -113,18 +113,19 @@ sub run {
     # loop over each schema block, sort the blocks into input and output
     INI_BLOCK: foreach my $block_key ( keys(%{$self->ini_map}) ) {
         #print Dumper $block_key;
-        $log->debug(qq(Received: $block_key));
-        $log->debug(q(dump: ) . Dumper($self->ini_map->{$block_key}));
+        $log->debug(qq(Block name: $block_key));
+        $log->debug(qq(Block dump:\n) . Dumper($self->ini_map->{$block_key}));
         next if ( $block_key =~ /default/ );
         if ( $block_key =~ /^input/ ) {
             push(@input_blocks, $self->ini_map->{$block_key});
-        } elsif ( $block_key =~ /^input/ ) {
+        } elsif ( $block_key =~ /^output/ ) {
             $output_block = $self->ini_map->{$block_key};
         } else {
             $log->warn(qq(Unrecognized block: $block_key));
         }
         $self->total_records($self->total_records + 1);
     }
+    #my $out_db = App::WADTools::DBTool->new();
 
     $timer->stop(name => $timer_name);
     my $total_script_execution_time =

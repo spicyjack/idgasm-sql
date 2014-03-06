@@ -112,7 +112,7 @@ ok($rv == 5, q(Schema table has 5 entries));
 # - Read in the test INI with live File objects
 my $test_ini = App::WADTools::INIFile->new(
     filename => q(data/idgames_dump_sql_blocks.ini));
-ok(ref($ini) eq q(App::WADTools::INIFile),
+ok(ref($test_ini) eq q(App::WADTools::INIFile),
     q(Successfully created App::WADTools::INIFile object));
 # - Create the schema object with live SQL
 my $test_blocks = $test_ini->read_ini_config();

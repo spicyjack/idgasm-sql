@@ -37,19 +37,19 @@ Controller methods
     updated.  If _DBTool_ needs to be updated, calls the appropriate _DBTool_
     method
     - `create/update/read/delete`
-- `db_update`
+- `request_update`
   - Invoked by: _DBTool_
   - Purpose: Updates the _Controller_ with the status of a request; _DBTool_
     will include information about the successful request (request ID or type,
     or both)
   - Response: _Controller_ updates _View_ based on business rules/need
-- `db_success`
+- `request_success`
   - Invoked by: _DBTool_
   - Purpose: Lets the _Controller_ know that a previous request was successful;
     _DBTool_ will include information about the successful request (request ID
     or type, or both)
   - Response: _Controller_ updates _View_ based on business rules/need
-- `db_failure`
+- `request_failure`
   - Invoked by: _DBTool_
   - Purpose: Lets the _Controller_ know that a previous request failed;
     _DBTool_ will include information about the failed request (request ID or
@@ -59,8 +59,9 @@ Controller methods
 
 DBTool (Model) methods
 - All _DBTool_ methods are invoked by the _Controller_, and will cause
-  _DBTool_ to invoke one or more of the `db_*` methods both during processing
-  and after processing is complete
+  _DBTool_ to invoke one or more of the `request_*` methods during processing
+  (`request_update`), as well as after processing is complete
+  (`request_success`/`request_failure`)
 - `create(table_name, hash_with_table_info)`
   - Create a table using info read from another database
 - `read_schema(database_object, table_name)`

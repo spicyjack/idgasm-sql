@@ -11,7 +11,8 @@ App::WADTools::idGamesDB
 
  my $db = App::WADTools::idGamesDB->new(filename => q(/path/to/file.db));
  # check that the database already has a schema applied to it
- my $result = $db->connect( check_schema => 1 );
+ my $result = $db->connect();
+ my $result = $db->connect();
  if ( $result->can(q(is_error) ) {
      # something bad happened
  }
@@ -45,7 +46,10 @@ use App::WADTools::idGamesFile;
 
 ### Roles
 # contains App::WADTools::Error
-with qw(App::WADTools::Roles::Database);
+with qw(
+    App::WADTools::Roles::Database
+    App::WADTools::Roles::DatabaseSchema
+);
 
 =head2 Attributes
 
@@ -53,26 +57,50 @@ with qw(App::WADTools::Roles::Database);
 
 =item callback
 
-An object that will receive callbacks from this object (L<idGamesDB>) for
-the following events:
+An object that will receive callbacks from this object (L<idGamesDB>).  The
+callbacks will include a hash with different attributes for each callback.
+The callback methods that will be invoked on this object will include:
 
 =over
 
-=item db_request_success
+=item request_success
 
-The database request has finished successfully.
+The database request has finished successfully.  The return attributes will
+include the C<type> attribute, which will indicate what event triggered the
+C<request_success> call.
 
-=item db_request_failure
+=item request_failure
 
-The database request failed for some reason.  A L<App::WADTools::Error> object
-will be returned in the callback request.
+The database request failed for some reason.  The return attributes will
+include the C<error> attribute, which will contain a L<App::WADTools::Error>
+object, and the C<type> attribute, which will indicate what event triggered
+the C<request_failure> call.
 
-=item db_request_update
+=item request_update
 
 The database request which is still processing wants to update the status of
-the request.
+the request.  The return attributes will include the C<type> attribute, which
+will indicate what event triggered the C<request_success> call, and the
+C<message> attribute, which is usually an update message of some kind that can
+be passed along to the user.
 
 =back
+
+=cut
+
+has q(callback) => (
+    # https://metacpan.org/pod/Moo#has
+    # 'rwp' generates a reader like 'ro', but also sets writer to
+    # _set_${attribute_name} for attributes that are designed to be written
+    # from inside of the class, but read-only from outside.
+    is  => q(rwp),
+    default => sub { },
+    isa     => sub { die q(Missing required 'request_*' callback methods)
+                        unless ( $_[0]->can(q(request_update))
+                                && $_[0]->can(q(request_success))
+                                && $_[0]->can(q(request_failure)) );
+    },
+);
 
 =back
 

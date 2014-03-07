@@ -76,23 +76,11 @@ has dbh => (
 
 =head2 Methods
 
-=over
-
-=item new(filename => $filename)
-
-Creates the L<App::WADTools::Roles::Database> object.  Method is automatically
-provided by the L<Moo> module as the C<BUILD> method.
-
-Required arguments:
+B<NOTE!> Since this is a L<Moo::Role> object, you cannot directly create an
+object from it, you need to create an object that consumes this role in order
+to use the methods/attributes that this role provides.
 
 =over
-
-=item filename
-
-The filename of the database file that will be read from and written to.  See
-the L<filename> attribute above for more information about this argument.
-
-=back
 
 =item connect()
 
@@ -115,6 +103,8 @@ sub connect {
     $log->debug(q(Connecting to/reading database...));
     if ( length($self->filename) == 0 ) {
         $log->warn(q|Creating temp database ('filename' attribute is empty)|);
+    } elsif ( $self->filename eq q(:memory:) ) {
+        $log->warn(q|Creating in-memory database ('filename' == ':memory:')|);
     } else {
         $log->debug(q(Database filename: ) . $self->filename);
     }

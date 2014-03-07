@@ -9,13 +9,13 @@ package main;
 use strictures 1; # strict + warnings
 
 my $VERSION = $App::WADTools::DBTool::VERSION || q(git-dev);
-
 diag( qq(\nTesting App::WADTools::DBTool )
     . $VERSION
     . qq(,\n)
     . qq(Perl $], $^X)
 );
 
+# located in this file, below...
 my $test = WADToolsTest::DBToolTest->new();
 $test->run();
 
@@ -30,8 +30,14 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-# provides 'setup_logging', checks to see that the config file is available
+# provides 'setup_logging' method, which checks to see that the config file is
+# available
 with qw(WADToolsTest::Logging);
+
+has q(expected_callback) => (
+    is      => q(rw),
+    default => sub { q() },
+);
 
 sub run {
     my $self = shift;
@@ -46,6 +52,7 @@ BEGIN {
     use_ok( q(WADToolsTest::DBCallback) );
 }
 
+    # needs Log::Log4perl loaded first (above)
     $self->setup_logging;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
     isa_ok($log, q(Log::Log4perl::Logger));
@@ -53,113 +60,38 @@ BEGIN {
     my $file; # a test App::WADTools::File object
     my $rv; # generic return value
 
-    ### Create App::WADTools::DBTool object
-    #my $db = App::WADTools::DBTool->new(callback => $db_cb);
-    my $db = App::WADTools::DBTool->new();
-    ok(ref($db) eq q(App::WADTools::DBTool),
-        q(Successfully created App::WADTools::DBTool object));
-
-### Check Database is_connected()
-# set up the callback
-    &db_request_cb(expected_callback => q(is_connected));
-# - this should fail and send an Error object in the callback because
-# 'connect()' hasn't been called yet
-    $db->is_connected;
-#ok(ref($rv) eq q(App::WADTools::Error),
-#    q(Check for database connection fails as expected; ) . $rv->type);
-
-### Database connect()
-    $rv = $db->connect;
-    ok($rv == 1, q|DB connect() call successful|);
-
-# check App::WADTools::INIFile
-# use the current idgames_db_dump.ini schema file
+    # check App::WADTools::INIFile
+    # use the current idgames_db_dump.ini schema file
     my $ini = App::WADTools::INIFile->new(
-        filename => q(../../sql_schemas/idgames_db_dump.ini));
+        filename => q(data/dbtool_test.ini));
     ok(ref($ini) eq q(App::WADTools::INIFile),
         q(Successfully created App::WADTools::INIFile object));
+    my $ini_map = $ini->read_ini_config();
 
-### Create a schema using 'apply_schema'
-    my $db_schema = $ini->read_ini_config();
-    $rv = $db->apply_schema(schema => $db_schema);
-    ok($rv == 1, q(apply_schema applied database schema without errors));
-
-### Run $db->has_schema
-    $rv = $db->has_schema();
-    ok($rv == 5, q(Schema table has 5 entries));
-
-### Insert some records, make sure callbacks for record insertion are received
-# - Read in the test INI with live File objects
-    my $test_ini = App::WADTools::INIFile->new(
-        filename => q(data/idgames_dump_sql_blocks.ini));
-    ok(ref($ini) eq q(App::WADTools::INIFile),
-        q(Successfully created App::WADTools::INIFile object));
-# - Create the schema object with live SQL
-    my $test_blocks = $test_ini->read_ini_config();
-    ok(ref($test_blocks) eq q(Config::Std::Hash),
-        qq(Config::Std::Hash object created from INI file));
-    $rv = $db->apply_schema(schema => $test_blocks);
-
-# other possible ways to do this...
-#$rv = $db->run_sql_insert(sql_predicate => $scalar, sql_params => @array);
-#$rv = $db->run_sql_insert(table => $scalar, sql_params => @array);
-#$rv = $db->insert_data(table => $scalar, sql_params => @array);
-
-# check the schema table again, it should now have 5 + scalar(@test_ids)
-    $rv = $db->has_schema();
-    my $total_schema_entries = 5 + scalar(@test_ids);
-    ok($rv == $total_schema_entries,
-        qq(Schema table now has $total_schema_entries entries));
-
-# negative test case
-    $file = $db->get_file_by_id(id => 1);
-    ok($file->can(q(is_error)),
-        q(Request for non-existant file ID returns Error object));
-    ok($file->type =~ /file_id_not_found/,
-        q(Error 'type' returned includes 'file_id_not_found' string));
-
-# - use get_file_by_id to retrieve records
-    foreach my $file_id ( @test_ids ) {
-        $file = $db->get_file_by_id(id => $file_id);
-        if ( ref($file) eq q(App::WADTools::Error) ) {
-            die $file->log_error;
-        }
-        ok($file->id == $file_id,
-            qq|Retrieved File object by ID (id=$file_id)|);
-    }
-
-# negative test case
-    $file = $db->get_file_by_path(path => q(/path/to), filename => q(⁄foo.wad));
-    ok($file->can(q(is_error)),
-        q(Request for non-existant file ID returns Error object));
-    ok($file->type =~ /file_path_not_found/,
-        q(Error 'type' returned includes 'file_path_not_found' string));
-
-# - use get_file_by_path to retrieve records
-    foreach my $file_path ( @test_paths ) {
-        my ($filename, $path) = fileparse($file_path);
-        $file = $db->get_file_by_path(path => $path, filename => $filename);
-        ok($file->dir eq $path && $file->filename eq $filename,
-            qq|Retrieved File object by path ($file_path)|);
-    }
+    ### Create App::WADTools::DBTool object
+    my $db_tool = App::WADTools::DBTool->new(
+        controller => $self,
+        filename => q(:memory:),
+    );
+    ok(ref($db_tool) eq q(App::WADTools::DBTool),
+        q(Successfully created App::WADTools::DBTool object));
 }
 
-sub db_request_cb {
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    #my $self = shift;
-    $log->debug(q(db_request_cb arguments: ) . join(q(, ), @_));
+sub request_update {
+    my $self = shift;
     my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    if ( exists $args{expected_callback} ) {
-        $expected_callback = $args{expected_callback};
-        $log->debug(q(40-DBTool: received 'expected_callback' call));
-        $log->info(qq(Set expected_callback to: $expected_callback));
+    $log->debug(q(db_request_cb arguments: ) . join(q(, ), @_));
+
+    if ( $self->expected_callback ) {
+        $log->info(q(40-DBTool: received 'db_request_cb' call));
     } else {
         $log->info(q(40-DBTool: received 'db_request_cb' call));
-        $log->info(qq(Expecting callback: $expected_callback));
-        ok(defined $args{type} && $args{type} eq $expected_callback,
-            qq(Received callback: $expected_callback));
-        undef $expected_callback;
+        $log->info(q(Expecting callback: ) . $self->expected_callback);
+        ok(defined $args{type} && $args{type} eq $self->expected_callback,
+            q(Received callback: ) . $self->expected_callback);
+        $self->expected_callback(q());
     }
 }
 

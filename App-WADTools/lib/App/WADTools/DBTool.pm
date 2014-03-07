@@ -23,66 +23,43 @@ reading/writing data amongst them.
 
 =cut
 
-# system modules
+### System modules
 use Moo;
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
-# local modules
+### Local modules
 use App::WADTools::Error;
+
+### Roles consumed
+with qw(App::WADTools::Roles::Database);
 
 =head2 Attributes
 
 =over
 
-=item view
+=item controller
 
-The view object, which controls the user interface shown to the user.
+Required attribute.
 
-=cut
-
-has q(view) => (
-    is  => q(rw),
-    #isa => sub{ ref($_[0]) eq q(App::WADTools::Views::DumpOMatic) },
-);
-
-=item model
-
-The model object, which will handle reading and updating various databases.
+The L<DumpController> object to send callbacks to.  Depending on what
+L<DumpController> is being notified of, it will forward information on to the
+C<View> object so that the user interface can be updated.
 
 =cut
 
-has q(model) => (
-    is  => q(rw),
-    #isa => sub{ ref($_[0]) eq q(App::WADTools::DumpModel) },
-);
-
-=item ini_map
-
-The L<Config::Std> object containing input and output objects for the object to
-work with.  The L<Config::Std> object was created using the C<INI> file
-specified by the C<--inifile> switch on the command line.
-
-=cut
-
-has q(ini_map) => (
-    is  => q(rw),
-    isa => sub{ ref($_[0]) =~ /HASH/ },
-);
-
-=item total_records
-
-A count of the total number of records read in from all of the input
-databases and written to the output database.
-
-=cut
-
-has q(total_records) => (
+has q(controller) => (
     is      => q(rw),
-    isa     => sub{ $_[0] =~ /\d+/; },
-    default => sub { 0 },
+    default => sub { },
+    isa     => sub {
+        # return a 1 if these callback methods are available, 0 otherwise
+        ( $_[0]->can(q(request_update))
+        && $_[0]->can(q(request_success))
+        && $_[0]->can(q(request_failure)) ) ? 1 : 0;
+    },
+
 );
 
 =back
@@ -96,48 +73,13 @@ has q(total_records) => (
 Creates the L<App::WADTools::DBTool> object and returns it to the
 caller.
 
-=item run()
+=item db_connect()
 
-Transfers control of the program to the L<DBTool> object.
+Connects to the specified database, using the filename specified by the
+C<filename> parameter.
 
 =cut
 
-sub run {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    my $timer_name = q(dump_controller);
-    # start the script timer
-    my $timer = App::WADTools::Timer->new();
-    $timer->start(name => $timer_name);
-
-    my @input_blocks;
-    my $output_block;
-    # loop over each schema block, sort the blocks into input and output
-    INI_BLOCK: foreach my $block_key ( keys(%{$self->ini_map}) ) {
-        #print Dumper $block_key;
-        $log->debug(qq(Received: $block_key));
-        $log->debug(q(dump: ) . Dumper($self->ini_map->{$block_key}));
-        next if ( $block_key =~ /default/ );
-        if ( $block_key =~ /^input/ ) {
-            push(@input_blocks, $self->ini_map->{$block_key});
-        } elsif ( $block_key =~ /^input/ ) {
-            $output_block = $self->ini_map->{$block_key};
-        } else {
-            $log->warn(qq(Unrecognized block: $block_key));
-        }
-        $self->total_records($self->total_records + 1);
-    }
-    my $out_db = App::WADTools::DBTool->new()
-
-    $timer->stop(name => $timer_name);
-    my $total_script_execution_time =
-        $timer->time_value_difference(name => $timer_name);
-
-    # FIXME tell the View to dump this stuff out
-    #$log->warn(q(Total script execution time: )
-    #    . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
-}
 =back
 
 =head1 AUTHOR

@@ -212,13 +212,19 @@ use constant {
         $db = App::WADTools::idGamesDB->new(
             filename => $cfg->get(q(database))
         );
-        my $db_connect = $db->connect( check_schema => 1 );
-        if ( ref($db_connect) eq q(App::WADTools::Error) ) {
-            $log->error(q(Recieved error connecting to idgames-db));
+        if ( $db->can(q(is_error)) ) {
+            $log->error(q(Recieved error creating database object));
             $log->error(q(Error type: ) . $db->type);
             $log->logdie(q(Error message: ) . $db->message);
         } else {
-            $log->debug(qq(idgames-db has $db_connect schema entries));
+            my $schema_check = $db->check_schema();
+            if ( $schema_check->can(q(is_error)) ) {
+                $log->error(q(Recieved schema error in --idgames-db));
+                $log->error(q(Error type: ) . $schema_check->type);
+                $log->logdie(q(Error message: ) . $schema_check->message);
+            } else {
+                $log->debug(qq(idgames-db has $schema_check schema entries));
+            }
         }
     }
     my $ua = LWP::UserAgent->new(agent => qq($my_name $VERSION));

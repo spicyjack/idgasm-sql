@@ -38,51 +38,41 @@ use App::WADTools::Error;
 
 =over
 
-=item callback
-
-The callback that will be called by this object while processing, or is
-finished successfuly, fails, or exits with an error before completing.
-
-=back
-
-=cut
-
-has callback => (
-    is      => q(rw),
-);
-
 =item filename
 
-A filename to the C<SQLite> database file.  If the file does not exist, a new
-file will be created.
-
-=back
+The path to the file on the filesystem that will be used as the C<SQLite>
+database file.  If the special string C<:memory:> is used, then the database
+will be stored in memory instead of being created as a file on the filesystem.
+For in-memory databases, once this database object goes out of scope and
+deleted, the database stored in memory will also be deleted.
 
 =cut
 
-has filename => (
-    is      => q(rw),
-    default => sub { q() },
-#    isa => sub {
-#                my $self = shift;
-#                die "$self is not a valid filename"
-#                    unless (-r $self);
-#            },
-
+has q(filename) => (
+    is      => q(ro),
 );
 
 =item dbh
 
-The database handle, provided by the L<DBI> object.
-
-=back
+The database handle created by this object.  The database handle is a L<DBI>
+object.  The handle is stored in this object so that subsequent database
+requests by this object don't need to obtain a new database handle for each
+request.
 
 =cut
 
 has dbh => (
-    is  => q(rw),
-    isa => sub{ ref($_[0]) eq q(DBI) },
+    # https://metacpan.org/pod/Moo#has
+    # 'rwp' generates a reader like 'ro', but also sets writer to
+    # _set_${attribute_name} for attributes that are designed to be written
+    # from inside of the class, but read-only from outside.
+    is  => q(rwp),
+    isa => sub{
+        die q('dbh' requires a DBI object) unless ref($_[0]) eq q(DBI)
+    },
 );
+
+=back
 
 =head2 Methods
 
@@ -93,13 +83,14 @@ has dbh => (
 Creates the L<App::WADTools::Roles::Database> object.  Method is automatically
 provided by the L<Moo> module as the C<BUILD> method.
 
-Optional arguments:
+Required arguments:
 
 =over
 
 =item filename
 
-The filename of the database file that will be read from and written to.
+The filename of the database file that will be read from and written to.  See
+the L<filename> attribute above for more information about this argument.
 
 =back
 
@@ -108,33 +99,9 @@ The filename of the database file that will be read from and written to.
 Connects to the database (calls C<DBI-E<gt>connect> using the C<filename>
 attribute).
 
-Optional arguments:
-
-=over
-
-=item check_schema
-
-Checks to see if a schema has already been applied to this database.
-
-=back
-
-Return values:
-
-=over
-
-=item if C<check_schema> was used...
-
-Then this method returns the number of schema blocks applied if the database
-connection was successful and has had a schema applied to it, or an
-L<App::WADTools::Error> object if there was an error.
-
-=item if C<check_schema> was not used...
-
-Then this method returns true (C<1>) if the database connection was
-successful, or an L<App::WADTools::Error> object if there was a problem
-connecting to the database.
-
-=back
+This method returns true (C<1>) if the database connection was successful, or
+an L<App::WADTools::Error> object if there was a problem connecting to the
+database.
 
 =cut
 
@@ -143,14 +110,8 @@ sub connect {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    my $check_schema_flag;
     my $dbh = $self->dbh;
 
-    if ( exists $args{check_schema} ) {
-        if ( $args{check_schema} ) {
-            $check_schema_flag = $args{check_schema};
-        }
-    }
     $log->debug(q(Connecting to/reading database...));
     if ( length($self->filename) == 0 ) {
         $log->warn(q|Creating temp database ('filename' attribute is empty)|);
@@ -159,26 +120,21 @@ sub connect {
     }
 
     if ( ! defined $dbh ) {
-        $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
-        # turn on unicode handling
-        $dbh->{sqlite_unicode} = 1;
-        # don't print errors by default, all of the methods in this object are
-        # checking $dbh->err after every interaction with the database
-        # code
-        $dbh->{PrintError} = 0;
-        if ( defined $dbh->err ) {
-            my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(database.connect),
-                message => $dbh->errstr,
-            );
-            return $error;
-        } else {
-            # save the database handle
-            $self->dbh($dbh);
-            if ( $check_schema_flag ) {
-                # returns the number of schema blocks applied, or an error
-                return $self->has_schema;
+        if ( -w $self->filename || $self->filename eq q(:memory:) ) {
+            $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
+            # turn on unicode handling
+            $dbh->{sqlite_unicode} = 1;
+            # don't print errors by default; all of the methods in this object
+            # are checking $dbh->err after every interaction with the database
+            # code
+            $dbh->{PrintError} = 0;
+            if ( defined $dbh->err ) {
+                my $error = App::WADTools::Error->new(
+                    caller  => __PACKAGE__ . q(.) . __LINE__,
+                    type    => q(database.connect),
+                    message => $dbh->errstr,
+                );
+                return $error;
             } else {
                 return 1;
             }
@@ -186,219 +142,10 @@ sub connect {
     } else {
         # database connection has already been set up (connection should
         # always be a singleton)
+        $log->warn(q|Database connect() method has previously been called;|);
         $log->warn(q(Database connection already set up!));
-        $log->warn(q|Database connect() method has previously been called...|);
         return 1;
     }
-}
-
-=item apply_schema()
-
-Applies the schema as determined by the C<schema> argument to the database
-file.  It's up to the caller to set up the C<schema> argument correctly, by
-using the L<App::WADTools::INIFile> object to read in schema info from an
-C<INI> file, which gets converted to the correct data structure for this
-method to apply to the database.
-
-Returns either C<1> if all of the SQL calls were successful, or an
-L<App::WADTools::Error> object if any of the SQL calls failed.
-
-Required arguments:
-
-=over
-
-=item schema
-
-A data structure that specifies different SQL data definition language (DDL)
-commands to run in order to create a database.
-
-=back
-
-=cut
-
-sub apply_schema {
-    my $self = shift;
-    my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
-    my $dbh = $self->dbh;
-
-    $log->logdie(q(Missing 'schema' parameter))
-        unless ( defined $args{schema} );
-
-    my $schema = $args{schema};
-
-    # when the schema is stuffed into a hash, the order of the blocks is
-    # randomized; we need to always have the 'schema' block be run first, then
-    # the other blocks in whatever order
-    my @unsorted_blocks = sort(keys(%{$schema}));
-    my @schema_blocks;
-    # push the 'schema' block on the list of blocks so it's at the front, if
-    # the 'schema' block even exists in the *.ini file
-    if ( grep(/schema/, @unsorted_blocks) > 0 ) {
-        push (@schema_blocks, q(schema));
-    }
-    foreach my $random_block ( @unsorted_blocks ) {
-        # skip the 'default' schema block, and the 'schema' schema block
-        next if ( $random_block =~ /^default|^schema/ );
-        push(@schema_blocks, $random_block);
-    }
-    SQL_BLOCK: foreach my $block_name ( @schema_blocks ) {
-        # get the hash underneath the $block_name key
-        my $block = $schema->{$block_name};
-        #$log->debug(q(Dumping schema block: ) . Dumper($block));
-        $log->info(qq(Executing SQL schema block: $block_name));
-        if ( defined $block->{sql} ) {
-            # create the table
-            $dbh->do($block->{sql});
-            if ( defined $dbh->err ) {
-                $log->error(qq(Execution of schema block '$block_name' failed));
-                $log->error(q(Error message: ) . $dbh->errstr);
-                my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute_sql),
-                    message => $dbh->errstr
-                );
-                return $error;
-            }
-        } elsif ( defined $block->{params} ) {
-            # verify the SQL predicate exists
-            my $sql_predicate = $block->{sql_predicate};
-            if ( ! defined $sql_predicate ) {
-                $log->error(qq(Missing SQL predicate from block '$block_name'));
-                my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute_params),
-                    message =>
-                        qq(Missing SQL predicate from block '$block_name'),
-                );
-                return $error;
-            }
-            # "cast" params to an array
-            my @params = @{$block->{params}};
-            if ( scalar(@params) == 0 ) {
-                $log->error(qq(Missing SQL params from block '$block_name'));
-                my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute_params),
-                    message => qq(Missing SQL params from block '$block_name'),
-                );
-                return $error;
-            }
-            my @bind_placeholders;
-            for (my $i = 0; $i < scalar(@params); $i++) {
-                push(@bind_placeholders, q(?));
-            }
-            my $sql = qq|$sql_predicate (|
-                . join(q(, ), @bind_placeholders) . q|)|;
-            #$log->debug(q(Dumping SQL statement for predicate/params;));
-            #$log->debug($sql);
-            # create the table
-            $dbh->do($sql, undef, @params);
-            if ( defined $dbh->err ) {
-                $log->error(qq(Execution of schema block '$block_name' failed));
-                $log->error(q(Error message: ) . $dbh->errstr);
-                my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute),
-                    message => $dbh->errstr,
-                );
-                return $error;
-            }
-        } else {
-            $log->error(qq(Block '$block_name' has no 'sql' key));
-            $log->error(qq(Skipping to next SQL block));
-            next SQL_BLOCK;
-        }
-        # add the newly created table to the schema table
-        # this statement handle is only valid *after* the `schema` table has
-        # been created
-        my $sth = $dbh->prepare(
-            q|INSERT INTO schema VALUES (NULL, ?, ?, ?, ?, ?)|);
-        if ( defined $dbh->err ) {
-            $log->error(q('prepare' call to INSERT into 'schema' failed));
-            $log->error(q(Error message: ) . $dbh->errstr);
-            my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(database.schema_insert.prepare),
-                message => $dbh->errstr
-            );
-            return $error;
-        }
-        $sth->bind_param(1, time);
-        $sth->bind_param(2, $block_name);
-        $sth->bind_param(3, $block->{description});
-        $sth->bind_param(4, $block->{notes});
-        $sth->bind_param(5, $block->{checksum});
-        my $rv = $sth->execute();
-        if ( ! defined $rv ) {
-            $log->error(qq(INSERT for schema ID $block_name returned an error: )
-                . $sth->errstr);
-            my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(database.schema_insert.execute),
-                message => $dbh->errstr
-            );
-            return $error;
-        } else {
-            $log->debug(qq(INSERT of ID $block_name into 'schema' )
-                 . qq(changed $rv row));
-        }
-    }
-    return 1;
-}
-
-=item has_schema()
-
-Determines if the database specified with the C<filename> attribute has
-already had a schema applied to it via L<apply_schema>.  Returns C<0> if the
-schema has not been applied, and the number of rows in the C<schema> table if
-the schema has been applied.
-
-=cut
-
-sub has_schema {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
-    my $dbh = $self->dbh;
-
-    my $sql = <<SQL;
-        SELECT id, date_applied
-        FROM schema
-        ORDER BY date_applied ASC
-SQL
-    $log->debug(q(Preparing SQL for querying 'schema' table));
-    my $sth = $dbh->prepare($sql);
-    if ( defined $dbh->err ) {
-        $log->error(q(Checking for schema failed: ) . $dbh->errstr);
-        return 0;
-    }
-
-    my $schema_rows = 0;
-    $log->debug(q(Reading schema entries from 'schema' table));
-    $sth->execute;
-    if ( defined $sth->err ) {
-        $log->warn(q(Execution of schema entries read failed));
-        $log->warn(q(Error message: ) . $sth->errstr);
-        return 0;
-    }
-    while ( my @row = $sth->fetchrow_array ) {
-        $schema_rows++;
-        # "unpack" the row
-        #my ($row_id, $date_applied) = @row;
-        #$log->debug(qq(Row; id: $row_id, date: $date_applied));
-    }
-
-    # return the number of schema rows read from the database; this should
-    # roughly correspond to the schema version of the database
-    return $schema_rows;
 }
 
 =item is_connected()
@@ -419,7 +166,6 @@ sub is_connected {
     # connect()
     $log->debug(q(Checking to see if database connection is established));
     my $dbh = $self->dbh;
-    my $cb = $self->callback;
     if ( ! defined $dbh ) {
         $log->warn(q(Database connection is NOT established));
         my $error = App::WADTools::Error->new(
@@ -427,15 +173,9 @@ sub is_connected {
             type    => q(database.no_connection),
             message => q|connect() never called to set up database handle|,
         );
-        &$cb (
-            error => $error,
-            type => q(is_connected),
-        );
-        #return $error;
+        return $error;
     } else {
-        #return 1;
-        $log->info(q(Database connection is established));
-        &$cb (type => q(is_connected));
+        return 1;
     }
 }
 

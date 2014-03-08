@@ -203,13 +203,23 @@ use constant {
         # with updated Database object, when check_schema => 1 is passed, the
         # return value is the number of rows in the schema table, aka how many
         # schema blocks that have been applied to the database
-        my $idg_db_connect = $idg_db->connect( check_schema => 1 );
+        my $idg_db_connect = $idg_db->connect();
         if ( $idg_db_connect->can(q(is_error)) ) {
             # $idg_db_connect is an App::WADTools::Error object
             $log->error(q(Recieved error connecting to idgames-db;));
             $idg_db_connect->log_error();
+            # undef $idg_db so the script doesn't try to use it
+            undef $idg_db;
         } else {
-            $log->debug(qq(idgames-db has $idg_db_connect schema entries));
+            my $schema_entries = $idg_db->has_schema();
+            if ( $schema_entries == 0 ) {
+                $log->warn(q(Missing database schema in idGames database));
+                $log->warn(q(Please use 'db_tool' to create idGames DB file));
+                # undef $idg_db so the script doesn't try to use it
+                undef $idg_db;
+            } else {
+                $log->debug(qq(idgames-db has $idg_db_connect schema entries));
+            }
         }
     } else {
         $log->warn(q(WARNING: Missing optional parameter --idgames-db;));
@@ -225,13 +235,23 @@ use constant {
         );
         # use check_schema to check schema; $idx_db_connect will be the number
         # of schema entries if there are no errors
-        my $idx_db_connect = $idx_db->connect( check_schema => 1 );
+        my $idx_db_connect = $idx_db->connect();
         if ( $idx_db_connect->can(q(is_error)) ) {
             # $idx_db_connect is an App::WADTools::Error object
             $log->error(q(Recieved error connecting to idgames-db));
             $idx_db_connect->log_error();
+            # undef the index database so it doesn't get used later on
+            undef $idx_db;
         } else {
-            $log->debug(qq(index-db has $idx_db_connect schema entries));
+            my $schema_entries = $idx_db->has_schema();
+            if ( $schema_entries == 0 ) {
+                $log->warn(q(Missing database schema in Index database));
+                $log->warn(q(Please use 'db_tool' to create Index DB file));
+                # undef $idg_db so the script doesn't try to use it
+                undef $idg_db;
+            } else {
+                $log->debug(qq(index-db has $idx_db_connect schema entries));
+            }
         }
     } else {
         $log->warn(q(WARNING: Missing optional parameter '--index-db'));

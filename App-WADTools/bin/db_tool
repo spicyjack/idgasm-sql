@@ -115,8 +115,7 @@ $Data::Dumper::Terse = 1;
 # local packages
 use App::WADTools; # for $VERSION
 use App::WADTools::Config;
-use App::WADTools::idGamesDB;
-use App::WADTools::INIFile;
+use App::WADTools::DBTool;
 use App::WADTools::Logger;
 
     # create a variable with the current name of the script
@@ -155,8 +154,8 @@ use App::WADTools::Logger;
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
         if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
-            $log->error(qq(Output file exists!));
-            $log->error(qq(Use '--overwrite' option to overwrite output file));
+            $log->fatal(qq(Output file exists!));
+            $log->fatal(qq(Use '--overwrite' option to overwrite output file));
             $log->logdie(q(Output file: ) . $cfg->get(q(output)));
         } else {
             # delete the database file; it will be recreated when the database
@@ -169,83 +168,12 @@ use App::WADTools::Logger;
         }
     }
 
-    my $db_schema;
-    my $ini_file = App::WADTools::INIFile->new(
-        filename => $cfg->get(q(input)));
-    if ( ref($ini_file) eq q(App::WADTools::Error) ) {
-        $log->logdie(q(Error opening INI file ') . $cfg->get(q(input)) . q('));
-    }
-    if ( $cfg->defined(q(create-db)) ) {
-        $log->warn(q(Creating database file...));
-        if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            $db_schema = $ini_file->read_ini_config();
-            #$ini_file->dump_schema(
-            #    db_schema  => $db_schema,
-            #    extra_text => q(Dump called from --create-db block),
-            #);
-            $log->debug(q(Parsing schema metadata;));
-            $log->debug(q(  Epoch:    )
-                . $db_schema->{q(default)}->{q(schema_epoch)});
-            $log->debug(q(  Date:     )
-                . $db_schema->{q(default)}->{q(schema_date)});
-            $log->debug(q(  Notes:    )
-                . $db_schema->{q(default)}->{q(schema_notes)});
-            if ( exists $db_schema->{q(default)}->{q(base_url)} ) {
-                $log->debug(q(  Base URL: )
-                    . $db_schema->{q(default)}->{q(base_url)});
-            }
-            my $db = App::WADTools::idGamesDB->new(
-                filename => $cfg->get(q(output))
-            );
-            if ( $db->connect ) {
-                $log->warn(q(Checking for existing schema...));
-                $log->warn(q|(Note: errors checking for schema are harmless)|);
-                my $schema_entries = $db->has_schema;
-                if ( $schema_entries == 0 ) {
-                    $log->warn(q(DB schema empty, calling 'apply_schema'));
-                    $db->apply_schema(schema => $db_schema);
-                } else {
-                    $log->warn(q(DB schema has already been populated;));
-                    $log->warn(qq(Schema has $schema_entries entries));
-                }
-                $log->warn(q(DB schema creation complete!));
-            } else {
-                $log->logdie(q(Unable to connect to database));
-            }
-        } else {
-            $log->logdie(q(Don't know how to process file )
-                . $cfg->get(q(input)));
-        }
-    } elsif ( $cfg->defined(q(create-yaml)) ) {
-    } elsif ( $cfg->defined(q(create-ini)) ) {
-    } elsif ( $cfg->defined(q(checksum)) ) {
-        $log->warn(q(Checksumming database schema INI file...));
-        if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
-            # MD5 checksums, for now
-            $db_schema = $ini_file->read_ini_config();
-            $db_schema = $ini_file->md5_checksum(db_schema => $db_schema);
-            $ini_file->dump_schema(
-                db_schema  => $db_schema,
-                extra_text => q(Dump called post-MD5 checksum),
-            );
-            my $filesize = $ini_file->write_ini_config(
-                db_schema => $db_schema
-            );
-            if ( ref($filesize) eq q(App::WADTools::Error) ) {
-                $log->error(q(Writing config file returned an error!));
-                $log->logdie(q(Error message: ) . $filesize->error_msg);
-            } else {
-                $log->warn(q(Wrote file ) . $ini_file->filename);
-                $log->warn(q(File size: ) . $filesize . q| byte(s)|);
-            }
-        } else {
-            $log->logdie(q(Don't know how to process file )
-                . $cfg->get(q(input)));
-        }
-    } else {
-        $log->error(q(Please specify a script output option));
-        $log->error(qq(Use "$my_name --help" to see script options));
-    }
+    # transfer script control over to the DBTool object
+    my $controller = App::WADTools::DBTool->new(
+        config  => $cfg,
+        my_name => $my_name,
+    );
+    $controller->run();
 
 =cut
 

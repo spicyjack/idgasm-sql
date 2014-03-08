@@ -1,17 +1,17 @@
 ###########################################
-# package App::WADTools::Roles::Callbacks #
+# package App::WADTools::Roles::Callback #
 ###########################################
-package App::WADTools::Roles::Callbacks;
+package App::WADTools::Roles::Callback;
 
 =head1 NAME
 
-App::WADTools::Roles::Callbacks
+App::WADTools::Roles::Callback
 
 =head1 SYNOPSIS
 
  # in another object...
  use Moo;
- with qw(App::WADTools::Roles::Callbacks);
+ with qw(App::WADTools::Roles::Callback);
 
 =head1 DESCRIPTION
 

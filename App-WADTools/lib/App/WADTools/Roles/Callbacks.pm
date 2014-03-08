@@ -30,7 +30,25 @@ use App::WADTools::Error;
 
 =head2 Attributes
 
-No attributes.
+=over
+
+=item callback
+
+An object that will receive callbacks from the object that consumes this role.
+When a callback method is called, it will include a hash with different
+attributes for each callback.
+
+=cut
+
+has q(callback) => (
+    # https://metacpan.org/pod/Moo#has
+    # 'rwp' generates a reader like 'ro', but also sets writer to
+    # _set_${attribute_name} for attributes that are designed to be written
+    # from inside of the class, but read-only from outside.
+    is  => q(rwp),
+    #default => sub { },
+);
+=back
 
 =head2 Methods
 

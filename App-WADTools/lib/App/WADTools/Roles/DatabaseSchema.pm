@@ -16,9 +16,6 @@ App::WADTools::Roles::DatabaseSchema
  # in another module or script, create the database object
  $db = My::Database->new(filename => q(/path/to/file.db));
 
- # must connect to the database before you can check for schema
- my $db_connect = $db->connect();
-
  my $check_schema = $db->check_schema()
  if ( ref($check_schema) eq q(App::WADTools::Error) ) {
     # handle errors with database schema here...
@@ -27,12 +24,8 @@ App::WADTools::Roles::DatabaseSchema
 
 =head1 DESCRIPTION
 
-This object provides a C<DatabaseSchema> role to provide functions for working
-with database schemas.
-
-
-Provides and methods dealing with connecting to a
-database and checking schema.
+This object provides a C<DatabaseSchema> role for working with database
+schemas.
 
 =cut
 
@@ -119,6 +112,10 @@ sub apply_schema {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
+        $self->callback->request_update(
+            type    => q(database_schema.execute_block),
+            message => qq(Executing SQL schema block: $block_name)
+        );
         $log->info(qq(Executing SQL schema block: $block_name));
         if ( defined $block->{sql} ) {
             # create the table
@@ -222,10 +219,9 @@ sub apply_schema {
 
 =item has_schema()
 
-Determines if the database specified with the C<filename> attribute has
-already had a schema applied to it via L<apply_schema>.  Returns C<0> if the
-schema has not been applied, and the number of rows in the C<schema> table if
-the schema has been applied.
+Determines if the connected database has already had a schema applied to it
+via L<apply_schema>.  Returns C<0> if a schema has not been applied, and the
+number of rows in the C<schema> table if a schema has been applied.
 
 =cut
 

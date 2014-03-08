@@ -44,8 +44,13 @@ $Data::Dumper::Terse = 1;
 use App::WADTools::Timer;
 
 ### Roles
-# contains App::WADTools::Error
-with q(App::WADTools::Roles::Database);
+# App::WADTools::Roles::Database uses App::WADTools::Error, so it's
+# automatically available here too
+with qw(
+    App::WADTools::Roles::Database
+    App::WADTools::Roles::DatabaseSchema
+    App::WADTools::Roles::Callback
+);
 
 =head2 Attributes
 
@@ -79,9 +84,75 @@ has q(add_zipfile_time) => (
 
 =back
 
+=head2 Callbacks
+
+As this object runs, it will invoke 'callback methods' in the calling object
+to signal a change in state or to update the caller with the current status of
+the request.  When a callback method is invoked, it will pass key/value
+attributes back to the caller as a Perl hash, as documented in each callback
+method below.
+
+This object checks that the following callbacks are implemented by the caller;
+
+=over
+
+=item request_success
+
+The database request has finished successfully.  The return hash will include
+the C<type> key/value pair, which will indicate what event triggered the
+C<request_success> call.
+
+=item request_failure
+
+The database request failed for some reason.  The return hash will include the
+C<error> key/value pair, which will contain a L<App::WADTools::Error> object,
+and a C<type> key/value pair, which will indicate what event triggered the
+C<request_failure> call.
+
+=item request_update
+
+This method is called when this object wants to update the status of a
+database request which is still processing.  The return hash will include the
+C<type> key/value pair, which will indicate what event triggered the
+C<request_update> call, and the C<message> key/value pair, which will be an
+update message of some kind that can be passed along to the user (via a
+C<View> object).
+
+=back
+
+
 =head2 Methods
 
 =over
+
+=item new() (AKA BUILD)
+
+Creates the L<App::WADTools::idGamesDB> object.  A check is also made to see
+if required attribute C<callback> was set by the caller; if the attribute was
+not set, then the method will return an C<App::WADTools::Error> object to the
+caller, otherwise, returns the L<App::WADTools::idGamesDB> object to the
+caller.
+
+=cut
+
+sub BUILD {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    if ( ! defined $self->callback ) {
+        # can't return things in BUILD, you must die, or do this kind of setup
+        # in a method, which can return something
+        $log->logdie(q(IndexDB missing required callback object));
+    }
+    my $callbacks_check = $self->check_callbacks(
+        object => $self->callback,
+        check_methods => [qw(request_update request_success request_failure)],
+    );
+    if ( ref($callbacks_check) eq q(App::WADTools::Error) ) {
+        $log->fatal($callbacks_check->message);
+        $log->logdie($callbacks_check->raw_error);
+    }
+}
 
 =item add_wadfile(wadfile => $wadfile)
 

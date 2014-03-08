@@ -68,7 +68,7 @@ has dbh => (
     # from inside of the class, but read-only from outside.
     is  => q(rwp),
     isa => sub{
-        die q('dbh' requires a DBI object) unless ref($_[0]) eq q(DBI)
+        die q('dbh' requires a DBI object) unless ref($_[0]) =~ /^DBI/
     },
 );
 
@@ -110,24 +110,25 @@ sub connect {
     }
 
     if ( ! defined $dbh ) {
-        if ( -w $self->filename || $self->filename eq q(:memory:) ) {
-            $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
-            # turn on unicode handling
-            $dbh->{sqlite_unicode} = 1;
-            # don't print errors by default; all of the methods in this object
-            # are checking $dbh->err after every interaction with the database
-            # code
-            $dbh->{PrintError} = 0;
-            if ( defined $dbh->err ) {
-                my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.connect),
-                    message => $dbh->errstr,
-                );
-                return $error;
-            } else {
-                return 1;
-            }
+        $dbh = DBI->connect("dbi:SQLite:dbname=" . $self->filename,"","");
+        # turn on unicode handling
+        $dbh->{sqlite_unicode} = 1;
+        # don't print errors by default; all of the methods in this object
+        # are checking $dbh->err after every interaction with the database
+        # code
+        $dbh->{PrintError} = 0;
+        if ( defined $dbh->err ) {
+            my $error = App::WADTools::Error->new(
+                caller  => __PACKAGE__ . q(.) . __LINE__,
+                type    => q(database.connect),
+                message => $dbh->errstr,
+            );
+            $error->log_error;
+            return $error;
+        } else {
+            $log->debug(q(Setting $self->dbh to: ) . $dbh);
+            $self->_set_dbh($dbh);
+            return 1;
         }
     } else {
         # database connection has already been set up (connection should

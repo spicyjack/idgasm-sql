@@ -142,20 +142,25 @@ sub run {
                 callback => $self,
             );
 
-            if ( $db->connect ) {
+            my $db_connect_check = $db->connect();
+            if ( ref($db_connect_check) ne q(App::WADTools::Error) ) {
                 $log->warn(q(Checking for existing schema...));
                 $log->warn(q|(Note: errors checking for schema are harmless)|);
                 my $schema_entries = $db->has_schema;
                 if ( $schema_entries == 0 ) {
                     $log->warn(q(DB schema empty, calling 'apply_schema'));
                     $db->apply_schema(schema => $db_schema);
+                } elsif ( $schema_entries->can(q(is_error)) ) {
+                    $schema_entries->log_error();
+                    $log->logdie(q(Error connecting to the database));
                 } else {
                     $log->warn(q(DB schema has already been populated;));
                     $log->warn(qq(Schema has $schema_entries entries));
                 }
                 $log->warn(q(DB schema creation complete!));
             } else {
-                $log->logdie(q(Unable to connect to database));
+                $db_connect_check->log_error();
+                $log->logdie(q(Error connecting to the database));
             }
         } else {
             $log->logdie(q(Don't know how to process file )
@@ -195,6 +200,45 @@ sub run {
     $timer->stop(name => $my_name);
     my $total_script_execution_time =
         $timer->time_value_difference(name => $my_name);
+}
+
+=item request_update()
+
+Callback for updating the status of an ongoing request.
+
+=cut
+
+sub request_update {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    $log->warn(q(Update: ) . $args{type});
+}
+
+=item request_success()
+
+Callback for indicating a request was successful.
+
+=cut
+
+sub request_success {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    $log->warn(q(Success: ) . $args{type});
+}
+
+=item request_failure()
+
+Callback for indicating a request failed.
+
+=cut
+
+sub request_failure {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+    $log->warn(q(Failure: ) . $args{type});
 }
 
 =back

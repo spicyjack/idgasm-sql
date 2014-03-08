@@ -45,62 +45,52 @@ $Data::Dumper::Terse = 1;
 use App::WADTools::idGamesFile;
 
 ### Roles
-# contains App::WADTools::Error
+# App::WADTools::Roles::Database uses App::WADTools::Error, so it's
+# automatically available here too
 with qw(
     App::WADTools::Roles::Database
     App::WADTools::Roles::DatabaseSchema
+    App::WADTools::Roles::Callback
 );
 
 =head2 Attributes
 
-=over
+No attributes in this object directly, but this object consumes one or more
+roles that may have attributes.
 
-=item callback
+=head2 Callbacks
 
-An object that will receive callbacks from this object (L<idGamesDB>).  The
-callbacks will include a hash with different attributes for each callback.
-The callback methods that will be invoked on this object will include:
+As this object runs, it will invoke 'callback methods' in the calling object
+to signal a change in state or to update the caller with the current status of
+the request.  When a callback method is invoked, it will pass key/value
+attributes back to the caller as a Perl hash, as documented in each callback
+method below.
+
+This object checks that the following callbacks are implemented by the caller;
 
 =over
 
 =item request_success
 
-The database request has finished successfully.  The return attributes will
-include the C<type> attribute, which will indicate what event triggered the
+The database request has finished successfully.  The return hash will include
+the C<type> key/value pair, which will indicate what event triggered the
 C<request_success> call.
 
 =item request_failure
 
-The database request failed for some reason.  The return attributes will
-include the C<error> attribute, which will contain a L<App::WADTools::Error>
-object, and the C<type> attribute, which will indicate what event triggered
-the C<request_failure> call.
+The database request failed for some reason.  The return hash will include the
+C<error> key/value pair, which will contain a L<App::WADTools::Error> object,
+and a C<type> key/value pair, which will indicate what event triggered the
+C<request_failure> call.
 
 =item request_update
 
-The database request which is still processing wants to update the status of
-the request.  The return attributes will include the C<type> attribute, which
-will indicate what event triggered the C<request_success> call, and the
-C<message> attribute, which is usually an update message of some kind that can
-be passed along to the user.
-
-=back
-
-=cut
-
-has q(callback) => (
-    # https://metacpan.org/pod/Moo#has
-    # 'rwp' generates a reader like 'ro', but also sets writer to
-    # _set_${attribute_name} for attributes that are designed to be written
-    # from inside of the class, but read-only from outside.
-    is  => q(rwp),
-    default => sub { },
-    isa     => sub { die q(Missing required 'request_*' callback methods)
-                        unless ( $_[0]->can(q(request_update))
-                                && $_[0]->can(q(request_success))
-                                && $_[0]->can(q(request_failure)) );
-    },
-);
+This method is called when this object wants to update the status of a
+database request which is still processing.  The return hash will include the
+C<type> key/value pair, which will indicate what event triggered the
+C<request_update> call, and the C<message> key/value pair, which will be an
+update message of some kind that can be passed along to the user (via a
+C<View> object).
 
 =back
 
@@ -123,14 +113,17 @@ sub BUILD {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     if ( ! defined $self->callback ) {
-        $log->error(q(idGamesDB missing required callback object));
-        my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(idgames-db.build.missing_callback_object),
-            message   => q(Missing 'callback' object),
-            raw_error => q(Need an object to handle callbacks),
-        );
-        return $error;
+        # can't return things in BUILD, you must die, or do this kind
+        # of setup in a method, which can return something
+        $log->logdie(q(idGamesDB missing required callback object));
+    }
+    my $callbacks_check = $self->check_callbacks(
+        object => $self->callback,
+        check_methods => [qw(request_update request_success request_failure)],
+    );
+    if ( ref($callbacks_check) eq q(App::WADTools::Error) ) {
+        $log->fatal($callbacks_check->message);
+        $log->logdie($callbacks_check->raw_error);
     }
 }
 

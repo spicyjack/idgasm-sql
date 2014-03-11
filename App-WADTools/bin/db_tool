@@ -169,11 +169,17 @@ use App::WADTools::Logger;
     }
 
     # transfer script control over to the DBTool object
-    my $controller = App::WADTools::DBTool->new(
-        config  => $cfg,
-        my_name => $my_name,
-    );
-    $controller->run();
+    my $controller = App::WADTools::DBTool->new(config  => $cfg);
+    my $return = $controller->run();
+    # run() will only return if there's an error, or if the script is done
+    # running
+    if ( $return->can(q(is_error)) ) {
+        $return->log_error();
+        $log->error(qq(Use "$my_name --help" to see script options));
+        exit 1;
+    } else {
+        exit 0;
+    }
 
 =cut
 

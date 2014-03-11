@@ -146,8 +146,14 @@ sub run {
             }
             $log->warn(q(DB schema creation complete!));
         } else {
-            $log->logdie(q(Don't know how to process file )
-                . $cfg->get(q(input)));
+            $timer->stop(name => __PACKAGE__);
+            my $error = App::WADTools::Error->new(
+                caller    => __PACKAGE__ . q(.) . __LINE__,
+                type      => q(dbtool.unknown_file_type),
+                message   => q(Don't know how to process file ')
+                    . $cfg->get(q(input)) . q('),
+            );
+            return $error;
         }
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {

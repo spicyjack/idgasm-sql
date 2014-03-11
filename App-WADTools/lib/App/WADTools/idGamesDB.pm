@@ -125,6 +125,11 @@ sub BUILD {
         $log->fatal($callbacks_check->message);
         $log->logdie($callbacks_check->raw_error);
     }
+    my $db_connect_check = $self->connect;
+    if ( ref($db_connect_check) eq q(App::WADTools::Error) ) {
+        $db_connect_check->log_error();
+        $log->logdie(q(Error connecting to the database));
+    }
 }
 
 =item add_file(file => $file)

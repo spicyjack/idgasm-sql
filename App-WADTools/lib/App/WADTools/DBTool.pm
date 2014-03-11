@@ -74,17 +74,6 @@ has q(config) => (
     is => q(ro),
 );
 
-=item my_name
-
-The name of the script that is run on the command line.  Used in logging
-output.
-
-=cut
-
-has q(my_name) => (
-    is => q(ro),
-);
-
 =back
 
 =head2 Methods
@@ -108,8 +97,8 @@ sub run {
 
     # start the script timer
     my $timer = App::WADTools::Timer->new();
-    my $my_name = $self->my_name;
-    $timer->start(name => $my_name);
+    $log->debug(q(Starting timer for: ) . __PACKAGE__);
+    $timer->start(name => __PACKAGE__);
 
     my $cfg = $self->config;
     my $db_schema;
@@ -142,26 +131,20 @@ sub run {
                 callback => $self,
             );
 
-            my $db_connect_check = $db->connect();
-            if ( ref($db_connect_check) ne q(App::WADTools::Error) ) {
-                $log->warn(q(Checking for existing schema...));
-                $log->warn(q|(Note: errors checking for schema are harmless)|);
-                my $schema_entries = $db->has_schema;
-                if ( $schema_entries == 0 ) {
-                    $log->warn(q(DB schema empty, calling 'apply_schema'));
-                    $db->apply_schema(schema => $db_schema);
-                } elsif ( $schema_entries->can(q(is_error)) ) {
-                    $schema_entries->log_error();
-                    $log->logdie(q(Error connecting to the database));
-                } else {
-                    $log->warn(q(DB schema has already been populated;));
-                    $log->warn(qq(Schema has $schema_entries entries));
-                }
-                $log->warn(q(DB schema creation complete!));
-            } else {
-                $db_connect_check->log_error();
+            $log->warn(q(Checking for existing schema...));
+            $log->warn(q|(Note: errors checking for schema are harmless)|);
+            my $schema_entries = $db->has_schema;
+            if ( $schema_entries == 0 ) {
+                $log->warn(q(DB schema empty, calling 'apply_schema'));
+                $db->apply_schema(schema => $db_schema);
+            } elsif ( $schema_entries->can(q(is_error)) ) {
+                $schema_entries->log_error();
                 $log->logdie(q(Error connecting to the database));
+            } else {
+                $log->warn(q(DB schema has already been populated;));
+                $log->warn(qq(Schema has $schema_entries entries));
             }
+            $log->warn(q(DB schema creation complete!));
         } else {
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));
@@ -193,13 +176,18 @@ sub run {
                 . $cfg->get(q(input)));
         }
     } else {
-        $log->error(q(Please specify a script output option));
-        $log->error(qq(Use "$my_name --help" to see script options));
+        $timer->stop(name => __PACKAGE__);
+        my $error = App::WADTools::Error->new(
+            caller    => __PACKAGE__ . q(.) . __LINE__,
+            type      => q(dbtool.unknown_option),
+            message   => q(Please specify a valid script action),
+        );
+        return $error;
     }
 
-    $timer->stop(name => $my_name);
+    $timer->stop(name => __PACKAGE__);
     my $total_script_execution_time =
-        $timer->time_value_difference(name => $my_name);
+        $timer->time_value_difference(name => __PACKAGE__);
 }
 
 =item request_update()

@@ -81,6 +81,7 @@ commands to run in order to create a database.
 sub apply_schema {
     my $self = shift;
     my %args = @_;
+    my $cb = $self->callback;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     # check for an existing database connection
@@ -112,7 +113,8 @@ sub apply_schema {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
-        $self->callback->request_update(
+        $cb->request_update(
+            level   => q(info),
             type    => q(database_schema.execute_block),
             message => qq(Executing SQL schema block: $block_name)
         );

@@ -1,4 +1,4 @@
-# Dump-O-Matic #
+# WADTools Callbacks #
 
 ## Program control flow ##
 - After the program starts, a "controller" object is created, then control is

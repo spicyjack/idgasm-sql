@@ -117,6 +117,7 @@ use App::WADTools; # for $VERSION
 use App::WADTools::Config;
 use App::WADTools::DBTool;
 use App::WADTools::Logger;
+use App::WADTools::View::GenericCLI;
 
     # create a variable with the current name of the script
     my $my_name = basename($0);
@@ -146,11 +147,6 @@ use App::WADTools::Logger;
     $log->logdie(qq(Can't read input file ) . $cfg->get(q(input)) )
         unless ( -r $cfg->get(q(input)) );
 
-    # print a nice banner first
-    $log->warn(qq(Starting $my_name, version '$VERSION'));
-    $log->warn(qq($copyright));
-    $log->warn(qq(My PID is $$));
-
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
         if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
@@ -169,7 +165,16 @@ use App::WADTools::Logger;
     }
 
     # transfer script control over to the DBTool object
-    my $controller = App::WADTools::DBTool->new(config  => $cfg);
+    my $view = App::WADTools::View::GenericCLI->new();
+    # print a nice banner first
+    $log->warn(qq(Starting $my_name, version '$VERSION'));
+    $log->warn(qq($copyright));
+    $log->warn(qq(My PID is $$));
+
+    my $controller = App::WADTools::DBTool->new(
+        config => $cfg,
+        view   => $view,
+    );
     my $return = $controller->run();
     # run() will only return if there's an error, or if the script is done
     # running

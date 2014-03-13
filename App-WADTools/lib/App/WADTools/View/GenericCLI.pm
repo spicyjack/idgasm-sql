@@ -1,7 +1,7 @@
-############################################
-# package App::WADTools::Views::GenericCLI #
-############################################
-package App::WADTools::Views::GenericCLI;
+###########################################
+# package App::WADTools::View::GenericCLI #
+###########################################
+package App::WADTools::View::GenericCLI;
 
 ### System Modules
 use 5.010;

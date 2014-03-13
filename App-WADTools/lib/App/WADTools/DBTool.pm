@@ -85,6 +85,21 @@ has q(config) => (
 Creates the L<App::WADTools::DBTool> object and returns it to the
 caller.
 
+=cut
+
+sub BUILD {
+    my $self = shift;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->logdie(q(DBTool is missing required 'config' object))
+        unless (defined $self->config
+                && ref($self->config) eq q(App::WADTools::Config));
+
+    $log->logdie(q(DBTool is missing required 'view' object))
+        unless (defined $self->view
+                && ref($self->view) =~ /App::WADTools::View/);
+}
+
 =item run()
 
 Transfers control of the program to the L<DBTool> object.
@@ -206,7 +221,11 @@ sub request_update {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(Update: ) . $args{type});
+
+    $log->debug(q(Calling View->update_status));
+    $self->view->update_status(%args);
+    #$log->warn(q(Update: ) . $args{level} . q(:) . $args{type});
+    #$log->warn(q(Update: ) . $args{message});
 }
 
 =item request_success()

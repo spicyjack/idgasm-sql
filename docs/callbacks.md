@@ -21,6 +21,23 @@ View methods
   - Invoked by: _Controller_
   - Purpose: When data in _Model_ (model) has changed
   - Response: _View_ calls `read_data(view_name)`
+- `request_success(view_name)`
+  - Invoked by: _Controller_
+  - Purpose: When an operation in progress completes successfully
+  - Response: None
+- `request_failure(view_name)`
+  - Invoked by: _Controller_
+  - Purpose: When an operation in progress fails to complete successfully
+  - Response: None
+- `request_update(log_level.log_activity, view_name)`
+  - Invoked by: _Controller_
+  - Purpose: When an operation in progress wants to update the user with the
+    status of the operation
+  - Response: None
+- `trace/debug/info/warn/error/fatal`
+  - Invoked by: _Controller_
+  - Purpose: Same as `request_update()` above, but with log levels baked in
+  - Response: None
 
 Controller methods
 - `read_data(view_name)`

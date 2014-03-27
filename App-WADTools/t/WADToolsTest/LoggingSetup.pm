@@ -6,8 +6,9 @@ package WADToolsTest::Logging;
 # for this project: https://github.com/spicyjack/wadtools/issues
 
 use strictures 1; # strict + warnings
-use Moo::Role;
+use File::Basename;
 use Log::Log4perl qw(:no_extra_logdie_message);
+use Moo::Role;
 #use Data::Dumper;
 #$Data::Dumper::Indent = 1;
 #$Data::Dumper::Sortkeys = 1;

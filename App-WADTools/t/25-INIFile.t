@@ -16,7 +16,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 use constant {
-    REQUEST_UPDATE => 0,
+    REQUEST_UPDATE  => 0,
     REQUEST_SUCCESS => 1,
     REQUEST_FAILURE => 2,
 };

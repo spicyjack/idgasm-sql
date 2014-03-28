@@ -9,8 +9,8 @@ use Log::Log4perl qw(:no_extra_logdie_message);
 
 sub setup_logging {
     my $dirname = dirname($0);
-    die qq(ERROR: Can't find config file 'tests.log4perl.cfg' in:\n> $dirname))
-        unless ( -f qq($dirname/tests.log4perl.cfg.foo) );
+    die qq(ERROR: Can't find config file 'tests.log4perl.cfg' in:\n> $dirname)
+        unless ( -f qq($dirname/tests.log4perl.cfg) );
     Log::Log4perl->init_once(qq($dirname/tests.log4perl.cfg));
 }
 

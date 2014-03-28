@@ -5,22 +5,6 @@
 # For support with this file, please file an issue on the GitHub issue tracker
 # for this project: https://github.com/spicyjack/wadtools/issues
 
-package main;
-use strictures 1; # strict + warnings
-
-my $VERSION = $App::WADTools::DBTool::VERSION || q(git-dev);
-diag( qq(\nTesting App::WADTools::DBTool )
-    . $VERSION
-    . qq(,\n)
-    . qq(Perl $], $^X)
-);
-
-# located in this file, below...
-my $test = WADToolsTest::DBToolTest->new();
-$test->run();
-
-exit 0;
-
 package WADToolsTest::DBToolTest;
 use Moo; # includes 'strictures 1'
 use Test::More tests => 44;
@@ -30,9 +14,15 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
+use constant {
+    REQUEST_UPDATE  => 0,
+    REQUEST_SUCCESS => 1,
+    REQUEST_FAILURE => 2,
+};
+
 # provides 'setup_logging' method, which checks to see that the config file is
 # available
-with qw(WADToolsTest::Logging);
+with qw(WADToolsTest::Role::SetupLogging);
 
 has q(expected_callback) => (
     is      => q(rw),
@@ -42,10 +32,13 @@ has q(expected_callback) => (
 sub run {
     my $self = shift;
 
+    my $VERSION = $App::WADTools::DBTool::VERSION || q(git-dev);
+    diag( qq(\nTesting App::WADTools::DBTool )
+        . qq($VERSION,\n)
+        . qq(Perl $],\n$^X)
+    );
+
 BEGIN {
-    use_ok( q(Log::Log4perl), qw(:no_extra_logdie_message));
-    use_ok( q(File::Basename)); # used to find test config, and for test files
-    use_ok( q(App::WADTools::DBTool) );
     use_ok( q(App::WADTools::DBTool) );
     use_ok( q(App::WADTools::INIFile) );
     # local test object for testing callbacks from DBTool
@@ -59,22 +52,28 @@ BEGIN {
 
     my $file; # a test App::WADTools::File object
     my $rv; # generic return value
+    my $ini;
 
     # check App::WADTools::INIFile
     # use the current idgames_db_dump.ini schema file
-    my $ini = App::WADTools::INIFile->new(
-        filename => q(data/dbtool_test.ini));
+    $self->expected_callback(REQUEST_FAILURE);
+
+    ### Call INI with valid file
+    $ini = App::WADTools::INIFile->new(filename => q(data/dbtool_test.ini));
     ok(ref($ini) eq q(App::WADTools::INIFile),
         q(Successfully created App::WADTools::INIFile object));
     my $ini_map = $ini->read_ini_config();
+    ok(ref($ini) =~ /Config::Std/,
+        q(Received Config::Std object reading valid INI file));
 
     ### Create App::WADTools::DBTool object
     my $db_tool = App::WADTools::DBTool->new(
-        controller => $self,
+        view     => $self,
         filename => q(:memory:),
     );
     ok(ref($db_tool) eq q(App::WADTools::DBTool),
         q(Successfully created App::WADTools::DBTool object));
+    $db_tool->run();
 }
 
 sub request_update {
@@ -95,4 +94,11 @@ sub request_update {
     }
 }
 
-#done_testing();
+package main;
+use strictures 1; # strict + warnings
+
+# located in this file, below...
+my $test = WADToolsTest::DBToolTest->new();
+$test->run();
+
+exit 0;

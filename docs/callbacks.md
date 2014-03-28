@@ -34,10 +34,6 @@ View methods
   - Purpose: When an operation in progress wants to update the user with the
     status of the operation
   - Response: None
-- `trace/debug/info/warn/error/fatal(id => log_id, message => $msg)`
-  - Invoked by: _Controller_
-  - Purpose: Same as `request_update()` above, but with log levels baked in
-  - Response: None
 
 Controller methods
 - `read_data(name => view_name)`
@@ -73,6 +69,13 @@ Controller methods
     type, or both)
   - Response: _Controller_ updates _View_ based on business rules/need,
     possibly lets user know something failed
+- `trace/debug/info/warn/error/fatal(id => log_id, message => $msg)`
+  - Invoked by: _Model_, _Controller_
+  - Purpose: Same as `request_update()` above, but with log levels baked in
+  - Response: _Controller_ updates _View_ based on the current log level; if
+    the current log level is less than the log level in the message,
+    `request_update()` is not called on the _View_
+    is sent
 
 Model methods
 - All _Model_ methods are invoked by the _Controller_, and will cause

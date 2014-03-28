@@ -15,7 +15,7 @@ App::WADTools::DBTool
 
 =head1 DESCRIPTION
 
-A controller (as in, Model-View-Controller design pattern for the C<db_tool>
+A controller (as in, Model-View-Controller design pattern) for the C<db_tool>
 script.
 
 =cut
@@ -120,9 +120,14 @@ sub run {
     my $ini_file = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));
     if ( ref($ini_file) eq q(App::WADTools::Error) ) {
-        $log->logdie(q(Error opening INI file ') . $cfg->get(q(input)) . q('));
+        # FIXME view
+        $self->request_failure(
+            id  => q(dbtool.inifile.create),
+            msg => q(Error opening INI file ') . $cfg->get(q(input)) . q(')
+        );
     }
     if ( $cfg->defined(q(create-db)) ) {
+        # FIXME view
         $log->warn(q(Creating database file...));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             $db_schema = $ini_file->read_ini_config();
@@ -146,19 +151,24 @@ sub run {
                 callback => $self,
             );
 
+            # FIXME view
             $log->warn(q(Checking for existing schema...));
             $log->warn(q|(Note: errors checking for schema are harmless)|);
             my $schema_entries = $db->has_schema;
             if ( $schema_entries == 0 ) {
+                # FIXME view
                 $log->warn(q(DB schema empty, calling 'apply_schema'));
                 $db->apply_schema(schema => $db_schema);
             } elsif ( $schema_entries->can(q(is_error)) ) {
                 $schema_entries->log_error();
+                # FIXME view
                 $log->logdie(q(Error connecting to the database));
             } else {
+                # FIXME view
                 $log->warn(q(DB schema has already been populated;));
                 $log->warn(qq(Schema has $schema_entries entries));
             }
+            # FIXME view
             $log->warn(q(DB schema creation complete!));
         } else {
             $timer->stop(name => __PACKAGE__);
@@ -168,11 +178,13 @@ sub run {
                 message   => q(Don't know how to process file ')
                     . $cfg->get(q(input)) . q('),
             );
+            # FIXME view
             return $error;
         }
     } elsif ( $cfg->defined(q(create-yaml)) ) {
     } elsif ( $cfg->defined(q(create-ini)) ) {
     } elsif ( $cfg->defined(q(checksum)) ) {
+        # FIXME view
         $log->warn(q(Checksumming database schema INI file...));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             # MD5 checksums, for now
@@ -186,13 +198,16 @@ sub run {
                 db_schema => $db_schema
             );
             if ( ref($filesize) eq q(App::WADTools::Error) ) {
+                # FIXME view
                 $log->error(q(Writing config file returned an error!));
                 $log->logdie(q(Error message: ) . $filesize->error_msg);
             } else {
+                # FIXME view
                 $log->warn(q(Wrote file ) . $ini_file->filename);
                 $log->warn(q(File size: ) . $filesize . q| byte(s)|);
             }
         } else {
+            # FIXME view
             $log->logdie(q(Don't know how to process file )
                 . $cfg->get(q(input)));
         }
@@ -203,6 +218,7 @@ sub run {
             type      => q(dbtool.unknown_option),
             message   => q(Please specify a valid script action),
         );
+        # FIXME view
         return $error;
     }
 
@@ -238,7 +254,7 @@ sub request_success {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(Success: ) . $args{type});
+    $log->warn(q(Success: ) . $args{id});
 }
 
 =item request_failure()
@@ -251,7 +267,10 @@ sub request_failure {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(Failure: ) . $args{type});
+
+    $log->warn(q(Failure: ) . $args{id});
+    $self->view->update_status(%args);
+    exit 1;
 }
 
 =back

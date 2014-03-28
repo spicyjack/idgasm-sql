@@ -157,10 +157,10 @@ sub add_file {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     # check for an existing database connection
-    my $error = $self->is_connected;
+    my $conn_check = $self->is_connected;
     # can't use $error->can(q(is_error)) here, since $error is only an Error
     # object when there's an issue, otherwise, it's a blank scalar
-    return $error if ( ref($error) eq q(App::WADTools::Error) );
+    return $conn_check if ( ref($conn_check) eq q(App::WADTools::Error) );
     my $dbh = $self->dbh;
 
     $log->logdie(q(Missing 'file' argument))
@@ -188,6 +188,7 @@ FILESQL
             message   => q('prepare' call to INSERT into 'files' failed),
             raw_error => $dbh->errstr,
         );
+        # FIXME controller
         return $error;
     }
 
@@ -212,6 +213,7 @@ FILESQL
             type    => q(idgames-db.file_insert.execute),
             message => $sth_file->errstr
         );
+        # FIXME controller
         return $error;
     } else {
         $log->debug(sprintf(q(ID: %5u; ), $file->id)
@@ -229,6 +231,7 @@ FILESQL
             type    => q(idgames-db.vote_insert.prepare),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
     my $vote_id = 0;
@@ -256,6 +259,7 @@ FILESQL
                 type    => q(idgames-db.vote_insert.execute),
                 message => $sth_vote->errstr
             );
+            # FIXME controller
             return $error;
         } # else {
         #    $log->debug(q('INSERT' of vote for file ID/vote ID )
@@ -300,8 +304,8 @@ sub get_file_by_id {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
+    my $conn_check = $self->is_connected;
+    return $conn_check if ( ref($conn_check) eq q(App::WADTools::Error));
     my $dbh = $self->dbh;
 
     $log->logdie(q(Missing 'id' parameter))
@@ -322,6 +326,7 @@ sub get_file_by_id {
             type    => q(idgames-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
 
@@ -340,6 +345,7 @@ sub get_file_by_id {
             type    => q(idgames-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
 
@@ -357,6 +363,7 @@ sub get_file_by_id {
             type    => q(idgames-db.get_file_by_id.file_id_not_found),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
 
@@ -400,8 +407,8 @@ sub get_file_by_path  {
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     # check for an existing database connection
-    my $error = $self->is_connected;
-    return $error if ( ref($error) eq q(App::WADTools::Error));
+    my $conn_check = $self->is_connected;
+    return $conn_check if ( ref($conn_check) eq q(App::WADTools::Error));
     my $dbh = $self->dbh;
 
     $log->logdie(q(Missing 'path' parameter))
@@ -425,6 +432,7 @@ sub get_file_by_path  {
             type    => q(idgames-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
 
@@ -445,6 +453,7 @@ sub get_file_by_path  {
             type    => q(idgames-db.get_file_by_path.execute),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
 
@@ -462,6 +471,7 @@ sub get_file_by_path  {
             type    => q(idgames-db.get_file_by_path.file_path_not_found),
             message => $dbh->errstr
         );
+        # FIXME controller
         return $error;
     }
     #$log->debug(q(dump: ) . Dumper $row);

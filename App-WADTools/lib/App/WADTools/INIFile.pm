@@ -61,7 +61,6 @@ has filename => (
                 die "$self is not a valid filename"
                     unless (-r $self);
             },
-
 );
 
 =head2 Methods

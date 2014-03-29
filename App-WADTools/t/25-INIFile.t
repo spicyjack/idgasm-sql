@@ -72,7 +72,7 @@ BEGIN {
 
     ### Call INI with valid file
     $ini = App::WADTools::INIFile->new(
-        filename => q(data/idgames_dump_sql_blocks.ini));
+        filename => q(testdata/idgames_dump_sql_blocks.ini));
     ok(ref($ini) eq q(App::WADTools::INIFile),
         q(Successfully created App::WADTools::INIFile object));
     $ini_map = $ini->read_ini_config();

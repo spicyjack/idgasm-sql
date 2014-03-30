@@ -119,7 +119,7 @@ C<E<lt>objectE<gt>.E<lt>method or actionE<gt>.E<lt>action_in_methodE<gt>>.
 
 =cut
 
-has q(type) => (
+has q(id) => (
     is      => q(rw),
     default => sub { q() },
 );
@@ -151,7 +151,7 @@ sub log_error {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    foreach my $attrib ( qw(caller type message raw_error) ) {
+    foreach my $attrib ( qw(level id message raw_error) ) {
         # all of the attributes by default are empty strings; if the attribute
         # is longer than zero bytes, log it
         if ( length($self->$attrib) > 0 ) {

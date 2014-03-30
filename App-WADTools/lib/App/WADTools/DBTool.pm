@@ -116,6 +116,14 @@ sub run {
     $timer->start(name => __PACKAGE__);
 
     my $cfg = $self->config;
+    if ( ! defined $cfg ) {
+        my $error = App::WADTools::Error->new(
+            level   => q(fatal),
+            id      => q(dbtool.run.missing_config),
+            message => qq(App::WADTools::Config object unavailable),
+        );
+        return $error;
+    }
     my $db_schema;
     my $ini_file = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));

@@ -182,7 +182,7 @@ FILESQL
     if ( defined $dbh->err ) {
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
-        $error = App::WADTools::Error->new(
+        my $error = App::WADTools::Error->new(
             caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(idgames-db.file_insert.prepare),
             message   => q('prepare' call to INSERT into 'files' failed),

@@ -80,25 +80,10 @@ has q(config) => (
 
 =over
 
-=item new() (aka 'BUILD')
+=item new()
 
 Creates the L<App::WADTools::DBTool> object and returns it to the
 caller.
-
-=cut
-
-sub BUILD {
-    my $self = shift;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-
-    $log->logdie(q(DBTool is missing required 'config' object))
-        unless (defined $self->config
-                && ref($self->config) eq q(App::WADTools::Config));
-
-    $log->logdie(q(DBTool is missing required 'view' object))
-        unless (defined $self->view
-                && ref($self->view) =~ /App::WADTools::View/);
-}
 
 =item run()
 
@@ -110,20 +95,32 @@ sub run {
     my $self = shift;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    my $cfg = $self->config;
+    my $view = $self->view;
+
+    if ( ! defined $cfg && ref($cfg) !~ /App::WADTools::Config/ ) {
+        my $error = App::WADTools::Error->new(
+            level   => q(fatal),
+            id      => q(dbtool.run.missing_config),
+            message => qq(App::WADTools::Config object missing/unavailable),
+        );
+        return $error;
+    }
+
+    if ( ! defined $view && ref($view) !~ /App::WADTools::View/ ) {
+        my $error = App::WADTools::Error->new(
+            level   => q(fatal),
+            id      => q(dbtool.run.missing_view),
+            message => qq(App::WADTools::View object missing/unavailable),
+        );
+        return $error;
+    }
+
     # start the script timer
     my $timer = App::WADTools::Timer->new();
     $log->debug(q(Starting timer for: ) . __PACKAGE__);
     $timer->start(name => __PACKAGE__);
 
-    my $cfg = $self->config;
-    if ( ! defined $cfg ) {
-        my $error = App::WADTools::Error->new(
-            level   => q(fatal),
-            id      => q(dbtool.run.missing_config),
-            message => qq(App::WADTools::Config object unavailable),
-        );
-        return $error;
-    }
     my $db_schema;
     my $ini_file = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));

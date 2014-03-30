@@ -59,7 +59,8 @@ BEGIN {
     $self->expected_callback(REQUEST_FAILURE);
 
     ### Call INI with valid file
-    $ini = App::WADTools::INIFile->new(filename => q(data/dbtool_test.ini));
+    $ini = App::WADTools::INIFile->new(
+        filename => q(../../sql_schemas/wadindex.ini));
     ok(ref($ini) eq q(App::WADTools::INIFile),
         q(Successfully created App::WADTools::INIFile object));
     my $ini_map = $ini->read_ini_config();
@@ -73,7 +74,9 @@ BEGIN {
     );
     ok(ref($db_tool) eq q(App::WADTools::DBTool),
         q(Successfully created App::WADTools::DBTool object));
-    $db_tool->run();
+    my $return = $db_tool->run();
+    ok( ref($return) eq q(App::WADTools::Error),
+        q(Calling DBTool->run with setting Config results in error));
 }
 
 sub request_update {
@@ -81,17 +84,14 @@ sub request_update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(db_request_cb arguments: ) . join(q(, ), @_));
+    $log->debug(q(request_update; arguments: ) . join(q(, ), @_));
 
-    if ( $self->expected_callback ) {
-        $log->info(q(40-DBTool: received 'db_request_cb' call));
-    } else {
-        $log->info(q(40-DBTool: received 'db_request_cb' call));
-        $log->info(q(Expecting callback: ) . $self->expected_callback);
-        ok(defined $args{type} && $args{type} eq $self->expected_callback,
-            q(Received callback: ) . $self->expected_callback);
-        $self->expected_callback(q());
-    }
+    note(q(45-DBTool: received 'request_update' call));
+    $log->info(q(Expecting callback: ) . $self->expected_callback);
+    ok(defined $args{type} && $args{type} eq $self->expected_callback,
+        q(Received callback: ) . $self->expected_callback);
+    # reset expected_callback
+    $self->expected_callback(q());
 }
 
 package main;

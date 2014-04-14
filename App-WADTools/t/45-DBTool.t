@@ -7,7 +7,7 @@
 
 package WADToolsTest::DBToolTest;
 use Moo; # includes 'strictures 1'
-use Test::More tests => 10;
+use Test::More tests => 12;
 #use Test::More; # using done_testing() at the end of this test
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -79,7 +79,7 @@ BEGIN {
 
     $return = $db_tool->run();
     ok( ref($return) eq q(App::WADTools::Error),
-        q(Calling DBTool->run with missing View results in error));
+        q(Calling DBTool->run with missing View + Config results in error));
 
     ### Create an App::WADTools::DBTool object
     # - View set to $self

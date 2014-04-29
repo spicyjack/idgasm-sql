@@ -7,7 +7,7 @@
 
 package WADToolsTest::DBToolTest;
 use Moo; # includes 'strictures 1'
-use Test::More tests => 12;
+use Test::More tests => 15;
 #use Test::More; # using done_testing() at the end of this test
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -68,9 +68,11 @@ BEGIN {
         q(Received Config::Std object reading valid INI file));
 
     my ($db_tool, $return);
+
     # Create an App::WADTools::DBTool object
     # - View missing
     # - Config missing
+    # - Database filename provided
     $db_tool = App::WADTools::DBTool->new(
         filename => q(:memory:),
     );
@@ -80,10 +82,13 @@ BEGIN {
     $return = $db_tool->run();
     ok( ref($return) eq q(App::WADTools::Error),
         q(Calling DBTool->run with missing View + Config results in error));
+    ok( $return->id eq q(dbtool.run.missing_config),
+        q(Error object returned by DBTool->run returned ID: ) . $return->id);
 
     ### Create an App::WADTools::DBTool object
     # - View set to $self
     # - Config missing
+    # - Database filename provided
     $db_tool = App::WADTools::DBTool->new(
         view     => $self,
         filename => q(:memory:),
@@ -94,22 +99,25 @@ BEGIN {
     $return = $db_tool->run();
     ok( ref($return) eq q(App::WADTools::Error),
         q(Calling DBTool->run with with missing Config results in error));
-    note($return->id);
+    ok( $return->id eq q(dbtool.run.missing_config),
+        q(Error object returned by DBTool->run returned ID: ) . $return->id);
+    ok( $return->level eq q(fatal),
+        q(Error level for the returned Error object is: ) . $return->level);
 
     ### Create an App::WADTools::DBTool object
     # - View set to $self
     # - Config provided
+    # - Database filename provided
     $db_tool = App::WADTools::DBTool->new(
         view     => $self,
         filename => q(:memory:),
+        # FIXME add a test/mock Config object here
     );
     ok(ref($db_tool) eq q(App::WADTools::DBTool),
         q(Created object: ) . ref($db_tool));
 
     $return = $db_tool->run();
-    ok( ref($return) eq q(App::WADTools::Error),
-        q(Calling DBTool->run with with missing Config results in error));
-    note($return->id);
+
 }
 
 sub request_update {

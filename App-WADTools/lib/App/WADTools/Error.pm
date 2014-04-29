@@ -11,7 +11,7 @@ App::WADTools::Error
 
  # in an object method somewhere, an error occurs...
  my $error = App::WADTools::Error->new(
-    caller    => __PACKAGE__ . q(.) . __LINE__,
+    level     => q(error),
     type      => q(object.method_name.error_type),
     message   => qq(Something bad happened! error:) . $obj->parsed_error,
     raw_error => $obj->raw_unparsed_error,
@@ -43,28 +43,6 @@ use Moo;
 
 =over
 
-=item caller
-
-The caller that created this L<Error> object.  You can use the C<__FILE__>,
-C<__PACKAGE__> and C<__LINE__> "special literals" from L<perldata> to quickly
-get the information about the caller;
-
-  my $error1 = App::WADTools::Error->new(
-    caller => __PACKAGE__ . q(.) . __LINE__
-  );
-
-  my $error2 = App::WADTools::Error->new(
-    caller => __FILE__ . q( +) . __LINE__
-  );
-
-=cut
-
-has q(caller) => (
-    is      => q(rw),
-    default => sub { q() },
-);
-
-
 =item is_error
 
 A read-only boolean flag that's set to C<1>.  Meant to be used to test to see
@@ -72,7 +50,7 @@ if an L<Error> object was returned to the caller via:
 
     my $obj = $foo->do_something();
     if ( $obj->can(q(is_error)) ) {
-        # Error object returned
+        # An Error object was returned
     }
 
 =cut
@@ -80,6 +58,54 @@ if an L<Error> object was returned to the caller via:
 has q(is_error) => (
     is      => q(ro),
     default => sub { 1 },
+);
+
+=item level
+
+The log level of the L<Error>.  Using different log levels lets the user
+filter out log messages while the program is running.  The log levels can be
+one of the following case-insensitive strings:
+
+=over
+
+=item FATAL
+
+=item ERROR
+
+=item WARN
+
+=item INFO
+
+=item DEBUG
+
+=item TRACE
+
+The default level of any L<Error> object is C<WARN>.
+
+=back
+
+=cut
+
+has q(level) => (
+    is      => q(rw),
+    isa     => sub { $_[0] =~ /fatal|error|warn|info|debug|trace/i },
+    default => sub { q(warn) },
+);
+
+=item id
+
+A text string that identifies where the error occurs.  The attribute types are
+determined by the objects that create this L<Error> object, there is no set
+"master" list of attributes.
+
+A general naming convention is
+C<E<lt>objectE<gt>.E<lt>method_or_actionE<gt>.E<lt>action_in_methodE<gt>>.
+
+=cut
+
+has q(id) => (
+    is      => q(rw),
+    default => sub { q() },
 );
 
 =item message
@@ -104,22 +130,6 @@ the object that created the L<Erorr> object.
 =cut
 
 has q(raw_error) => (
-    is      => q(rw),
-    default => sub { q() },
-);
-
-=item type
-
-A text string that indicates what "type" of error this is.  The attribute
-types are determined by the objects that create this L<Error> object, there is
-no set "master" list of attributes.
-
-A general naming convention is
-C<E<lt>objectE<gt>.E<lt>method or actionE<gt>.E<lt>action_in_methodE<gt>>.
-
-=cut
-
-has q(id) => (
     is      => q(rw),
     default => sub { q() },
 );

@@ -75,15 +75,8 @@ our @options = (
 
 =head1 DESCRIPTION
 
-Creates databases using config specified in INI file.
-
-=head1 OBJECTS
-
-=head2 App::WADTools::Config
-
-An object used for storing configuration data.
-
-=head3 Object Methods
+Creates the specified type of output file, using the information contained in
+the specified in INI file.
 
 =cut
 
@@ -187,10 +180,6 @@ use App::WADTools::View::GenericCLI;
     } else {
         exit 0;
     }
-
-=cut
-
-=back
 
 =head1 AUTHOR
 

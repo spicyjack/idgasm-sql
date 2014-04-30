@@ -70,6 +70,7 @@ has q(options) => (
 
 Creates the L<App::WADTools::Config> object, parses options from the
 command line via L<Getopt::Long>, and returns the object to the caller.
+
 =cut
 
 sub BUILD {
@@ -85,12 +86,6 @@ sub BUILD {
     # script arguments
     my %args;
 
-    # parse the command line arguments (if any)
-    my $parser = Getopt::Long::Parser->new();
-
-    # pass in a reference to the args hash as the first argument
-    $parser->getoptions( \%args, @{$self->options} );
-
     # assign the args hash to this object so it can be reused later on
     $self->{_args} = \%args;
 
@@ -101,6 +96,29 @@ sub BUILD {
 
     # return this object to the caller
     return $self;
+}
+
+=item getopts()
+
+Calls L<Getopt::Long::Parser> to parse arguments to this script, and turn the
+parsed information into attributes of the L<Config> object.
+
+=cut
+
+sub getopts {
+    my $self = shift;
+
+    # script arguments
+    my %args = $self->{_args};
+
+    # parse the command line arguments (if any)
+    my $parser = Getopt::Long::Parser->new();
+
+    # pass in a reference to the args hash as the first argument
+    $parser->getoptions( \%args, @{$self->options} );
+
+    # assign the args hash to this object so it can be reused later on
+    $self->{_args} = \%args;
 }
 
 =item get($key)

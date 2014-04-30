@@ -130,6 +130,8 @@ use App::WADTools::Timer;
 
     # create a logger object
     my $cfg = App::WADTools::Config->new(options => \@options);
+    # use Getopt::Long::Parser to parse script arguments
+    $cfg->getopts();
 
     # dump and bail if we get called with --help
     if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }

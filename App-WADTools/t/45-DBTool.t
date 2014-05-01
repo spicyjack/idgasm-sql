@@ -41,7 +41,6 @@ sub run {
 BEGIN {
     use_ok( q(App::WADTools::Config) );
     use_ok( q(App::WADTools::DBTool) );
-    use_ok( q(App::WADTools::INIFile) );
     # local test object for testing callbacks from DBTool
     use_ok( q(WADToolsTest::DBCallback) );
 }
@@ -54,19 +53,6 @@ BEGIN {
     my $file; # a test App::WADTools::File object
     my $rv; # generic return value
     my $ini_file = q(../../sql_schemas/wadindex.ini);
-    my $ini;
-
-    # check App::WADTools::INIFile
-    # use the current idgames_db_dump.ini schema file
-    $self->expected_callback(REQUEST_FAILURE);
-
-    ### Call INI with valid file
-    $ini = App::WADTools::INIFile->new( filename => $ini_file);
-    is( ref($ini), q(App::WADTools::INIFile),
-        q(Successfully created App::WADTools::INIFile object));
-    my $ini_map = $ini->read_ini_config();
-    ok( ref($ini_map) =~ /Config::Std/,
-        q(Received Config::Std object reading valid INI file));
 
     my ($db_tool, $return);
 

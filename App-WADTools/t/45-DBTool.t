@@ -7,7 +7,7 @@
 
 package WADToolsTest::DBToolTest;
 use Moo; # includes 'strictures 1'
-use Test::More tests => 15;
+use Test::More tests => 18;
 #use Test::More; # using done_testing() at the end of this test
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -39,6 +39,7 @@ sub run {
     );
 
 BEGIN {
+    use_ok( q(App::WADTools::Config) );
     use_ok( q(App::WADTools::DBTool) );
     use_ok( q(App::WADTools::INIFile) );
     # local test object for testing callbacks from DBTool
@@ -48,10 +49,11 @@ BEGIN {
     # needs Log::Log4perl loaded first (above)
     $self->setup_logging;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    isa_ok($log, q(Log::Log4perl::Logger));
+    isa_ok( $log, q(Log::Log4perl::Logger) );
 
     my $file; # a test App::WADTools::File object
     my $rv; # generic return value
+    my $ini_file = q(../../sql_schemas/wadindex.ini);
     my $ini;
 
     # check App::WADTools::INIFile
@@ -59,12 +61,11 @@ BEGIN {
     $self->expected_callback(REQUEST_FAILURE);
 
     ### Call INI with valid file
-    $ini = App::WADTools::INIFile->new(
-        filename => q(../../sql_schemas/wadindex.ini));
-    ok(ref($ini) eq q(App::WADTools::INIFile),
+    $ini = App::WADTools::INIFile->new( filename => $ini_file);
+    is( ref($ini), q(App::WADTools::INIFile),
         q(Successfully created App::WADTools::INIFile object));
     my $ini_map = $ini->read_ini_config();
-    ok(ref($ini_map) =~ /Config::Std/,
+    ok( ref($ini_map) =~ /Config::Std/,
         q(Received Config::Std object reading valid INI file));
 
     my ($db_tool, $return);
@@ -76,14 +77,14 @@ BEGIN {
     $db_tool = App::WADTools::DBTool->new(
         filename => q(:memory:),
     );
-    ok(ref($db_tool) eq q(App::WADTools::DBTool),
+    is( ref($db_tool), q(App::WADTools::DBTool),
         q(Created object: ) . ref($db_tool));
 
     $return = $db_tool->run();
-    ok( ref($return) eq q(App::WADTools::Error),
+    is( ref($return), q(App::WADTools::Error),
         q(Calling DBTool->run with missing View + Config results in error));
-    ok( $return->id eq q(dbtool.run.missing_config),
-        q(Error object returned by DBTool->run returned ID: ) . $return->id);
+    is( $return->id, q(dbtool.run.missing_config),
+        q(ID of returned Error object: ) . $return->id);
 
     ### Create an App::WADTools::DBTool object
     # - View set to $self
@@ -93,31 +94,39 @@ BEGIN {
         view     => $self,
         filename => q(:memory:),
     );
-    ok(ref($db_tool) eq q(App::WADTools::DBTool),
+    is( ref($db_tool), q(App::WADTools::DBTool),
         q(Created object: ) . ref($db_tool));
 
     $return = $db_tool->run();
-    ok( ref($return) eq q(App::WADTools::Error),
+    is( ref($return), q(App::WADTools::Error),
         q(Calling DBTool->run with with missing Config results in error));
-    ok( $return->id eq q(dbtool.run.missing_config),
-        q(Error object returned by DBTool->run returned ID: ) . $return->id);
-    ok( $return->level eq q(fatal),
+    is( $return->id, q(dbtool.run.missing_config),
+        q(ID of returned Error object: ) . $return->id);
+    is( $return->level, q(fatal),
         q(Error level for the returned Error object is: ) . $return->level);
 
     ### Create an App::WADTools::DBTool object
     # - View set to $self
     # - Config provided
     # - Database filename provided
+    my $cfg = App::WADTools::Config->new(options => []);
+    $cfg->set(q(create-db), 1);
+    $cfg->set(q(input), $ini_file);
+    is( ref($cfg), q(App::WADTools::Config),
+        q(Created a valid App::WADTools::Config object));
+    is( $cfg->get(q(create-db)), 1,
+        q(App::WADTools::Config has valid 'create-db' attribute));
+    is( $cfg->get(q(input)), $ini_file,
+        q(App::WADTools::Config has valid 'input' attribute));
+
     $db_tool = App::WADTools::DBTool->new(
         view     => $self,
         filename => q(:memory:),
-        # FIXME add a test/mock Config object here
+        config   => $cfg,
     );
-    ok(ref($db_tool) eq q(App::WADTools::DBTool),
+    is( ref($db_tool), q(App::WADTools::DBTool),
         q(Created object: ) . ref($db_tool));
-
     $return = $db_tool->run();
-
 }
 
 sub request_update {

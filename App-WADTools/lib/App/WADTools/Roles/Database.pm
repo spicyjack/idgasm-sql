@@ -101,10 +101,10 @@ sub connect {
     my $dbh = $self->dbh;
 
     $log->debug(q(Connecting to/reading database...));
-    if ( length($self->filename) == 0 ) {
+    if ( ! defined $self->filename || length($self->filename) == 0 ) {
         $log->warn(q|Creating temp database ('filename' attribute is empty)|);
     } elsif ( $self->filename eq q(:memory:) ) {
-        $log->warn(q|Creating in-memory database ('filename' == ':memory:')|);
+        $log->info(q|Creating in-memory database ('filename' == ':memory:')|);
     } else {
         $log->debug(q(Database filename: ) . $self->filename);
     }

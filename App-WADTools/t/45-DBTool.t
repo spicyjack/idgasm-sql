@@ -7,8 +7,8 @@
 
 package WADToolsTest::DBToolTest;
 use Moo; # includes 'strictures 1'
+use File::Temp;
 use Test::More tests => 18;
-#use Test::More; # using done_testing() at the end of this test
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
@@ -24,10 +24,7 @@ use constant {
 # available
 with qw(WADToolsTest::Role::SetupLogging);
 
-has q(expected_callback) => (
-    is      => q(rw),
-    default => sub { q() },
-);
+my @_test_callbacks_list;
 
 sub run {
     my $self = shift;
@@ -53,6 +50,7 @@ BEGIN {
     my $file; # a test App::WADTools::File object
     my $rv; # generic return value
     my $ini_file = q(../../sql_schemas/wadindex.ini);
+    my $out_file = File::Temp->new();
 
     my ($db_tool, $return);
 
@@ -105,6 +103,18 @@ BEGIN {
     is( $cfg->get(q(input)), $ini_file,
         q(App::WADTools::Config has valid 'input' attribute));
 
+    # should be 8 "execute block" callbacks, and one "success" callback
+    @_test_callbacks_list = qw(
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.execute_block
+        database_schema.apply_schema
+    );
     $db_tool = App::WADTools::DBTool->new(
         view     => $self,
         filename => q(:memory:),
@@ -123,11 +133,24 @@ sub request_update {
     $log->debug(q(request_update; arguments: ) . join(q(, ), @_));
 
     note(q(45-DBTool: received 'request_update' call));
-    $log->info(q(Expecting callback: ) . $self->expected_callback);
-    ok(defined $args{type} && $args{type} eq $self->expected_callback,
-        q(Received callback: ) . $self->expected_callback);
-    # reset expected_callback
-    $self->expected_callback(q());
+    my $expected_callback = shift(@_test_callbacks_list);
+    $log->info(qq(Expecting callback: $expected_callback));
+    ok(defined $args{type} && $args{type} eq $expected_callback,
+        qq(Received callback: $expected_callback));
+}
+
+sub request_success {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    $log->debug(q(request_success; arguments: ) . join(q(, ), @_));
+
+    note(q(45-DBTool: received 'request_success' call));
+    my $expected_callback = shift(@_test_callbacks_list);
+    $log->info(qq(Expecting callback: $expected_callback));
+    ok(defined $args{type} && $args{type} eq $expected_callback,
+        qq(Received callback: $expected_callback));
 }
 
 package main;

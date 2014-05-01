@@ -62,8 +62,28 @@ C<schema> object is created by reading in a specially formatted C<INI> file
 using the module L<App::WADTools::INIFile>, which then gets converted to the
 correct data structure for this method to apply to the database.
 
-Returns either C<1> if all of the SQL calls were successful, or an
+The L<apply_schema> method calls the C<request_success> callback if all of the
+SQL calls were successful, or the C<request_failure> callback with an
 L<App::WADTools::Error> object if any of the SQL calls failed.
+
+Callbacks called:
+
+=over
+
+=item request_update
+
+Called each time a schema block will be applied to a database.
+
+=item request_success
+
+Called when all of the schema blocks have been applied to the database
+successfully.
+
+=item request_failure
+
+Called if there are any errors creating schema blocks in the database
+
+=back
 
 Required arguments:
 
@@ -81,7 +101,6 @@ commands to run in order to create a database.
 sub apply_schema {
     my $self = shift;
     my %args = @_;
-    my $cb = $self->callback;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     # check for an existing database connection
@@ -113,7 +132,7 @@ sub apply_schema {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
-        $cb->request_update(
+        $self->callback->request_update(
             level   => q(info),
             type    => q(database_schema.execute_block),
             message => qq(Executing SQL schema block: $block_name)
@@ -216,7 +235,13 @@ sub apply_schema {
                  . qq(changed $rv row));
         }
     }
-    return 1;
+    $self->callback->request_success(
+        level   => q(info),
+        type    => q(database_schema.apply_schema),
+        message => q(Applied ) . scalar(@schema_blocks)
+            . q( schema blocks successfully!)
+    );
+    return;
 }
 
 =item has_schema()

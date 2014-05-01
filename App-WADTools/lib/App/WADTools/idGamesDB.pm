@@ -123,7 +123,7 @@ sub BUILD {
     );
     if ( ref($callbacks_check) eq q(App::WADTools::Error) ) {
         $log->fatal($callbacks_check->message);
-        $log->logdie($callbacks_check->raw_error);
+        $log->logdie($callbacks_check->raw);
     }
     my $db_connect_check = $self->connect;
     if ( ref($db_connect_check) eq q(App::WADTools::Error) ) {
@@ -186,7 +186,7 @@ FILESQL
             caller    => __PACKAGE__ . q(.) . __LINE__,
             type      => q(idgames-db.file_insert.prepare),
             message   => q('prepare' call to INSERT into 'files' failed),
-            raw_error => $dbh->errstr,
+            raw => $dbh->errstr,
         );
         # FIXME controller
         return $error;

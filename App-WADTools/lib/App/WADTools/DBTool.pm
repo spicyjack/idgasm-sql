@@ -74,6 +74,20 @@ has q(config) => (
     is => q(ro),
 );
 
+=item filename
+
+The filename of the database file to create.  Accepts a special parameter,
+C<:memory:>, which creates a temporary database in memory.  If this parameter
+is C<undef> when the L<run()> method is called, the parameter C<output> from
+the L<Config> object will be used instead.
+
+=cut
+
+has q(filename) => (
+    is => q(rwp),
+);
+
+
 =back
 
 =head2 Methods
@@ -125,12 +139,16 @@ sub run {
     my $ini_file = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));
     if ( ref($ini_file) eq q(App::WADTools::Error) ) {
-        # FIXME view
-        $self->request_failure(
-            id  => q(dbtool.inifile.create),
-            msg => q(Error opening INI file ') . $cfg->get(q(input)) . q(')
+        $view->request_failure(
+            level => q(fault),
+            id    => q(dbtool.inifile.create),
+            msg   => q(Error opening INI file ') . $cfg->get(q(input)) . q(')
         );
     }
+    if ( ! defined $self->filename ) {
+        $self->_set_filename($cfg->get(q(οutput)));
+    }
+
     if ( $cfg->defined(q(create-db)) ) {
         # FIXME view
         $log->warn(q(Creating database file...));
@@ -152,7 +170,7 @@ sub run {
                     . $db_schema->{q(default)}->{q(base_url)});
             }
             my $db = App::WADTools::idGamesDB->new(
-                filename => $cfg->get(q(output)),
+                filename => $self->filename,
                 callback => $self,
             );
 
@@ -243,10 +261,8 @@ sub request_update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(Calling View->update_status));
-    $self->view->update_status(%args);
-    #$log->warn(q(Update: ) . $args{level} . q(:) . $args{type});
-    #$log->warn(q(Update: ) . $args{message});
+    $log->debug(q(Received request_update callback from: ) . $args{type});
+    $self->view->request_update(%args);
 }
 
 =item request_success()
@@ -259,7 +275,9 @@ sub request_success {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    $log->warn(q(Success: ) . $args{id});
+
+    $log->debug(q(Received request_success callback from: ) . $args{type});
+    $self->view->request_success(%args);
 }
 
 =item request_failure()
@@ -273,9 +291,8 @@ sub request_failure {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->warn(q(Failure: ) . $args{id});
-    $self->view->update_status(%args);
-    exit 1;
+    $log->debug(q(Received request_failure callback from: ) . $args{type});
+    $self->view->request_failure(%args);
 }
 
 =back

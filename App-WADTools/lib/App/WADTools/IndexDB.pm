@@ -150,7 +150,7 @@ sub BUILD {
     );
     if ( ref($callbacks_check) eq q(App::WADTools::Error) ) {
         $log->fatal($callbacks_check->message);
-        $log->logdie($callbacks_check->raw_error);
+        $log->logdie($callbacks_check->raw);
     }
 }
 

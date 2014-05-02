@@ -84,10 +84,10 @@ sub parse {
     if ( $@ ) {
         # no, an error occured parsing the XML
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(xmlparser.parse_error),
-            message   => qq(Error parsing XML content; $@),
-            raw_error => $data,
+            level   => q(fatal),
+            id      => q(xmlparser.parse_error),
+            message => qq(Error parsing XML content; $@),
+            raw     => $data,
         );
         return ( error => $error, api_version => $api_version );
     } else {
@@ -102,10 +102,10 @@ sub parse {
     if ( exists $parsed_data->{q(idgames-response)}->{error} ) {
         # an error was returned from the API
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(xmparser.api_error),
-            message   => q(Received 'error' response to API query),
-            raw_error => $parsed_data->{q(idgames-response)}->{error},
+            level   => q(fatal),
+            id      => q(xmparser.api_error),
+            message => q(Received 'error' response to API query),
+            raw     => $parsed_data->{q(idgames-response)}->{error},
         );
         return (error => $error, api_version => $api_version);
     } elsif ( exists $parsed_data->{q(idgames-response)}->{content}->{file} ) {
@@ -205,10 +205,10 @@ sub parse {
         return (file => $file, api_version => $api_version);
     } else {
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(xmlparser.undefined_response),
-            message   => q(Received undefined response to API query),
-            raw_error => $parsed_data,
+            level   => q(fatal),
+            id      => q(xmlparser.undefined_response),
+            message => q(Received undefined response to API query),
+            raw     => $parsed_data,
         );
         return (error => $error, api_version => $api_version);
     }

@@ -231,20 +231,20 @@ sub write_ini_config {
         eval { write_config($db_schema => $write_filename); };
         if ( $@ ) {
             my $error = App::WADTools::Error->new(
-                caller    => __PACKAGE__ . q(.) . __LINE__,
-                type      => q(inifile.write_ini_config.error_writing_config),
-                message   => q(Error encountered in write_config call),
-                raw_error => $@,
+                level   => q(fatal),
+                id      => q(inifile.write_ini_config.error_writing_config),
+                message => q(Error encountered in write_config call),
+                raw     => $@,
             );
             return $error;
         }
         $filesize = (-s $write_filename);
     } else {
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(inifile.write_ini_config.file_not_writeable),
-            message   => q(INI file not writeable!),
-            raw_error => $@,
+            level   => q(fatal),
+            id      => q(inifile.write_ini_config.file_not_writeable),
+            message => q(INI file not writeable!),
+            raw     => $@,
         );
         return $error;
     }

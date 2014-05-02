@@ -83,10 +83,10 @@ sub check_callbacks {
     }
     if ( scalar(@missing_methods) > 0 ) {
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(callbacks.check_callbacks.missing_callbacks),
-            message   => q(Missing required callbacks for ) . ref($object),
-            raw_error => q(Missing callbacks: ) . join(q(, ), @missing_methods),
+            level   => q(fatal),
+            id      => q(callbacks.check_callbacks.missing_callbacks),
+            message => q(Missing required callbacks for ) . ref($object),
+            raw     => q(Missing callbacks: ) . join(q(, ), @missing_methods),
         );
     }
 }

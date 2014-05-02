@@ -8,7 +8,7 @@
 package WADToolsTest::DBToolTest;
 use Moo; # includes 'strictures 1'
 use File::Temp;
-use Test::More tests => 18;
+use Test::More tests => 25;
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
@@ -123,6 +123,7 @@ BEGIN {
     is( ref($db_tool), q(App::WADTools::DBTool),
         q(Created object: ) . ref($db_tool));
     $return = $db_tool->run();
+    is(scalar(@_test_callbacks_list), 0, q(Received all expected callbacks));
 }
 
 sub request_update {
@@ -130,13 +131,11 @@ sub request_update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(request_update; arguments: ) . join(q(, ), @_));
-
-    note(q(45-DBTool: received 'request_update' call));
     my $expected_callback = shift(@_test_callbacks_list);
     $log->info(qq(Expecting callback: $expected_callback));
     ok(defined $args{id} && $args{id} eq $expected_callback,
-        qq(Received callback: $expected_callback));
+        qq(Received request_update callback: $expected_callback));
+    $log->debug(q(request_update; arguments: ) . join(q(, ), @_));
 }
 
 sub request_success {
@@ -144,13 +143,11 @@ sub request_success {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(request_success; arguments: ) . join(q(, ), @_));
-
-    note(q(45-DBTool: received 'request_success' call));
     my $expected_callback = shift(@_test_callbacks_list);
     $log->info(qq(Expecting callback: $expected_callback));
     ok(defined $args{id} && $args{id} eq $expected_callback,
-        qq(Received callback: $expected_callback));
+        qq(Received request_success callback: $expected_callback));
+    $log->debug(q(request_success; arguments: ) . join(q(, ), @_));
 }
 
 package main;

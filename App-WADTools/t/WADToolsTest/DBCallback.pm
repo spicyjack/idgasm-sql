@@ -18,8 +18,8 @@ sub db_request_callback {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
     $log->info(q(DBCallback: received 'db_request_success' callback call));
-    if ( exists $args{type} ) {
-        $log->info(q(callback type: ) . $args{type});
+    if ( exists $args{id} ) {
+        $log->info(q(callback id: ) . $args{id});
     }
 }
 

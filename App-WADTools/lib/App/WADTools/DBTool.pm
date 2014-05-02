@@ -196,8 +196,8 @@ sub run {
         } else {
             $timer->stop(name => __PACKAGE__);
             my $error = App::WADTools::Error->new(
-                caller    => __PACKAGE__ . q(.) . __LINE__,
-                type      => q(dbtool.unknown_file_type),
+                level     => q(fatal),
+                id        => q(dbtool.unknown_file_type),
                 message   => q(Don't know how to process file ')
                     . $cfg->get(q(input)) . q('),
             );
@@ -237,9 +237,9 @@ sub run {
     } else {
         $timer->stop(name => __PACKAGE__);
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(dbtool.unknown_option),
-            message   => q(Please specify a valid script action),
+            level   => q(fatal),
+            id      => q(dbtool.unknown_option),
+            message => q(Please specify a valid script action),
         );
         # FIXME view
         return $error;
@@ -261,7 +261,7 @@ sub request_update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(Received request_update callback from: ) . $args{type});
+    $log->debug(q(Received request_update callback from: ) . $args{id});
     $self->view->request_update(%args);
 }
 
@@ -276,7 +276,7 @@ sub request_success {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(Received request_success callback from: ) . $args{type});
+    $log->debug(q(Received request_success callback from: ) . $args{id});
     $self->view->request_success(%args);
 }
 
@@ -291,7 +291,7 @@ sub request_failure {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(Received request_failure callback from: ) . $args{type});
+    $log->debug(q(Received request_failure callback from: ) . $args{id});
     $self->view->request_failure(%args);
 }
 

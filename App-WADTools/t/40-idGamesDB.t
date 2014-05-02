@@ -86,7 +86,7 @@ ok(ref($db) eq q(App::WADTools::idGamesDB),
 # 'connect()' hasn't been called yet
 $db->is_connected;
 #ok(ref($rv) eq q(App::WADTools::Error),
-#    q(Check for database connection fails as expected; ) . $rv->type);
+#    q(Check for database connection fails as expected; ) . $rv->id);
 
 ### Database connect()
 $rv = $db->connect;
@@ -135,8 +135,8 @@ ok($rv == $total_schema_entries,
 $file = $db->get_file_by_id(id => 1);
 ok($file->can(q(is_error)),
     q(Request for non-existant file ID returns Error object));
-ok($file->type =~ /file_id_not_found/,
-    q(Error 'type' returned includes 'file_id_not_found' string));
+ok($file->id =~ /file_id_not_found/,
+    q(Error 'id' returned includes 'file_id_not_found' string));
 
 # - use get_file_by_id to retrieve records
 foreach my $file_id ( @test_ids ) {
@@ -152,8 +152,8 @@ foreach my $file_id ( @test_ids ) {
 $file = $db->get_file_by_path(path => q(/path/to), filename => q(⁄foo.wad));
 ok($file->can(q(is_error)),
     q(Request for non-existant file ID returns Error object));
-ok($file->type =~ /file_path_not_found/,
-    q(Error 'type' returned includes 'file_path_not_found' string));
+ok($file->id =~ /file_path_not_found/,
+    q(Error 'id' returned includes 'file_path_not_found' string));
 
 # - use get_file_by_path to retrieve records
 foreach my $file_path ( @test_paths ) {
@@ -176,7 +176,7 @@ sub db_request_cb {
     } else {
         $log->info(q(40-idGamesDB: received 'db_request_cb' call));
         $log->info(qq(Expecting callback: $expected_callback));
-        ok(defined $args{type} && $args{type} eq $expected_callback,
+        ok(defined $args{id} && $args{id} eq $expected_callback,
             qq(Received callback: $expected_callback));
         undef $expected_callback;
     }

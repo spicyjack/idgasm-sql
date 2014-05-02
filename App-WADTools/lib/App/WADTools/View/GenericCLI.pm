@@ -46,7 +46,7 @@ sub update_status{
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Update: ) . $args{level} . q(:) . $args{type};
+    say q(Update: ) . $args{level} . q(:) . $args{id};
     say q(Update: ) . $args{message};
 }
 

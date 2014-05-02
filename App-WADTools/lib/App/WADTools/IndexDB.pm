@@ -99,21 +99,21 @@ This object checks that the following callbacks are implemented by the caller;
 =item request_success
 
 The database request has finished successfully.  The return hash will include
-the C<type> key/value pair, which will indicate what event triggered the
+the C<id> key/value pair, which will indicate what event triggered the
 C<request_success> call.
 
 =item request_failure
 
 The database request failed for some reason.  The return hash will include the
 C<error> key/value pair, which will contain a L<App::WADTools::Error> object,
-and a C<type> key/value pair, which will indicate what event triggered the
+and a C<id> key/value pair, which will indicate what event triggered the
 C<request_failure> call.
 
 =item request_update
 
 This method is called when this object wants to update the status of a
 database request which is still processing.  The return hash will include the
-C<type> key/value pair, which will indicate what event triggered the
+C<id> key/value pair, which will indicate what event triggered the
 C<request_update> call, and the C<message> key/value pair, which will be an
 update message of some kind that can be passed along to the user (via a
 C<View> object).
@@ -206,8 +206,8 @@ sub add_wadfile {
         $log->error(q('prepare' call to INSERT into 'wads' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.wads-insert.prepare),
+            level   => q(fatal),
+            id      => q(index-db.wads-insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -227,8 +227,8 @@ sub add_wadfile {
         $log->error(q(INSERT for keysum ') . $wadfile->keysum
             . q(' returned an error: ) . $sth_wads->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.wads-insert.execute),
+            level   => q(fatal),
+            id      => q(index-db.wads-insert.execute),
             message => $sth_wads->errstr
         );
         return $error;
@@ -244,8 +244,8 @@ sub add_wadfile {
         $log->error(q('prepare' call to INSERT into 'levels_to_wads' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.levels_to_wads-insert.prepare),
+            level   => q(fatal),
+            id      => q(index-db.levels_to_wads-insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -273,8 +273,8 @@ sub add_wadfile {
             $log->error(q(INSERT keysum/level returned an error: )
                 . $sth_level->errstr);
             my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(index-db.levels_to_wads-insert.execute),
+                level   => q(fatal),
+                id      => q(index-db.levels_to_wads-insert.execute),
                 message => $sth_level->errstr
             );
             return $error;
@@ -343,8 +343,8 @@ sub add_zipfile {
         $log->error(q('prepare' call to INSERT into 'zipfiles' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.zipfiles-insert.prepare),
+            level   => q(fatal),
+            id      => q(index-db.zipfiles-insert.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -363,8 +363,8 @@ sub add_zipfile {
         $log->error(q(INSERT for keysum ') . $zipfile->keysum
             . q(' returned an error: ) . $sth_wads->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.zipfiles-insert.execute),
+            level   => q(fatal),
+            id      => q(index-db.zipfiles-insert.execute),
             message => $sth_wads->errstr
         );
         return $error;
@@ -388,7 +388,7 @@ sub add_zipfile {
 Queries the database for a L<App::WADTools::File> object in the database with
 the ID passed in as the argument.  Returns a L<App::WADTools::File> object if
 the file ID was found in the database, or an L<App::WADTools::Error> object
-with the C<error_type> of C<file_id_not_found>.
+with the C<id> of C<file_id_not_found>.
 
 Required arguments:
 
@@ -426,8 +426,8 @@ sub get_file_by_id {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.get_file_by_id.prepare),
+            level   => q(fatal),
+            id      => q(index-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -444,8 +444,8 @@ sub get_file_by_id {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.get_file_by_id.execute),
+            level   => q(fatal),
+            id      => q(index-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
         return $error;
@@ -470,7 +470,7 @@ matches the C<$path/$filename> arguments passed in.  A valid file path is the
 path from the root of the idGames Archive file tree, i.e. the directory
 containing the folders C<combos>, C<deathmatch>, C<historic>, C<idstuff>, etc.
 Returns a L<App::WADTools::File> object if the file was found in the database,
-or an L<App::WADTools::Error> object with the error C<type> of
+or an L<App::WADTools::Error> object with the error C<id> of
 C<file_not_found>.
 
 Required arguments:
@@ -516,8 +516,8 @@ sub get_file_by_path  {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.get_file_by_path.prepare),
+            level   => q(fatal),
+            id      => q(index-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
         return $error;
@@ -535,8 +535,8 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(index-db.get_file_by_path.execute),
+            level   => q(fatal)
+            id      => q(index-db.get_file_by_path.execute),
             message => $dbh->errstr
         );
         return $error;

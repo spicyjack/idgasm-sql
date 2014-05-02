@@ -134,7 +134,7 @@ sub apply_schema {
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
         $self->callback->request_update(
             level   => q(info),
-            type    => q(database_schema.execute_block),
+            id      => q(database_schema.execute_block),
             message => qq(Executing SQL schema block: $block_name)
         );
         $log->info(qq(Executing SQL schema block: $block_name));
@@ -145,8 +145,8 @@ sub apply_schema {
                 $log->error(qq(Execution of schema block '$block_name' failed));
                 $log->error(q(Error message: ) . $dbh->errstr);
                 my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute_sql),
+                    level   => q(fatal),
+                    id      => q(database.schema_block.execute_sql),
                     message => $dbh->errstr
                 );
                 return $error;
@@ -157,8 +157,8 @@ sub apply_schema {
             if ( ! defined $sql_predicate ) {
                 $log->error(qq(Missing SQL predicate from block '$block_name'));
                 my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute_params),
+                    level   => q(fatal),
+                    id      => q(database.schema_block.execute_params),
                     message =>
                         qq(Missing SQL predicate from block '$block_name'),
                 );
@@ -169,8 +169,8 @@ sub apply_schema {
             if ( scalar(@params) == 0 ) {
                 $log->error(qq(Missing SQL params from block '$block_name'));
                 my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute_params),
+                    level   => q(fatal),
+                    id      => q(database.schema_block.execute_params),
                     message => qq(Missing SQL params from block '$block_name'),
                 );
                 return $error;
@@ -189,8 +189,8 @@ sub apply_schema {
                 $log->error(qq(Execution of schema block '$block_name' failed));
                 $log->error(q(Error message: ) . $dbh->errstr);
                 my $error = App::WADTools::Error->new(
-                    caller  => __PACKAGE__ . q(.) . __LINE__,
-                    type    => q(database.schema_block.execute),
+                    level   => q(fatal),
+                    id      => q(database.schema_block.execute),
                     message => $dbh->errstr,
                 );
                 return $error;
@@ -209,8 +209,8 @@ sub apply_schema {
             $log->error(q('prepare' call to INSERT into 'schema' failed));
             $log->error(q(Error message: ) . $dbh->errstr);
             my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(database.schema_insert.prepare),
+                level   => q(fatal),
+                id      => q(database.schema_insert.prepare),
                 message => $dbh->errstr
             );
             return $error;
@@ -225,8 +225,8 @@ sub apply_schema {
             $log->error(qq(INSERT for schema ID $block_name returned an error: )
                 . $sth->errstr);
             my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(database.schema_insert.execute),
+                level   => q(fatal),
+                id      => q(database.schema_insert.execute),
                 message => $dbh->errstr
             );
             return $error;
@@ -237,7 +237,7 @@ sub apply_schema {
     }
     $self->callback->request_success(
         level   => q(info),
-        type    => q(database_schema.apply_schema),
+        id      => q(database_schema.apply_schema),
         message => q(Applied ) . scalar(@schema_blocks)
             . q( schema blocks successfully!)
     );

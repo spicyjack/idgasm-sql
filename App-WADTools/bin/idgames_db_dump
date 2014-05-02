@@ -216,13 +216,13 @@ use constant {
         );
         if ( $db->can(q(is_error)) ) {
             $log->error(q(Recieved error creating database object));
-            $log->error(q(Error type: ) . $db->type);
+            $log->error(q(Error id: ) . $db->id);
             $log->logdie(q(Error message: ) . $db->message);
         } else {
             my $schema_check = $db->check_schema();
             if ( $schema_check->can(q(is_error)) ) {
                 $log->error(q(Recieved schema error in --idgames-db));
-                $log->error(q(Error type: ) . $schema_check->type);
+                $log->error(q(Error id: ) . $schema_check->id);
                 $log->logdie(q(Error message: ) . $schema_check->message);
             } else {
                 $log->debug(qq(idgames-db has $schema_check schema entries));
@@ -274,7 +274,7 @@ use constant {
         my @latestfiles;
         if ( exists $parser_return{error} ) {
             my $error = $parser_return{error};
-            $log->error(q(Error type: ) . $error->type);
+            $log->error(q(Error id: ) . $error->id);
             $log->error(q(Error message: ) . $error->message);
             $log->logdie(q(Error parsing 'latestfiles' from )
                 . uc($parse_type) . q( request));
@@ -326,7 +326,7 @@ use constant {
             if ( exists $parser_return{error} ) {
                 my $error = $parser_return{error};
                 $log->error(qq(Error parsing API response for $file_id));
-                $log->error(q(Error type: ) . $error->type);
+                $log->error(q(Error id: ) . $error->id);
                 $log->error(q(Error message: ) . $error->message);
                 $log->error(q(Error contents:) . Dumper($error->content_block));
                 push(@unsuccessful_parse_ids, $file_id);

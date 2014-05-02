@@ -168,11 +168,11 @@ sub read_ini_config {
         return $db_schema;
     } else {
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(inifile.read_ini_config.file_not_found),
+            level   => q(fatal),
+            id      => q(inifile.read_ini_config.file_not_found),
             message => qq(Can't read INI file!),
         );
-
+        return $error;
     }
 }
 

@@ -73,21 +73,21 @@ This object checks that the following callbacks are implemented by the caller;
 =item request_success
 
 The database request has finished successfully.  The return hash will include
-the C<type> key/value pair, which will indicate what event triggered the
+the C<id> key/value pair, which will indicate what event triggered the
 C<request_success> call.
 
 =item request_failure
 
 The database request failed for some reason.  The return hash will include the
 C<error> key/value pair, which will contain a L<App::WADTools::Error> object,
-and a C<type> key/value pair, which will indicate what event triggered the
+and a C<id> key/value pair, which will indicate what event triggered the
 C<request_failure> call.
 
 =item request_update
 
 This method is called when this object wants to update the status of a
 database request which is still processing.  The return hash will include the
-C<type> key/value pair, which will indicate what event triggered the
+C<id> key/value pair, which will indicate what event triggered the
 C<request_update> call, and the C<message> key/value pair, which will be an
 update message of some kind that can be passed along to the user (via a
 C<View> object).
@@ -183,10 +183,10 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'files' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller    => __PACKAGE__ . q(.) . __LINE__,
-            type      => q(idgames-db.file_insert.prepare),
-            message   => q('prepare' call to INSERT into 'files' failed),
-            raw => $dbh->errstr,
+            level   => q(fatal),
+            id      => q(idgames-db.file_insert.prepare),
+            message => q('prepare' call to INSERT into 'files' failed),
+            raw     => $dbh->errstr,
         );
         # FIXME controller
         return $error;
@@ -209,8 +209,8 @@ FILESQL
         $log->error(q(INSERT for file ID ) . $file->id
             . q( returned an error: ) . $sth_file->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.file_insert.execute),
+            level   => q(fatal),
+            id      => q(idgames-db.file_insert.execute),
             message => $sth_file->errstr
         );
         # FIXME controller
@@ -227,8 +227,8 @@ FILESQL
         $log->error(q('prepare' call to INSERT into 'votes' failed));
         $log->error(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.vote_insert.prepare),
+            level   => q(fatal),
+            id      => q(idgames-db.vote_insert.prepare),
             message => $dbh->errstr
         );
         # FIXME controller
@@ -255,8 +255,8 @@ FILESQL
             $log->error(q(INSERT for file ID ) . $file->id
                 . q( returned an error: ) . $sth_vote->errstr);
             my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(idgames-db.vote_insert.execute),
+                level   => q(fatal),
+                id      => q(idgames-db.vote_insert.execute),
                 message => $sth_vote->errstr
             );
             # FIXME controller
@@ -283,7 +283,7 @@ FILESQL
 Queries the database for a L<App::WADTools::idGamesFile> object in the
 database with the ID passed in as the argument.  Returns a
 L<App::WADTools::idGamesFile> object if the file ID was found in the database,
-or an L<App::WADTools::Error> object with the C<error_type> of
+or an L<App::WADTools::Error> object with the error C<id> of
 C<idgames-db.get_file_by_id.file_id_not_found>.
 
 Required arguments:
@@ -322,8 +322,8 @@ sub get_file_by_id {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.get_file_by_id.prepare),
+            level   => q(fatal),
+            id      => q(idgames-db.get_file_by_id.prepare),
             message => $dbh->errstr
         );
         # FIXME controller
@@ -341,8 +341,8 @@ sub get_file_by_id {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.get_file_by_id.execute),
+            level   => q(fatal),
+            id      => q(idgames-db.get_file_by_id.execute),
             message => $dbh->errstr
         );
         # FIXME controller
@@ -359,8 +359,8 @@ sub get_file_by_id {
             $log->warn(qq(Database error: ) . $sth->err);
         }
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.get_file_by_id.file_id_not_found),
+            level   => q(fatal),
+            id      => q(idgames-db.get_file_by_id.file_id_not_found),
             message => $dbh->errstr
         );
         # FIXME controller
@@ -383,7 +383,7 @@ file path is the path from the root of the idGames Archive file tree, i.e. the
 directory containing the folders C<combos>, C<deathmatch>, C<historic>,
 C<idstuff>, etc.  Returns a L<App::WADTools::idGamesFile> object if the file
 was found in the database, or an L<App::WADTools::Error> object with the error
-C<type> of C<idgames-db.get_file_by_path.file_path_not_found>.
+C<id> of C<idgames-db.get_file_by_path.file_path_not_found>.
 
 Required arguments:
 
@@ -428,8 +428,8 @@ sub get_file_by_path  {
         $log->warn(q(Preparing query for file failed));
         $log->warn(q(Error message: ) . $dbh->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.get_file_by_path.prepare),
+            level   => q(fatal),
+            id      => q(idgames-db.get_file_by_path.prepare),
             message => $dbh->errstr
         );
         # FIXME controller
@@ -449,8 +449,8 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.get_file_by_path.execute),
+            level   => q(fatal),
+            id      => q(idgames-db.get_file_by_path.execute),
             message => $dbh->errstr
         );
         # FIXME controller
@@ -467,8 +467,8 @@ sub get_file_by_path  {
             $log->warn(qq(Database error: ) . $sth->err);
         }
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(idgames-db.get_file_by_path.file_path_not_found),
+            level   => q(fatal),
+            id      => q(idgames-db.get_file_by_path.file_path_not_found),
             message => $dbh->errstr
         );
         # FIXME controller

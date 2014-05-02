@@ -119,8 +119,8 @@ sub connect {
         $dbh->{PrintError} = 0;
         if ( defined $dbh->err ) {
             my $error = App::WADTools::Error->new(
-                caller  => __PACKAGE__ . q(.) . __LINE__,
-                type    => q(database.connect),
+                level   => q(fatal),
+                id      => q(database.connect),
                 message => $dbh->errstr,
             );
             $error->log_error;
@@ -160,8 +160,8 @@ sub is_connected {
     if ( ! defined $dbh ) {
         $log->warn(q(Database connection is NOT established));
         my $error = App::WADTools::Error->new(
-            caller  => __PACKAGE__ . q(.) . __LINE__,
-            type    => q(database.no_connection),
+            level   => q(fatal),
+            id      => q(database.no_connection),
             message => q|connect() never called to set up database handle|,
         );
         return $error;

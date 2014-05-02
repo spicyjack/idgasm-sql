@@ -93,7 +93,7 @@ BEGIN {
 #    if ( ! $self->expected_callback ) {
 #        $log->info(q(25-INIFile: received 'request_update' call));
 #        $log->info(q(Expecting callback: ) . $self->expected_callback);
-#        ok(defined $args{type} && $args{type} eq $self->expected_callback,
+#        ok(defined $args{id} && $args{id} eq $self->expected_callback,
 #            q(Received callback: ) . $self->expected_callback);
 #        $self->expected_callback(q());
 #    }

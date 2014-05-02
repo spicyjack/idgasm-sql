@@ -135,7 +135,7 @@ sub request_update {
     note(q(45-DBTool: received 'request_update' call));
     my $expected_callback = shift(@_test_callbacks_list);
     $log->info(qq(Expecting callback: $expected_callback));
-    ok(defined $args{type} && $args{type} eq $expected_callback,
+    ok(defined $args{id} && $args{id} eq $expected_callback,
         qq(Received callback: $expected_callback));
 }
 
@@ -149,7 +149,7 @@ sub request_success {
     note(q(45-DBTool: received 'request_success' call));
     my $expected_callback = shift(@_test_callbacks_list);
     $log->info(qq(Expecting callback: $expected_callback));
-    ok(defined $args{type} && $args{type} eq $expected_callback,
+    ok(defined $args{id} && $args{id} eq $expected_callback,
         qq(Received callback: $expected_callback));
 }
 

@@ -11,10 +11,10 @@ App::WADTools::Error
 
  # in an object method somewhere, an error occurs...
  my $error = App::WADTools::Error->new(
-    level     => q(error),
-    type      => q(object.method_name.error_type),
-    message   => qq(Something bad happened! error:) . $obj->parsed_error,
-    raw => $obj->raw_unparsed_error,
+    level   => q(error),
+    id      => q(object.method_name.error_type),
+    message => qq(Something bad happened! error:) . $obj->parsed_error,
+    raw     => $obj->raw_unparsed_error,
  );
 
  # return this error object to the caller
@@ -46,7 +46,7 @@ use Moo;
 =item is_error
 
 A read-only boolean flag that's set to C<1>.  Meant to be used to test to see
-if an L<Error> object was returned to the caller via:
+if an L<Error> object was returned during a method call;
 
     my $obj = $foo->do_something();
     if ( $obj->can(q(is_error)) ) {
@@ -94,12 +94,11 @@ has q(level) => (
 
 =item id
 
-A text string that identifies where the error occurs.  The attribute types are
-determined by the objects that create this L<Error> object, there is no set
-"master" list of attributes.  Defaults to an empty string.
+A text string that identifies the error.  Defaults to an empty string.
 
-A general naming convention is
-C<E<lt>objectE<gt>.E<lt>method_or_actionE<gt>.E<lt>action_in_methodE<gt>>.
+A general naming convention for the C<id> attribute is:
+
+C<E<lt>objectE<gt>.E<lt>method_or_actionE<gt>.E<lt>action_in_methodE<gt>>
 
 =cut
 

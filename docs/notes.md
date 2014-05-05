@@ -36,4 +36,10 @@ Cataloger
 See also `mayhem/docs.git/idgames_stats.md` for more ideas on what could be
 cataloged.
 
+Tokenizer
+- Goes through all of the fields, and creates a tokenized index database of
+  words in `/idgames` entries
+- Exports a database of tokenized values to be used in local/offline searches
+  from a client app
+
 vim: filetype=markdown shiftwidth=2 tabstop=2

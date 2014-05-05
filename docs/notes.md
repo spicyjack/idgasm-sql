@@ -39,6 +39,7 @@ cataloged.
 Tokenizer
 - Goes through all of the fields, and creates a tokenized index database of
   words in `/idgames` entries
+  - Tokenizes whole words, as well as first 1, 2, 3, 4, 5 characters
 - Exports a database of tokenized values to be used in local/offline searches
   from a client app
 

@@ -145,13 +145,17 @@ sub run {
             msg   => q(Error opening INI file ') . $cfg->get(q(input)) . q(')
         );
     }
-    if ( ! defined $self->filename ) {
-        $self->_set_filename($cfg->get(q(οutput)));
+    if ( ! defined $self->filename || length($self->filename) == 0 ) {
+        my $output_file = $cfg->get(q(output));
+        $log->debug(qq(Setting output filename to: $output_file));
+        $self->_set_filename($output_file);
+        $log->debug(q(Filename is now: ) . $self->filename);
     }
 
     if ( $cfg->defined(q(create-db)) ) {
         # FIXME view
-        $log->warn(q(Creating database file...));
+        #$log->warn(q(Creating database file ) . $cfg->get(q(output));
+        $log->warn(q(Creating database file ) . $self->filename);
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
             $db_schema = $ini_file->read_ini_config();
             #$ini_file->dump_schema(

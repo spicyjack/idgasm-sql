@@ -44,7 +44,7 @@ sub request_update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Update: ) . $args{level} . q(:) . $args{id} . q(; ) . $args{message};
+    say $args{level} . q(: ) . $args{message};
 }
 
 =item request_success()
@@ -58,7 +58,7 @@ sub request_success {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Update: ) . $args{level} . q(:) . $args{id} . q(; ) . $args{message};
+    say q(Success! ) . $args{message};
 }
 
 =item request_failure()
@@ -75,7 +75,7 @@ sub request_failure {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Update: ) . $args{level} . q(:) . $args{id} . q(; ) . $args{message};
+    say q(Failure! ) . $args{message} . q| (| . $args{id} . q|)|;
 }
 
 1;

@@ -109,7 +109,7 @@ sub getopts {
     my $self = shift;
 
     # script arguments
-    my %args = $self->{_args};
+    my %args = %{$self->{_args}};
 
     # parse the command line arguments (if any)
     my $parser = Getopt::Long::Parser->new();

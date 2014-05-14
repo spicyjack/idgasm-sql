@@ -33,21 +33,49 @@ This object has no attributes.
 
 =over
 
-=item update_status()
+=item request_update()
 
-Write a status message to C<STDOUT>.
+Show an update of the current request to the user.
+
+=cut
+
+sub request_update {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    say q(Update: ) . $args{level} . q(:) . $args{id} . q(; ) . $args{message};
+}
+
+=item request_success()
+
+Indicate to the user that the current request is complete, and was successful.
+
+=cut
+
+sub request_success {
+    my $self = shift;
+    my %args = @_;
+    my $log = Log::Log4perl->get_logger(""); # "" = root logger
+
+    say q(Update: ) . $args{level} . q(:) . $args{id} . q(; ) . $args{message};
+}
+
+=item request_failure()
+
+Indicate to the user that the current request is complete, and the request
+failed.  Also show the reason for the request failure.
 
 =back
 
 =cut
 
-sub update_status{
+sub request_failure {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Update: ) . $args{level} . q(:) . $args{id};
-    say q(Update: ) . $args{message};
+    say q(Update: ) . $args{level} . q(:) . $args{id} . q(; ) . $args{message};
 }
 
 1;

@@ -170,7 +170,12 @@ use App::WADTools::View::GenericCLI;
         config => $cfg,
         view   => $view,
     );
+
+    ### RUN
+    # call the run() method, which transfers control to the DBTool controller
+    # object
     my $return = $controller->run();
+
     # run() will only return if there's an error, or if the script is done
     # running
     if ( $return->can(q(is_error)) ) {

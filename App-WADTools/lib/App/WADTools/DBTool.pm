@@ -49,7 +49,7 @@ has q(view) => (
     # _set_${attribute_name} for attributes that are designed to be written
     # from inside of the class, but read-only from outside.
     is  => q(rwp),
-    #isa => sub{ ref($_[0]) eq q(App::WADTools::Views::DBTool) },
+    isa => sub{ ref($_[0]) =~ /View/ },
 );
 
 =item model
@@ -60,7 +60,7 @@ The model object, which will handle reading and updating various databases.
 
 has q(model) => (
     is => q(rwp),
-    #isa => sub{ ref($_[0]) eq q(App::WADTools::SimpleDBTool) },
+    isa => sub{ ref($_[0]) =~ /Model/i },
 );
 
 =item config
@@ -72,6 +72,7 @@ will perform, and also what files those actions will be performed on.
 
 has q(config) => (
     is => q(ro),
+    isa => sub{ ref($_[0]) =~ /Config/ },
 );
 
 =item filename

@@ -6,6 +6,27 @@ package App::WADTools::View::GenericCLI;
 ### System Modules
 use 5.010;
 use Moo;
+use Term::ANSIColor;
+
+my %_colors = (
+    trace   => q(white on_black),
+    debug   => q(bright_white on_black),
+    info    => q(blue on_black),
+    warn    => q(yellow on_black),
+    error   => q(red on_black),
+    fatal   => q(magenta on_black),
+    success => q(green on_black),
+    failure => q(red on_black),
+);
+
+my %_prefix = (
+    trace => q(T: ),
+    debug => q(D: ),
+    info  => q(I: ),
+    warn  => q(W: ),
+    error => q(E: ),
+    fatal => q(F: ),
+);
 
 =head1 NAME
 
@@ -44,7 +65,8 @@ sub request_update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say $args{level} . q(: ) . $args{message};
+    say colored([$_colors{$args{level}}],
+        $_prefix{$args{level}} . $args{message});
 }
 
 =item request_success()
@@ -58,7 +80,8 @@ sub request_success {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Success! ) . $args{message};
+    say colored([$_colors{success}], $args{message});
+    #say q(Success! ) . $args{message};
 }
 
 =item request_failure()
@@ -75,7 +98,8 @@ sub request_failure {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    say q(Failure! ) . $args{message} . q| (| . $args{id} . q|)|;
+    say colored([$_colors{failure}], $args{message});
+    #say q(Failure! ) . $args{message} . q| (| . $args{id} . q|)|;
 }
 
 1;

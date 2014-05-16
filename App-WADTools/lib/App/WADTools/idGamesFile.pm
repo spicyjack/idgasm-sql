@@ -53,7 +53,7 @@ use App::WADTools::Error;
 use App::WADTools::Logger;
 
 ### Roles consumed
-with qw(App::WADTools::Roles::Keysum);
+#with qw(App::WADTools::Roles::Keysum);
 
 =head2 Attributes
 

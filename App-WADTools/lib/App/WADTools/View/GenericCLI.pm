@@ -54,13 +54,13 @@ This object has no attributes.
 
 =over
 
-=item request_update()
+=item update()
 
 Show an update of the current request to the user.
 
 =cut
 
-sub request_update {
+sub update {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger

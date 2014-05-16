@@ -109,12 +109,12 @@ C<error> key/value pair, which will contain a L<App::WADTools::Error> object,
 and a C<id> key/value pair, which will indicate what event triggered the
 C<request_failure> call.
 
-=item request_update
+=item update
 
 This method is called when this object wants to update the status of a
 database request which is still processing.  The return hash will include the
 C<id> key/value pair, which will indicate what event triggered the
-C<request_update> call, and the C<message> key/value pair, which will be an
+C<update> call, and the C<message> key/value pair, which will be an
 update message of some kind that can be passed along to the user (via a
 C<View> object).
 
@@ -146,7 +146,7 @@ sub BUILD {
     }
     my $callbacks_check = $self->check_callbacks(
         object => $self->callback,
-        check_methods => [qw(request_update request_success request_failure)],
+        check_methods => [qw(update request_success request_failure)],
     );
     if ( ref($callbacks_check) eq q(App::WADTools::Error) ) {
         $log->fatal($callbacks_check->message);

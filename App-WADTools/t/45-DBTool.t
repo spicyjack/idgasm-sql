@@ -15,7 +15,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 use constant {
-    REQUEST_UPDATE  => 0,
+    UPDATE          => 0,
     REQUEST_SUCCESS => 1,
     REQUEST_FAILURE => 2,
 };
@@ -126,7 +126,7 @@ BEGIN {
     is(scalar(@_test_callbacks_list), 0, q(Received all expected callbacks));
 }
 
-sub request_update {
+sub update {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
@@ -134,8 +134,8 @@ sub request_update {
     my $expected_callback = shift(@_test_callbacks_list);
     $log->info(qq(Expecting callback: $expected_callback));
     ok(defined $args{id} && $args{id} eq $expected_callback,
-        qq(Received request_update callback: $expected_callback));
-    $log->debug(q(request_update; arguments: ) . join(q(, ), @_));
+        qq(Received update callback: $expected_callback));
+    $log->debug(q(update; arguments: ) . join(q(, ), @_));
 }
 
 sub request_success {

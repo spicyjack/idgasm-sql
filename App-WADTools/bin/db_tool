@@ -162,9 +162,10 @@ use App::WADTools::View::GenericCLI;
     # transfer script control over to the DBTool object
     my $view = App::WADTools::View::GenericCLI->new();
     # print a nice banner first
-    $log->warn(qq(Starting $my_name, version '$VERSION'));
-    $log->warn(qq($copyright));
-    $log->warn(qq(My PID is $$));
+    $view->update(level => q(info),
+        message => qq(Starting $my_name, version '$VERSION'));
+    $view->update(level => q(info), message => qq($copyright));
+    $view->update(level => q(info), message => qq(My PID is $$));
 
     my $controller = App::WADTools::DBTool->new(
         config => $cfg,

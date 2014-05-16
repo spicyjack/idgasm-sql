@@ -55,7 +55,7 @@ has q(controller) => (
     default => sub { },
     isa     => sub {
         # return a 1 if these callback methods are available, 0 otherwise
-        ( $_[0]->can(q(request_update))
+        ( $_[0]->can(q(update))
         && $_[0]->can(q(request_success))
         && $_[0]->can(q(request_failure)) ) ? 1 : 0;
     },

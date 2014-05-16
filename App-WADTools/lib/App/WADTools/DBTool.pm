@@ -255,19 +255,19 @@ sub run {
         $timer->time_value_difference(name => __PACKAGE__);
 }
 
-=item request_update()
+=item update()
 
 Callback for updating the status of an ongoing request.
 
 =cut
 
-sub request_update {
+sub update {
     my $self = shift;
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
-    $log->debug(q(Received request_update callback from: ) . $args{id});
-    $self->view->request_update(%args);
+    $log->debug(q(Received update callback from: ) . $args{id});
+    $self->view->update(%args);
 }
 
 =item request_success()

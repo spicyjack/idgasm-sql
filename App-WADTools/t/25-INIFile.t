@@ -16,7 +16,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Terse = 1;
 
 use constant {
-    REQUEST_UPDATE  => 0,
+    UPDATE          => 0,
     REQUEST_SUCCESS => 1,
     REQUEST_FAILURE => 2,
 };
@@ -83,15 +83,15 @@ BEGIN {
 # 2014-03-27 - brian
 # - This method isn't used, because INIFile currently doesn't use callbacks,
 # but may in the future, so I'm leaving it here for now
-#sub request_update {
+#sub update {
 #    my $self = shift;
 #    my %args = @_;
 #    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 #
 #    $log->debug(q(db_request_cb arguments: ) . join(q(, ), @_));
-#    $log->info(q(25-INIFile: received 'request_update' call));
+#    $log->info(q(25-INIFile: received 'update' call));
 #    if ( ! $self->expected_callback ) {
-#        $log->info(q(25-INIFile: received 'request_update' call));
+#        $log->info(q(25-INIFile: received 'update' call));
 #        $log->info(q(Expecting callback: ) . $self->expected_callback);
 #        ok(defined $args{id} && $args{id} eq $self->expected_callback,
 #            q(Received callback: ) . $self->expected_callback);

@@ -70,7 +70,7 @@ Callbacks called:
 
 =over
 
-=item request_update
+=item update
 
 Called each time a schema block will be applied to a database.
 
@@ -132,7 +132,7 @@ sub apply_schema {
         # get the hash underneath the $block_name key
         my $block = $schema->{$block_name};
         #$log->debug(q(Dumping schema block: ) . Dumper($block));
-        $self->callback->request_update(
+        $self->callback->update(
             level   => q(info),
             id      => q(database_schema.execute_block),
             message => qq(Executing SQL schema block: $block_name)

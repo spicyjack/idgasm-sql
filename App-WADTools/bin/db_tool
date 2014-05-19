@@ -142,6 +142,14 @@ use App::WADTools::View::GenericCLI;
     $log->logdie(qq(Can't read input file ) . $cfg->get(q(input)) )
         unless ( -r $cfg->get(q(input)) );
 
+    # create a view object
+    my $view = App::WADTools::View::GenericCLI->new();
+    # print a nice banner
+    $view->update(level => q(info),
+        message => qq(Starting $my_name, version '$VERSION'));
+    $view->update(level => q(info), message => qq($copyright));
+    $view->update(level => q(info), message => qq(My PID is $$));
+
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
         if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
@@ -152,20 +160,16 @@ use App::WADTools::View::GenericCLI;
             # delete the database file; it will be recreated when the database
             # handle is instantiated
             if ( $cfg->defined(q(create-db)) ) {
-                $log->info(q(--output file exists, --overwrite requested;));
-                $log->info(q(Unlinking old database file...));
+                $view->update(level => q(info),
+                    message => q(--output file exists, --overwrite requested;));
+                $view->update(level => q(info),
+                    message => q(Unlinking old database file...));
                 unlink( $cfg->get(q(output)) );
             }
         }
     }
 
-    # transfer script control over to the DBTool object
-    my $view = App::WADTools::View::GenericCLI->new();
-    # print a nice banner first
-    $view->update(level => q(info),
-        message => qq(Starting $my_name, version '$VERSION'));
-    $view->update(level => q(info), message => qq($copyright));
-    $view->update(level => q(info), message => qq(My PID is $$));
+
 
     my $controller = App::WADTools::DBTool->new(
         config => $cfg,

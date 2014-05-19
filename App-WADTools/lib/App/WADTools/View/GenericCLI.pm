@@ -56,7 +56,22 @@ This object has no attributes.
 
 =item update()
 
-Show an update of the current request to the user.
+Show an update of the current request to the user.  Accepts the following
+arguments:
+
+=over
+
+=item level (alias: 'lvl')
+
+Optional argument: the log level, one of C<trace>, C<debug>, C<info>, C<warn>,
+C<error>, C<fatal>.  If no log level arugment is used, the log level defaults
+to B<info>.
+
+=item message (alias: 'msg')
+
+Required argument: The message to be output.
+
+=back
 
 =cut
 
@@ -65,6 +80,14 @@ sub update {
     my %args = @_;
     my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
+    my ($level, $message);
+    if ( exists $args{lvl} ) {
+        $level = $args{lvl};
+    } elsif ( exists $args{level} ) {
+        $level = $args{level};
+    } else {
+        $level = q(info);
+    }
     say colored([$_colors{$args{level}}],
         $_prefix{$args{level}} . $args{message});
 }

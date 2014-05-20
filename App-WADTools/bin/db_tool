@@ -160,9 +160,9 @@ use App::WADTools::View::GenericCLI;
             # delete the database file; it will be recreated when the database
             # handle is instantiated
             if ( $cfg->defined(q(create-db)) ) {
-                $view->update(level => q(info),
+                $view->update(level => q(warn),
                     message => q(--output file exists, --overwrite requested;));
-                $view->update(level => q(info),
+                $view->update(level => q(warn),
                     message => q(Unlinking old database file...));
                 unlink( $cfg->get(q(output)) );
             }

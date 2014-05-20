@@ -78,7 +78,6 @@ Required argument: The message to be output.
 sub update {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     my ($level, $message);
     if ( exists $args{lvl} ) {
@@ -101,7 +100,6 @@ Indicate to the user that the current request is complete, and was successful.
 sub request_success {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     say colored([$_colors{success}], $args{message});
     #say q(Success! ) . $args{message};
@@ -119,7 +117,6 @@ failed.  Also show the reason for the request failure.
 sub request_failure {
     my $self = shift;
     my %args = @_;
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
 
     say colored([$_colors{failure}], $args{message});
     #say q(Failure! ) . $args{message} . q| (| . $args{id} . q|)|;

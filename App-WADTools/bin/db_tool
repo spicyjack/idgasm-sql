@@ -143,7 +143,7 @@ use App::WADTools::View::GenericCLI;
         unless ( -r $cfg->get(q(input)) );
 
     # create a view object
-    my $view = App::WADTools::View::GenericCLI->new();
+    my $view = App::WADTools::View::GenericCLI->new(config => $cfg);
     # print a nice banner
     $view->update(level => q(info),
         message => qq(Starting $my_name, version '$VERSION'));

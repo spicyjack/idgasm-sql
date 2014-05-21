@@ -65,8 +65,9 @@ has q(model) => (
 
 =item config
 
-The L<App::WADTools::Config> object, which sets up what actions this object
-will perform, and also what files those actions will be performed on.
+An L<App::WADTools::Config> object.  The L<Config> object is used to determine
+things like input and output files, file formats, output colorization, and
+so on.
 
 =cut
 

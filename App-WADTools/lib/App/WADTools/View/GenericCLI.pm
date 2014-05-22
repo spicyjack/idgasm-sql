@@ -133,9 +133,9 @@ sub update {
     my %args = @_;
 
     my ($level, $message);
-    if ( exists $args{lvl} && exists $_prefix{lvl} ) {
+    if ( exists $args{lvl} && exists $_prefix{$args{lvl}} ) {
         $level = $args{lvl};
-    } elsif ( exists $args{level} && exists $_prefix{level} ) {
+    } elsif ( exists $args{level} && exists $_prefix{$args{level}} ) {
         $level = $args{level};
     } else {
         # set a default level of "info"
@@ -153,9 +153,9 @@ sub update {
     }
 
     if ( $self->colorize ) {
-        say colored([$_colors{$level}], $_prefix{$level} . $args{message});
+        say colored([$_colors{$level}], $_prefix{$level} . $message);
     } else {
-        say $_prefix{$level} . $args{message};
+        say $_prefix{$level} . $message;
     }
 }
 

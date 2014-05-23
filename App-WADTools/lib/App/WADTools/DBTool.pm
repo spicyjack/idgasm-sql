@@ -138,6 +138,7 @@ sub run {
     $timer->start(name => __PACKAGE__);
 
     my $db_schema;
+    my $script_action = $cfg->get(q(action));
     my $ini_file = App::WADTools::INIFile->new(
         filename => $cfg->get(q(input)));
     if ( ref($ini_file) eq q(App::WADTools::Error) ) {
@@ -154,7 +155,7 @@ sub run {
         $log->debug(q(Filename is now: ) . $self->filename);
     }
 
-    if ( $cfg->defined(q(create-db)) ) {
+    if ( $script_action eq q(create-db) ) {
         # FIXME view
         #$log->warn(q(Creating database file ) . $cfg->get(q(output));
         $log->warn(q(Creating database file ) . $self->filename);
@@ -210,9 +211,9 @@ sub run {
             # FIXME view
             return $error;
         }
-    } elsif ( $cfg->defined(q(create-yaml)) ) {
-    } elsif ( $cfg->defined(q(create-ini)) ) {
-    } elsif ( $cfg->defined(q(checksum)) ) {
+    } elsif ( $script_action eq q(create-yaml) ) {
+    } elsif ( $script_action eq q(create-ini) ) {
+    } elsif ( $script_action eq q(checksum) ) {
         # FIXME view
         $log->warn(q(Checksumming database schema INI file...));
         if ( $cfg->get(q(input)) =~ /\.ini$/ ) {
@@ -241,11 +242,12 @@ sub run {
                 . $cfg->get(q(input)));
         }
     } else {
+        # handle unknown --action arguments
         $timer->stop(name => __PACKAGE__);
         my $error = App::WADTools::Error->new(
-            level   => q(fatal),
-            id      => q(dbtool.unknown_option),
-            message => q(Please specify a valid script action),
+            level   => q|fatal|,
+            id      => q|dbtool.unknown_script_action|,
+            message => qq|Invalid/unknown '--action' argument ($script_action)|,
         );
         # FIXME view
         return $error;

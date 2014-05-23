@@ -25,30 +25,32 @@ our $copyright =
  --version          Print script version and copyright, then exit
 
  Script file options:
+ -a|--action        Action to perform (see actions below)
  -i|--input         The input file to read information from
  -o|--output        The output file to write information to
- -s|--checksum      Populate --input file with checksums to --output
  -x|--overwrite     Overwrite file specified as --output
 
- Script output options (what kind of files to create, choose only one):
- --create-db        Create a database file using the given INI file
- --create-ini       Create an INI file using schema info in database
- --create-yaml      Create a YAML file using schema info in database
+ Script '--action' arguments:
+ * checksum         Add checksums to --input file, write to --output
+ * create-db        Create a database file using the given INI file
+ * create-ini       Create an INI file using schema info in database
+ * create-yaml      Create a YAML file using schema info in database
 
  Example usage:
 
  # build a database file using the given INI file
  db_tool --input /path/to/db.ini \
-    --output sample.db --create-db
+    --output sample.db --action=create-db
 
  # update the checksums in an existing INI file
  db_tool --input /path/to/db.ini \
-    --output /path/to/db.ini --checksum --overwrite
+    --output /path/to/db.ini \
+    --action=checksum --overwrite
 
  # create a database, debug mode, with colorization
  db_tool --input /path/to/db.ini \
    --output idgames_file_map.db \
-   --create-db --debug --colorize --overwrite
+   --action=create-db --debug --colorize --overwrite
 
 You can view the full C<POD> documentation of this file by calling
 C<perldoc db_tool>.
@@ -67,10 +69,7 @@ our @options = (
     q(input|i=s),
     q(output|o=s),
     q(overwrite|x),
-    q(checksum|s),
-    q(create-db),
-    q(create-ini),
-    q(create-yaml),
+    q(action|a=s),
 );
 
 =head1 DESCRIPTION
@@ -142,6 +141,13 @@ use App::WADTools::View::GenericCLI;
     $log->logdie(qq(Can't read input file ) . $cfg->get(q(input)) )
         unless ( -r $cfg->get(q(input)) );
 
+    # Check that the user passed in a valid '--action' parameter
+    my $script_action = $cfg->get(q(action));
+    if ( ! defined $script_action ) {
+        $log->fatal(qq(Missing '--action' argument));
+        $log->logdie(qq(Use '--help' to see all possible script actions));
+    }
+
     # create a view object
     my $view = App::WADTools::View::GenericCLI->new(config => $cfg);
     # print a nice banner
@@ -159,7 +165,7 @@ use App::WADTools::View::GenericCLI;
         } else {
             # delete the database file; it will be recreated when the database
             # handle is instantiated
-            if ( $cfg->defined(q(create-db)) ) {
+            if ( $cfg->get(q(action)) eq q(create-db) ) {
                 $view->update(level => q(warn),
                     message => q(--output file exists, --overwrite requested;));
                 $view->update(level => q(warn),
@@ -168,8 +174,6 @@ use App::WADTools::View::GenericCLI;
             }
         }
     }
-
-
 
     my $controller = App::WADTools::DBTool->new(
         config => $cfg,

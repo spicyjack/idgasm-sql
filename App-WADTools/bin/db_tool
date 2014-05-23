@@ -158,19 +158,22 @@ use App::WADTools::View::GenericCLI;
 
     # check that we're not overwriting files if --output was used
     if ( $cfg->defined(q(output)) ) {
-        if ( -e $cfg->get(q(output)) && ! $cfg->defined(q(overwrite)) ) {
-            $log->fatal(qq(Output file exists!));
-            $log->fatal(qq(Use '--overwrite' option to overwrite output file));
-            $log->logdie(q(Output file: ) . $cfg->get(q(output)));
-        } else {
-            # delete the database file; it will be recreated when the database
-            # handle is instantiated
-            if ( $cfg->get(q(action)) eq q(create-db) ) {
-                $view->update(level => q(warn),
-                    message => q(--output file exists, --overwrite requested;));
-                $view->update(level => q(warn),
-                    message => q(Unlinking old database file...));
-                unlink( $cfg->get(q(output)) );
+        if ( -e $cfg->get(q(output)) ) {
+            if ( ! $cfg->defined(q(overwrite)) ) {
+                $log->fatal(qq(Output file exists!));
+                $log->fatal(qq(Use '--overwrite' to overwrite output file));
+                $log->logdie(q(Output file: ) . $cfg->get(q(output)));
+            } else {
+                # delete the database file; it will be recreated when the
+                # database handle is instantiated
+                if ( $cfg->get(q(action)) eq q(create-db) ) {
+                    $view->update(level => q(info),
+                        message => q(--output file exists, )
+                            . q(but --overwrite requested;));
+                    $view->update(level => q(info),
+                        message => q(Unlinking old database file...));
+                    unlink( $cfg->get(q(output)) );
+                }
             }
         }
     }

@@ -409,7 +409,8 @@ C<< <https://github.com/spicyjack/wadtools/issues> >>.
 
 =head1 SUPPORT
 
-You can find documentation for this script with the perldoc command.
+You can view the full documentation for this script with the C<perldoc>
+command.
 
     perldoc idgames_db_dump
 

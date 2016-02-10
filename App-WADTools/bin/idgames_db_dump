@@ -8,11 +8,6 @@
 B<idgames_db_dump> - Build a mapping of filenames to file ID's from the
 files stored in C<idGames Archive>.
 
-=cut
-
-our $copyright =
-    q|Copyright (c)2013-2014 Brian Manning/brian at xaoc dot org|;
-
 =head1 SYNOPSIS
 
  perl idgames_db_dump [OPTIONS]
@@ -45,6 +40,53 @@ You can view the full C<POD> documentation of this file by calling C<perldoc
 idgames_db_dump>.
 
 =cut
+
+=head1 DESCRIPTION
+
+B<idgames_db_dump> - Build a mapping of filenames to file ID's from the
+files stored in C<idGames Archive>.
+
+=cut
+
+################
+# package main #
+################
+package main;
+
+# pragmas
+use 5.010;
+# https://metacpan.org/pod/strictures
+use strictures 1;
+use utf8;
+
+our $copyright =
+    q|Copyright (c)2013-2014 Brian Manning/brian at xaoc dot org|;
+
+# system packages
+use Carp;
+use Config::Std;
+use File::Basename;
+use HTTP::Status;
+use Log::Log4perl qw(get_logger :no_extra_logdie_message);
+use Log::Log4perl::Level;
+use LWP::UserAgent;
+use Pod::Usage;
+
+# Data::Dumper gets it's own block, cause it has extra baggage
+use Data::Dumper;
+$Data::Dumper::Indent = 1;
+$Data::Dumper::Sortkeys = 1;
+$Data::Dumper::Terse = 1;
+
+# local packages
+use App::WADTools; # for $VERSION
+use App::WADTools::Config;
+use App::WADTools::idGamesDB;
+use App::WADTools::Logger;
+use App::WADTools::JSONParser;
+use App::WADTools::XMLParser;
+use App::WADTools::Views::CLI::idGamesDbDump;
+use App::WADTools::Timer;
 
 our $morehelp = <<MOREHELP;
 
@@ -87,50 +129,6 @@ our @options = (
     q(morehelp),
 );
 
-=head1 DESCRIPTION
-
-B<idgames_db_dump> - Build a mapping of filenames to file ID's from the
-files stored in C<idGames Archive>.
-
-=cut
-
-################
-# package main #
-################
-package main;
-
-# pragmas
-use 5.010;
-# https://metacpan.org/pod/strictures
-use strictures 1;
-use utf8;
-
-# system packages
-use Carp;
-use Config::Std;
-use File::Basename;
-use HTTP::Status;
-use Log::Log4perl qw(get_logger :no_extra_logdie_message);
-use Log::Log4perl::Level;
-use LWP::UserAgent;
-use Pod::Usage;
-
-# Data::Dumper gets it's own block, cause it has extra baggage
-use Data::Dumper;
-$Data::Dumper::Indent = 1;
-$Data::Dumper::Sortkeys = 1;
-$Data::Dumper::Terse = 1;
-
-# local packages
-use App::WADTools; # for $VERSION
-use App::WADTools::Config;
-use App::WADTools::idGamesDB;
-use App::WADTools::Logger;
-use App::WADTools::JSONParser;
-use App::WADTools::XMLParser;
-use App::WADTools::Views::CLI::idGamesDbDump;
-use App::WADTools::Timer;
-
 # script constants
 use constant {
     DELAY_TIME          => 5,
@@ -147,7 +145,7 @@ use constant {
 
     # total number of API requests
     my $total_requests = 0;
-    binmode(STDOUT, ":utf8");
+    binmode(STDOUT, ":encoding(UTF-8)");
 
     # create a logger object
     my $cfg = App::WADTools::Config->new(options => \@options);

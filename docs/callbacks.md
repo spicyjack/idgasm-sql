@@ -8,7 +8,8 @@
   the other objects
 - _Controller_ object will then pull data from _Model_ (the model), and call
   `update_view()` on the view
-- View will call ???
+- View will display the data that's passed into it, in whatever format was
+  requested by the user
 
 ## Object Methods/Messages ##
 

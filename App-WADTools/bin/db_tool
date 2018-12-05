@@ -8,44 +8,39 @@
 B<db_tool> - Bootstrap a database that will contain information about
 WAD files stored in C<idGames Archive>.
 
-=cut
-
-our $copyright =
-    q|Copyright (c)2013-2014 Brian Manning|;
-
 =head1 SYNOPSIS
 
  perl db_tool [OPTIONS]
 
  Script options:
- -h|--help          Shows this help text
- -c|--colorize      Always colorize script output
- -d|--debug         Debug script execution
- -v|--verbose       Verbose script execution
- --version          Print script version and copyright, then exit
+ -h|--help        Shows this help text
+ -c|--colorize     Always colorize script output
+ -d|--debug       Debug script execution
+ -v|--verbose      Verbose script execution
+ --version        Print script version and copyright, then exit
 
  Script file options:
- -a|--action        Action to perform (see actions below)
- -i|--input         The input file to read information from
- -o|--output        The output file to write information to
- -x|--overwrite     Overwrite file specified as --output
+ -a|--action      Action to perform (see actions below)
+ -i|--input       The input file to read information from
+ -o|--output      The output file to write information to
+ -x|--overwrite    Overwrite file specified as --output
 
  Script '--action' arguments:
- * checksum         Add checksums to --input file, write to --output
- * create-db        Create a database file using the given INI file
- * create-ini       Create an INI file using schema info in database
- * create-yaml      Create a YAML file using schema info in database
+ * checksum       Add checksums to --input file, write to --output
+ * create-db      Create a database file using the given INI file
+ * create-ini      Create an INI file using schema info in database
+ * create-yaml     Create a YAML file using schema info in database
 
  Example usage:
 
  # build a database file using the given INI file
  db_tool --input /path/to/db.ini \
-    --output sample.db --action=create-db
+   --output sample.db --action=create-db
 
  # update the checksums in an existing INI file
  db_tool --input /path/to/db.ini \
-    --output /path/to/db.ini \
-    --action=checksum --overwrite
+   --output /path/to/db.ini \
+   --action=checksum --overwrite
 
  # create a database, debug mode, with colorization
  db_tool --input /path/to/db.ini \
@@ -54,23 +49,6 @@ our $copyright =
 
 You can view the full C<POD> documentation of this file by calling
 C<perldoc db_tool>.
-
-=cut
-
-our @options = (
-    # script options
-    q(debug|d),
-    q(verbose|v),
-    q(version),
-    q(help|h),
-    q(colorize|c), # always colorize output
-
-    # other options
-    q(input|i=s),
-    q(output|o=s),
-    q(overwrite|x),
-    q(action|a=s),
-);
 
 =head1 DESCRIPTION
 
@@ -111,92 +89,115 @@ use App::WADTools::DBTool;
 use App::WADTools::Logger;
 use App::WADTools::View::GenericCLI;
 
-    # create a variable with the current name of the script
-    my $my_name = basename($0);
-    # provide a version string if dzil hasn't populated modules with $VERSION
-    # scalars
-    my $VERSION = $App::WADTools::VERSION || q(git-dev);
 
-    binmode(STDOUT, ":utf8");
-    # create a logger object
-    my $cfg = App::WADTools::Config->new(options => \@options);
-    # use Getopt::Long::Parser to parse script arguments
-    $cfg->getopts();
+   our $copyright =
+      q|Copyright (c)2013-2014 Brian Manning|;
 
-    # dump and bail if we get called with --help
-    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+   my @options = (
+      # script options
+      q(debug|d),
+      q(verbose|v),
+      q(version),
+      q(help|h),
+      q(colorize|c), # always colorize output
 
-    if ( $cfg->defined(q(version)) ) {
-        print STDERR qq($my_name: version '$VERSION'\n);
-        print STDERR qq($my_name: $copyright\n);
-        exit 0;
-    }
+      # other options
+      q(input|i=s),
+      q(output|o=s),
+      q(overwrite|x),
+      q(action|a=s),
+   );
 
-    # create a logger object, and prime the logfile for this session
-    my $log = App::WADTools::Logger->new(config => $cfg);
 
-    # check input file before doing any processing
-    $log->logdie(qq(Missing '--input' file argument))
-        unless ( $cfg->defined(q(input)) );
-    $log->logdie(qq(Can't read input file ) . $cfg->get(q(input)) )
-        unless ( -r $cfg->get(q(input)) );
 
-    # Check that the user passed in a valid '--action' parameter
-    my $script_action = $cfg->get(q(action));
-    if ( ! defined $script_action ) {
-        $log->fatal(qq(Missing '--action' argument));
-        $log->logdie(qq(Use '--help' to see all possible script actions));
-    }
 
-    # create a view object
-    my $view = App::WADTools::View::GenericCLI->new(config => $cfg);
-    # print a nice banner
-    $view->update(level => q(info),
-        message => qq(Starting $my_name, version '$VERSION'));
-    $view->update(level => q(info), message => qq($copyright));
-    $view->update(level => q(info), message => qq(My PID is $$));
 
-    # check that we're not overwriting files if --output was used
-    if ( $cfg->defined(q(output)) ) {
-        if ( -e $cfg->get(q(output)) ) {
-            if ( ! $cfg->defined(q(overwrite)) ) {
-                $log->fatal(qq(Output file exists!));
-                $log->fatal(qq(Use '--overwrite' to overwrite output file));
-                $log->logdie(q(Output file: ) . $cfg->get(q(output)));
-            } else {
-                # delete the database file; it will be recreated when the
-                # database handle is instantiated
-                if ( $cfg->get(q(action)) eq q(create-db) ) {
-                    $view->update(level => q(info),
-                        message => q(--output file exists, )
-                            . q(but --overwrite requested;));
-                    $view->update(level => q(info),
-                        message => q(Unlinking old database file...));
-                    unlink( $cfg->get(q(output)) );
-                }
+   # create a variable with the current name of the script
+   my $my_name = basename($0);
+   # provide a version string if dzil hasn't populated modules with $VERSION
+   # scalars
+   my $VERSION = $App::WADTools::VERSION || q(git-dev);
+
+   binmode(STDOUT, q(:encoding(UTF-8)));
+   # create a logger object
+   my $cfg = App::WADTools::Config->new(options => \@options);
+   # use Getopt::Long::Parser to parse script arguments
+   $cfg->getopts();
+
+   # dump and bail if we get called with --help
+   if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+
+   if ( $cfg->defined(q(version)) ) {
+      print STDERR qq($my_name: version '$VERSION'\n);
+      print STDERR qq($my_name: $copyright\n);
+      exit 0;
+   }
+
+   # create a logger object, and prime the logfile for this session
+   my $log = App::WADTools::Logger->new(config => $cfg);
+
+   # check input file before doing any processing
+   $log->logdie(qq(Missing '--input' file argument))
+      unless ( $cfg->defined(q(input)) );
+   $log->logdie(qq(Can't read input file ) . $cfg->get(q(input)) )
+      unless ( -r $cfg->get(q(input)) );
+
+   # Check that the user passed in a valid '--action' parameter
+   my $script_action = $cfg->get(q(action));
+   if ( ! defined $script_action ) {
+      $log->fatal(qq(Missing '--action' argument));
+      $log->logdie(qq(Use '--help' to see all possible script actions));
+   }
+
+   # create a view object
+   my $view = App::WADTools::View::GenericCLI->new(config => $cfg);
+   # print a nice banner
+   $view->update(level => q(info),
+      message => qq(Starting $my_name, version '$VERSION'));
+   $view->update(level => q(info), message => qq($copyright));
+   $view->update(level => q(info), message => qq(My PID is $$));
+
+   # check that we're not overwriting files if --output was used
+   if ( $cfg->defined(q(output)) ) {
+      if ( -e $cfg->get(q(output)) ) {
+         if ( ! $cfg->defined(q(overwrite)) ) {
+            $log->fatal(qq(Output file exists!));
+            $log->fatal(qq(Use '--overwrite' to overwrite output file));
+            $log->logdie(q(Output file: ) . $cfg->get(q(output)));
+         } else {
+            # delete the database file; it will be recreated when the
+            # database handle is instantiated
+            if ( $cfg->get(q(action)) eq q(create-db) ) {
+               $view->update(level => q(info),
+                  message => q(--output file exists, )
+                     . q(but --overwrite requested;));
+               $view->update(level => q(info),
+                  message => q(Unlinking old database file...));
+               unlink( $cfg->get(q(output)) );
             }
-        }
-    }
+         }
+      }
+   }
 
-    my $controller = App::WADTools::DBTool->new(
-        config => $cfg,
-        view   => $view,
-    );
+   my $controller = App::WADTools::DBTool->new(
+      config => $cfg,
+      view   => $view,
+   );
 
-    ### RUN
-    # call the run() method, which transfers control to the DBTool controller
-    # object
-    my $return = $controller->run();
+   ### RUN
+   # call the run() method, which transfers control to the DBTool controller
+   # object
+   my $return = $controller->run();
 
-    # run() will only return if there's an error, or if the script is done
-    # running
-    if ( $return->can(q(is_error)) ) {
-        $return->log_error();
-        $log->error(qq(Use "$my_name --help" to see script options));
-        exit 1;
-    } else {
-        exit 0;
-    }
+   # run() will only return if there's an error, or if the script is done
+   # running
+   if ( $return->can(q(is_error)) ) {
+      $return->log_error();
+      $log->error(qq(Use "$my_name --help" to see script options));
+      exit 1;
+   } else {
+      exit 0;
+   }
 
 =head1 AUTHOR
 
@@ -214,7 +215,7 @@ C<< <https://github.com/spicyjack/public/issues> >>.
 You can view the full documentation for this script with the C<perldoc>
 command.
 
-    perldoc db_tool
+   perldoc db_tool
 
 =head1 COPYRIGHT & LICENSE
 

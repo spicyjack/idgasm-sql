@@ -8,31 +8,27 @@
 B<wadindex> - Create an index and/or catalog of WAD files using files stored
 on a local machine
 
-=cut
-
-our $copyright = qq|Copyright (c) 2013-2014 by Brian Manning|;
-
 =head1 SYNOPSIS
 
  perl wadindex [OPTIONS]
 
  Script options:
- --version          Print script version and copyright, then exit
- -h|--help          Shows this help text
- -v|--verbose       Verbose script execution
+ --version        Print script version and copyright, then exit
+ -h|--help        Shows this help text
+ -v|--verbose      Verbose script execution
 
  Path/database options:
- -p|--path          Path to WAD files/directories with WAD files
- --strip-path       Strip this path string out of log output
- -t|--tempdir       Temporary directory to use when unzipping WAD files
- -i|--idgames-db    Database created with 'idg_db_dump' schema
- -x|--index-db      Database created with 'wadindex' schema
+ -p|--path        Path to WAD files/directories with WAD files
+ --strip-path      Strip this path string out of log output
+ -t|--tempdir      Temporary directory to use when unzipping WAD files
+ -i|--idgames-db   Database created with 'idg_db_dump' schema
+ -x|--index-db     Database created with 'wadindex' schema
 
  Debug options:
- -d|--debug         Debug script execution (tons of output)
- -c|--colorize      Always colorize script output
- -l|--logfile       Write verbose/debug output to a file instead of screen
- --debug-noexit     Don't exit script when --debug is used
+ -d|--debug       Debug script execution (tons of output)
+ -c|--colorize     Always colorize script output
+ -l|--logfile      Write verbose/debug output to a file instead of screen
+ --debug-noexit    Don't exit script when --debug is used
  --debug-requests   Exit after this many files when --debug used
 
  Example usage:
@@ -48,34 +44,11 @@ our $copyright = qq|Copyright (c) 2013-2014 by Brian Manning|;
  # Strip a string out of the --path argument;
  # good for traversing a local mirror of idGames Archive
  wadindex --path /real/long/path/to/idgames/archive \
-    --strip-path "/real/long/path/to"
+   --strip-path "/real/long/path/to"
 
 
 You can view the full C<POD> documentation of this file by calling C<perldoc
 wadindex>.
-
-=cut
-
-our @options = (
-    # script options
-    q(verbose|v),
-    q(version),
-    q(help|h),
-    q(colorize|c), # ignore '-t' test and always colorize output
-
-    # path/db options
-    q(path|p=s),
-    q(strip-path|strip|s=s),
-    q(tempdir|t=s),
-    q(idgames-db|idgdb|i=s),
-    q(index-db|idxdb|x=s),
-
-    # debug options
-    q(debug|d),
-    q(debug-noexit),
-    q(debug-requests=i),
-    q(logfile|log|l=s),
-);
 
 =head1 DESCRIPTION
 
@@ -132,432 +105,456 @@ use App::WADTools::Timer;
 use App::WADTools::WADIndexer;
 use App::WADTools::ZipFile;
 
+
 # FIXME: GitHub issue #83, create a MIME magic preflight check
 # WARNING: these will change depending on which 'magic' file you're looking at
 use constant {
-    OCTET_STREAM => q(application/octet-stream;),
-    TEXT_PLAIN   => q(text/plain; charset=),
-    ZIP        => q(application/zip; charset=binary),
+   OCTET_STREAM => q(application/octet-stream;),
+   TEXT_PLAIN   => q(text/plain; charset=),
+   ZIP      => q(application/zip; charset=binary),
 };
 
-    # create a variable with the current name of the script
-    my $my_name = basename($0);
-    # provide a version string if dzil hasn't populated modules with $VERSION
-    # scalars
-    my $VERSION = $App::WADTools::VERSION || q(git-dev);
+   my $copyright = qq|Copyright (c) 2013-2014 by Brian Manning|;
 
-    # allow UTF-8 output
-    binmode(STDOUT, ":utf8");
+   my @options = (
+      # script options
+      q(verbose|v),
+      q(version),
+      q(help|h),
+      q(colorize|c), # ignore '-t' test and always colorize output
 
-    # create a logger object
-    my $cfg = App::WADTools::Config->new(options => \@options);
-    # use Getopt::Long::Parser to parse script arguments
-    $cfg->getopts();
+      # path/db options
+      q(path|p=s),
+      q(strip-path|strip|s=s),
+      q(tempdir|t=s),
+      q(idgames-db|idgdb|i=s),
+      q(index-db|idxdb|x=s),
 
-    # dump and bail if we get called with --help
-    if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
+      # debug options
+      q(debug|d),
+      q(debug-noexit),
+      q(debug-requests=i),
+      q(logfile|log|l=s),
+   );
 
-    if ( $cfg->defined(q(version)) ) {
-        print STDERR qq($my_name: version '$VERSION'\n);
-        print STDERR qq($my_name: $copyright\n);
-        exit 0;
-    }
+   # create a variable with the current name of the script
+   my $my_name = basename($0);
+   # provide a version string if dzil hasn't populated modules with $VERSION
+   # scalars
+   my $VERSION = $App::WADTools::VERSION || q(git-dev);
 
-    if ( ! $cfg->defined(q(tempdir)) ) {
-        # If no temporary directory is defined, set one.
-        # - For Linux, use shared memory for temporary directory
-        # - For other systems, leave 'tempdir' unset, which will cause
-        # File::Temp to use the output of File::Spec->tmpdir
-        if ( -d q(/dev/shm) ) {
-            $cfg->set(q(tempdir), q(/dev/shm));
-        }
-    }
+   # allow UTF-8 output
+   binmode(STDOUT, q(:encode(UTF-8)));
 
-    App::WADTools::Logger->new(config => $cfg);
-    my $log = Log::Log4perl->get_logger(""); # "" = root logger
-    my $timer = App::WADTools::Timer->new();
-    $timer->start(name => $my_name);
+   # create a logger object
+   my $cfg = App::WADTools::Config->new(options => \@options);
+   # use Getopt::Long::Parser to parse script arguments
+   $cfg->getopts();
 
-    $log->logdie(qq(Missing '--path' directory argument))
-        unless ( $cfg->defined(q(path)) );
-    my $wad_path = $cfg->get(q(path));
-    $log->logdie(qq('--path' )
-        . $cfg->get(q(path)) . q( not found/available))
-        unless ( -r $wad_path );
+   # dump and bail if we get called with --help
+   if ( $cfg->defined(q(help)) ) { pod2usage(-exitstatus => 1); }
 
-    # print a nice banner before checking for optional arguments
-    $log->warn(qq(Starting $my_name, version '$VERSION'));
-    $log->warn($copyright);
-    $log->warn(qq(My PID is $$));
-    $log->info(qq(Command line: $0 ) . $cfg->args);
-    $log->warn(qq(Searching for ZIP files in path:));
-    $log->warn(qq(-> $wad_path));
+   if ( $cfg->defined(q(version)) ) {
+      print STDERR qq($my_name: version '$VERSION'\n);
+      print STDERR qq($my_name: $copyright\n);
+      exit 0;
+   }
 
-    # check for the database files if either/both --idgames-db and/or
-    # --index-db were used
-    my ($idg_db, $idx_db);
-    if ( $cfg->defined(q(idgames-db)) ) {
-        $log->logdie(qq(Can't find idgames-db file ) . $cfg->get(q(idgames-db)))
-            unless ( -e $cfg->get(q(idgames-db)) );
-        $idg_db = App::WADTools::idGamesDB->new(
-            filename => $cfg->get(q(idgames-db))
-        );
-        # with updated Database object, when check_schema => 1 is passed, the
-        # return value is the number of rows in the schema table, aka how many
-        # schema blocks that have been applied to the database
-        my $idg_db_connect = $idg_db->connect();
-        if ( $idg_db_connect->can(q(is_error)) ) {
-            # $idg_db_connect is an App::WADTools::Error object
-            $log->error(q(Recieved error connecting to idgames-db;));
-            $idg_db_connect->log_error();
+   if ( ! $cfg->defined(q(tempdir)) ) {
+      # If no temporary directory is defined, set one.
+      # - For Linux, use shared memory for temporary directory
+      # - For other systems, leave 'tempdir' unset, which will cause
+      # File::Temp to use the output of File::Spec->tmpdir
+      if ( -d q(/dev/shm) ) {
+         $cfg->set(q(tempdir), q(/dev/shm));
+      }
+   }
+
+   App::WADTools::Logger->new(config => $cfg);
+   my $log = Log::Log4perl->get_logger(""); # "" = root logger
+   my $timer = App::WADTools::Timer->new();
+   $timer->start(name => $my_name);
+
+   $log->logdie(qq(Missing '--path' directory argument))
+      unless ( $cfg->defined(q(path)) );
+   my $wad_path = $cfg->get(q(path));
+   $log->logdie(qq('--path' )
+      . $cfg->get(q(path)) . q( not found/available))
+      unless ( -r $wad_path );
+
+   # print a nice banner before checking for optional arguments
+   $log->warn(qq(Starting $my_name, version '$VERSION'));
+   $log->warn($copyright);
+   $log->warn(qq(My PID is $$));
+   $log->info(qq(Command line: $0 ) . $cfg->args);
+   $log->warn(qq(Searching for ZIP files in path:));
+   $log->warn(qq(-> $wad_path));
+
+   # check for the database files if either/both --idgames-db and/or
+   # --index-db were used
+   my ($idg_db, $idx_db);
+   if ( $cfg->defined(q(idgames-db)) ) {
+      $log->logdie(qq(Can't find idgames-db file ) . $cfg->get(q(idgames-db)))
+         unless ( -e $cfg->get(q(idgames-db)) );
+      $idg_db = App::WADTools::idGamesDB->new(
+         filename => $cfg->get(q(idgames-db))
+      );
+      # with updated Database object, when check_schema => 1 is passed, the
+      # return value is the number of rows in the schema table, aka how many
+      # schema blocks that have been applied to the database
+      my $idg_db_connect = $idg_db->connect();
+      if ( $idg_db_connect->can(q(is_error)) ) {
+         # $idg_db_connect is an App::WADTools::Error object
+         $log->error(q(Recieved error connecting to idgames-db;));
+         $idg_db_connect->log_error();
+         # undef $idg_db so the script doesn't try to use it
+         undef $idg_db;
+      } else {
+         my $schema_entries = $idg_db->has_schema();
+         if ( $schema_entries == 0 ) {
+            $log->warn(q(Missing database schema in idGames database));
+            $log->warn(q(Please use 'db_tool' to create idGames DB file));
             # undef $idg_db so the script doesn't try to use it
             undef $idg_db;
-        } else {
-            my $schema_entries = $idg_db->has_schema();
-            if ( $schema_entries == 0 ) {
-                $log->warn(q(Missing database schema in idGames database));
-                $log->warn(q(Please use 'db_tool' to create idGames DB file));
-                # undef $idg_db so the script doesn't try to use it
-                undef $idg_db;
-            } else {
-                $log->debug(qq(idgames-db has $idg_db_connect schema entries));
-            }
-        }
-    } else {
-        $log->warn(q(WARNING: Missing optional parameter --idgames-db;));
-        $log->warn(q(Script will continue, but will not be able to retrieve));
-        $log->warn(q(info from idGames Archive for files being indexed));
-    }
+         } else {
+            $log->debug(qq(idgames-db has $idg_db_connect schema entries));
+         }
+      }
+   } else {
+      $log->warn(q(WARNING: Missing optional parameter --idgames-db;));
+      $log->warn(q(Script will continue, but will not be able to retrieve));
+      $log->warn(q(info from idGames Archive for files being indexed));
+   }
 
-    if ( $cfg->defined(q(index-db)) ) {
-        $log->logdie(qq(Can't find index-db file ) . $cfg->get(q(index-db)))
-            unless ( -e $cfg->get(q(index-db)) );
-        $idx_db = App::WADTools::IndexDB->new(
-            filename => $cfg->get(q(index-db))
-        );
-        # use check_schema to check schema; $idx_db_connect will be the number
-        # of schema entries if there are no errors
-        my $idx_db_connect = $idx_db->connect();
-        if ( $idx_db_connect->can(q(is_error)) ) {
-            # $idx_db_connect is an App::WADTools::Error object
-            $log->error(q(Recieved error connecting to idgames-db));
-            $idx_db_connect->log_error();
-            # undef the index database so it doesn't get used later on
-            undef $idx_db;
-        } else {
-            my $schema_entries = $idx_db->has_schema();
-            if ( $schema_entries == 0 ) {
-                $log->warn(q(Missing database schema in Index database));
-                $log->warn(q(Please use 'db_tool' to create Index DB file));
-                # undef $idg_db so the script doesn't try to use it
-                undef $idg_db;
-            } else {
-                $log->debug(qq(index-db has $idx_db_connect schema entries));
-            }
-        }
-    } else {
-        $log->warn(q(WARNING: Missing optional parameter '--index-db'));
-        $log->warn(q(Script will continue, but will not record information));
-        $log->warn(q(about files that are indexed by the script));
-    }
+   if ( $cfg->defined(q(index-db)) ) {
+      $log->logdie(qq(Can't find index-db file ) . $cfg->get(q(index-db)))
+         unless ( -e $cfg->get(q(index-db)) );
+      $idx_db = App::WADTools::IndexDB->new(
+         filename => $cfg->get(q(index-db))
+      );
+      # use check_schema to check schema; $idx_db_connect will be the number
+      # of schema entries if there are no errors
+      my $idx_db_connect = $idx_db->connect();
+      if ( $idx_db_connect->can(q(is_error)) ) {
+         # $idx_db_connect is an App::WADTools::Error object
+         $log->error(q(Recieved error connecting to idgames-db));
+         $idx_db_connect->log_error();
+         # undef the index database so it doesn't get used later on
+         undef $idx_db;
+      } else {
+         my $schema_entries = $idx_db->has_schema();
+         if ( $schema_entries == 0 ) {
+            $log->warn(q(Missing database schema in Index database));
+            $log->warn(q(Please use 'db_tool' to create Index DB file));
+            # undef $idg_db so the script doesn't try to use it
+            undef $idg_db;
+         } else {
+            $log->debug(qq(index-db has $idx_db_connect schema entries));
+         }
+      }
+   } else {
+      $log->warn(q(WARNING: Missing optional parameter '--index-db'));
+      $log->warn(q(Script will continue, but will not record information));
+      $log->warn(q(about files that are indexed by the script));
+   }
 
-    # counters for different different script statistics
-    my $total_script_execution_time = 0;
-    my $total_zip_extract_counter = 0;
-    my $total_zip_extract_time = 0;
-    my $total_wadfile_counter = 0;
-    my $total_wadfile_index_time = 0;
-    my $total_wad_lumps_indexed = 0;
-    my $total_wadfile_checksum_counter = 0;
-    my $total_md5_checksum_counter = 0;
-    my $total_md5_checksum_time = 0;
-    my $total_sha_checksum_counter = 0;
-    my $total_sha_checksum_time = 0;
-    my $total_unzip_error_counter = 0;
-    my $total_file_counter = 0;
+   # counters for different different script statistics
+   my $total_script_execution_time = 0;
+   my $total_zip_extract_counter = 0;
+   my $total_zip_extract_time = 0;
+   my $total_wadfile_counter = 0;
+   my $total_wadfile_index_time = 0;
+   my $total_wad_lumps_indexed = 0;
+   my $total_wadfile_checksum_counter = 0;
+   my $total_md5_checksum_counter = 0;
+   my $total_md5_checksum_time = 0;
+   my $total_sha_checksum_counter = 0;
+   my $total_sha_checksum_time = 0;
+   my $total_unzip_error_counter = 0;
+   my $total_file_counter = 0;
 
-    # create a new Indexer object
-    my $indexer = App::WADTools::WADIndexer->new();
+   # create a new Indexer object
+   my $indexer = App::WADTools::WADIndexer->new();
 
-    # get a list of files underneath $wad_path
-    my @files = File::Find::Rule
-                        ->file
-                        #->name(q(*.wad), q(*.zip))
-                        ->in($wad_path);
+   # get a list of files underneath $wad_path
+   my @files = File::Find::Rule
+                  ->file
+                  #->name(q(*.wad), q(*.zip))
+                  ->in($wad_path);
 
-    # loop over each file in @files
-    FILE_LOOP: foreach my $filepath ( sort(@files) ) {
-        $total_file_counter++;
-        last FILE_LOOP if ( $cfg->defined(q(debug-requests))
-            && $total_file_counter > $cfg->get(q(debug-requests)) );
-        my $filename = basename($filepath);
-        my $dirname = dirname($filepath);
-        my $file_path = $dirname . q(/) . $filename;
-        my $short_path;
+   # loop over each file in @files
+   FILE_LOOP: foreach my $filepath ( sort(@files) ) {
+      $total_file_counter++;
+      last FILE_LOOP if ( $cfg->defined(q(debug-requests))
+         && $total_file_counter > $cfg->get(q(debug-requests)) );
+      my $filename = basename($filepath);
+      my $dirname = dirname($filepath);
+      my $file_path = $dirname . q(/) . $filename;
+      my $short_path;
 
-        # create a "short path", to make the logs look nicer
-        if ( $cfg->defined(q(strip-path)) ) {
-            my $strip_path = $cfg->get(q(strip-path));
-            #$log->debug(qq('strip-path' is $strip_path));
-            $short_path = $dirname;
-            $short_path =~ s/^$strip_path//;
-            $short_path =~ s!^/!!;
-            #$log->debug(qq(Setting short_path to $short_path));
-            $file_path = qq($short_path/$filename);
-        } else {
-            $short_path = $dirname;
-        }
+      # create a "short path", to make the logs look nicer
+      if ( $cfg->defined(q(strip-path)) ) {
+         my $strip_path = $cfg->get(q(strip-path));
+         #$log->debug(qq('strip-path' is $strip_path));
+         $short_path = $dirname;
+         $short_path =~ s/^$strip_path//;
+         $short_path =~ s!^/!!;
+         #$log->debug(qq(Setting short_path to $short_path));
+         $file_path = qq($short_path/$filename);
+      } else {
+         $short_path = $dirname;
+      }
 
-        $log->warn(qq(==== Begin: $file_path ====));
-        my $file;
-        if ( defined $idg_db ) {
-            $file = $idg_db->get_file_by_path(
-                # the trailing slash exists in API requests from idGames API
-                path     => $short_path . q(/),
-                filename => $filename,
+      $log->warn(qq(==== Begin: $file_path ====));
+      my $file;
+      if ( defined $idg_db ) {
+         $file = $idg_db->get_file_by_path(
+            # the trailing slash exists in API requests from idGames API
+            path    => $short_path . q(/),
+            filename => $filename,
+         );
+         if ( defined $file ) {
+            $log->info(qq(idgames-db match: file ID/keysum ')
+               . $file->id . q(/) . $file->keysum);
+         } else {
+            $log->info(qq(No match in db: $short_path/$filename));
+         }
+      }
+      if ( $filename =~ /\.zip$/ ) {
+         # filepath will be verified via an '-f' test in Roles/File
+         my $zipfile = App::WADTools::ZipFile->new(filepath => $filepath);
+         if ( $zipfile->can(q(is_error))  ) {
+            # $zipfile is an App::WADTools::Error object
+            $log->error(qq(Error creating/reading ZipFile object:));
+            $zipfile->log_error();
+            next FILE_LOOP;
+         }
+
+         # valid zipfile? generate checksums
+         # MD5 checksum first
+         my $md5 = $zipfile->gen_md5_checksum;
+         $log->info(qq(Zip MD5 checksum: $md5));
+         $log->info(sprintf(q(MD5 generated in %0.6f seconds),
+            $zipfile->md5_checksum_gen_time));
+         # update MD5 checksum time
+         $total_md5_checksum_time += $zipfile->md5_checksum_gen_time;
+         $total_md5_checksum_counter++;
+         $log->info(q(Last MD5 checksum time: )
+            . sprintf(q(%0.8f),
+            $zipfile->md5_checksum_gen_time));
+
+         $log->info(q(Current total MD5 checksum total time: )
+            . sprintf(q(%0.8f), $total_md5_checksum_time));
+
+         # now the SHA checksum
+         my $sha = $zipfile->gen_sha_checksum;
+         $log->info(qq(Zip SHA checksum: $sha));
+         $log->info(sprintf(q(SHA generated in %0.6f seconds),
+            $zipfile->sha_checksum_gen_time));
+         # update SHA checksum time
+         $total_sha_checksum_time += $zipfile->sha_checksum_gen_time;
+         $total_sha_checksum_counter++;
+
+         $log->info(q(Last SHA checksum time: )
+            . sprintf(q(%0.8f), $zipfile->sha_checksum_gen_time));
+
+         $log->info(q(Current total SHA checksum total time: )
+            . sprintf(q(%0.8f), $total_sha_checksum_time));
+
+         # generate the keysum
+         $zipfile->keysum($zipfile->generate_base36_checksum(
+               data => $filename . q(:) . $zipfile->size
+            ),
+         );
+         $log->info(q(Zipfile keysum: ) . $zipfile->keysum);
+
+         # get a list of files in the zipfile
+         my @members = $zipfile->get_zip_members();
+         # find the WAD files inside the ZIP file
+         my @wads_in_zip = grep(/\.wad$/i, @members);
+         # placeholder for WADFile objects returned from the indexer
+         #my @indexed_wads;
+         if ( scalar(@wads_in_zip) > 0 ) {
+            $log->info(q(Extracting ) . scalar(@wads_in_zip)
+               . qq( WADs from zipfile '$filename'));
+            my $unzip_dir = $zipfile->extract_files(
+               files   => \@wads_in_zip,
+               tempdir => $cfg->get(q(tempdir)),
             );
-            if ( defined $file ) {
-                $log->info(qq(idgames-db match: file ID/keysum ')
-                    . $file->id . q(/) . $file->keysum);
+            if ( $unzip_dir->can(q(is_error)) ) {
+               # $zipfile is an App::WADTools::Error object
+               $log->error(q(Received error unzipping file;));
+               $log->error(sprintf(q(keysum: %8s;), $zipfile->keysum)
+                  . q(; filename: ) . $zipfile->filename);
+               $unzip_dir->log_error();
+               $total_unzip_error_counter++;
+               next FILE_LOOP;
             } else {
-                $log->info(qq(No match in db: $short_path/$filename));
-            }
-        }
-        if ( $filename =~ /\.zip$/ ) {
-            # filepath will be verified via an '-f' test in Roles/File
-            my $zipfile = App::WADTools::ZipFile->new(filepath => $filepath);
-            if ( $zipfile->can(q(is_error))  ) {
-                # $zipfile is an App::WADTools::Error object
-                $log->error(qq(Error creating/reading ZipFile object:));
-                $zipfile->log_error();
-                next FILE_LOOP;
-            }
+               $log->info(sprintf(q|Extracting WAD(s) took %0.6f seconds|,
+                  $zipfile->extract_files_time)
+               );
+               # bump up the zipfile counter
+               $total_zip_extract_counter++;
+               # update total zip time
+               $total_zip_extract_time += $zipfile->extract_files_time;
+               # loop over each WAD in the zipfile, and index it
+               WAD_FILE: foreach my $wad_filename ( @wads_in_zip ) {
+                  # passing in path/wad_filename means the indexer
+                  # doesn't have to separate the path or use basename()
+                  $log->info(qq(---- Indexing $wad_filename ----));
+                  my $wadfile = $indexer->index_wad(
+                     path    => $unzip_dir,
+                     filename => $wad_filename,
+                  );
+                  if ( defined $wadfile && $wadfile->can(q(is_error)) ) {
+                     # $zipfile is an App::WADTools::Error object
+                     $log->error(q(Received error indexing WAD file;));
+                     $log->error(qq(ZIP filename: $filename));
+                     $log->error(qq(WAD filename: $wad_filename));
+                     $wadfile->log_error();
+                     next WAD_FILE;
+                  } elsif ( ! defined $wadfile ) {
+                     # if $wad_filename is a dotfile, $wadfile is
+                     # undef; skip it
+                     next WAD_FILE;
+                  }
 
-            # valid zipfile? generate checksums
-            # MD5 checksum first
-            my $md5 = $zipfile->gen_md5_checksum;
-            $log->info(qq(Zip MD5 checksum: $md5));
-            $log->info(sprintf(q(MD5 generated in %0.6f seconds),
-                $zipfile->md5_checksum_gen_time));
-            # update MD5 checksum time
-            $total_md5_checksum_time += $zipfile->md5_checksum_gen_time;
-            $total_md5_checksum_counter++;
-            $log->info(q(Last MD5 checksum time: )
-                . sprintf(q(%0.8f),
-                $zipfile->md5_checksum_gen_time));
+                  # update the WADfile counter
+                  $total_wadfile_counter++;
 
-            $log->info(q(Current total MD5 checksum total time: )
-                . sprintf(q(%0.8f), $total_md5_checksum_time));
+                  # generate the keysum
+                  $wadfile->generate_keysum();
+                  $log->info(q(WAD keysum/filename: )
+                     . $wadfile->keysum . q(/) . $wad_filename);
 
-            # now the SHA checksum
-            my $sha = $zipfile->gen_sha_checksum;
-            $log->info(qq(Zip SHA checksum: $sha));
-            $log->info(sprintf(q(SHA generated in %0.6f seconds),
-                $zipfile->sha_checksum_gen_time));
-            # update SHA checksum time
-            $total_sha_checksum_time += $zipfile->sha_checksum_gen_time;
-            $total_sha_checksum_counter++;
+                  # display and update the WAD indexing time
+                  $log->info( sprintf(q(WAD indexing took %0.6f seconds),
+                     $indexer->wad_index_time)
+                  );
+                  $total_wadfile_index_time += $indexer->wad_index_time;
 
-            $log->info(q(Last SHA checksum time: )
-                . sprintf(q(%0.8f), $zipfile->sha_checksum_gen_time));
+                  # display and update the number of lumps indexed
+                  $log->info(q(Total Number of lumps indexed: )
+                     . $wadfile->num_of_lumps);
+                  $total_wad_lumps_indexed += $wadfile->num_of_lumps;
 
-            $log->info(q(Current total SHA checksum total time: )
-                . sprintf(q(%0.8f), $total_sha_checksum_time));
+                  # Show what levels were contained inside the WAD (if
+                  # any)
+                  if ( defined $wadfile->levels ) {
+                     $log->info(q(WAD levels: )
+                        . join(q(, ), @{$wadfile->levels}));
+                  }
 
-            # generate the keysum
-            $zipfile->keysum($zipfile->generate_base36_checksum(
-                    data => $filename . q(:) . $zipfile->size
-                ),
-            );
-            $log->info(q(Zipfile keysum: ) . $zipfile->keysum);
+                  # show checksum info
+                  $log->info(q(WAD MD5 checksum: )
+                     . $wadfile->md5_checksum);
+                  $total_md5_checksum_counter++;
+                  $total_md5_checksum_time
+                     += $wadfile->md5_checksum_gen_time;
+                  $log->info(q(Last MD5 checksum time: )
+                     . sprintf(q(%0.8f),
+                     $wadfile->md5_checksum_gen_time));
 
-            # get a list of files in the zipfile
-            my @members = $zipfile->get_zip_members();
-            # find the WAD files inside the ZIP file
-            my @wads_in_zip = grep(/\.wad$/i, @members);
-            # placeholder for WADFile objects returned from the indexer
-            #my @indexed_wads;
-            if ( scalar(@wads_in_zip) > 0 ) {
-                $log->info(q(Extracting ) . scalar(@wads_in_zip)
-                    . qq( WADs from zipfile '$filename'));
-                my $unzip_dir = $zipfile->extract_files(
-                    files   => \@wads_in_zip,
-                    tempdir => $cfg->get(q(tempdir)),
-                );
-                if ( $unzip_dir->can(q(is_error)) ) {
-                    # $zipfile is an App::WADTools::Error object
-                    $log->error(q(Received error unzipping file;));
-                    $log->error(sprintf(q(keysum: %8s;), $zipfile->keysum)
-                        . q(; filename: ) . $zipfile->filename);
-                    $unzip_dir->log_error();
-                    $total_unzip_error_counter++;
-                    next FILE_LOOP;
-                } else {
-                    $log->info(sprintf(q|Extracting WAD(s) took %0.6f seconds|,
-                        $zipfile->extract_files_time)
-                    );
-                    # bump up the zipfile counter
-                    $total_zip_extract_counter++;
-                    # update total zip time
-                    $total_zip_extract_time += $zipfile->extract_files_time;
-                    # loop over each WAD in the zipfile, and index it
-                    WAD_FILE: foreach my $wad_filename ( @wads_in_zip ) {
-                        # passing in path/wad_filename means the indexer
-                        # doesn't have to separate the path or use basename()
-                        $log->info(qq(---- Indexing $wad_filename ----));
-                        my $wadfile = $indexer->index_wad(
-                            path     => $unzip_dir,
-                            filename => $wad_filename,
+                  $log->info(q(Current total MD5 checksum total time: )
+                     . sprintf(q(%0.8f), $total_md5_checksum_time));
+
+                  $log->info(q(WAD SHA checksum: )
+                     . $wadfile->sha_checksum);
+                  $total_sha_checksum_counter++;
+                  $total_sha_checksum_time
+                     += $wadfile->sha_checksum_gen_time;
+                  $log->info(q(Last SHA checksum time: )
+                     . sprintf(q(%0.8f),
+                     $wadfile->sha_checksum_gen_time));
+
+                  $log->info(q(Current total SHA checksum total time: )
+                     . sprintf(q(%0.8f), $total_sha_checksum_time));
+
+                  #push(@indexed_wads, $wadfile);
+                  # add the WADFile object to the database
+
+                  # don't add WADs to the index database unless there
+                  # actually is an index database to add them to
+                  if ( defined $idx_db && defined $wadfile ) {
+                     my $wad_add_status = $idx_db->add_wadfile(
+                        zip_keysum => $zipfile->keysum,
+                        wadfile   => $wadfile
+                     );
+                     if ( $wad_add_status->can(q(is_error)) ) {
+                        # $wad_add_status is an App::WADTools::Error
+                        # object
+                        $log->error(q(Received error adding WAD to DB));
+                        $log->error(qq(keysum: ) . $wadfile->keysum
+                           . q(; INSERT -> 'wads' unsuccessful));
+                        $log->error(qq(ZIP filename: $filename));
+                        $log->error(qq(WAD filename: $wad_filename));
+                        $wad_add_status->log_error();
+                     } else {
+                        $log->info(qq(keysum: ) . $wadfile->keysum
+                           . q(; INSERT -> 'wads' successful));
+                        $log->info(
+                           sprintf(q(INSERT took %0.6f seconds),
+                              $idx_db->add_wadfile_time)
                         );
-                        if ( defined $wadfile && $wadfile->can(q(is_error)) ) {
-                            # $zipfile is an App::WADTools::Error object
-                            $log->error(q(Received error indexing WAD file;));
-                            $log->error(qq(ZIP filename: $filename));
-                            $log->error(qq(WAD filename: $wad_filename));
-                            $wadfile->log_error();
-                            next WAD_FILE;
-                        } elsif ( ! defined $wadfile ) {
-                            # if $wad_filename is a dotfile, $wadfile is
-                            # undef; skip it
-                            next WAD_FILE;
-                        }
+                     }
+                  }
+               }
+            }
+         } else {
+            $log->info(qq(No *.wad files in $file_path));
+            $log->info(q(Zipfile members:));
+            foreach my $member ( @members ) {
+               $log->info(qq(- $member));
+            }
+         }
 
-                        # update the WADfile counter
-                        $total_wadfile_counter++;
-
-                        # generate the keysum
-                        $wadfile->generate_keysum();
-                        $log->info(q(WAD keysum/filename: )
-                            . $wadfile->keysum . q(/) . $wad_filename);
-
-                        # display and update the WAD indexing time
-                        $log->info( sprintf(q(WAD indexing took %0.6f seconds),
-                            $indexer->wad_index_time)
-                        );
-                        $total_wadfile_index_time += $indexer->wad_index_time;
-
-                        # display and update the number of lumps indexed
-                        $log->info(q(Total Number of lumps indexed: )
-                            . $wadfile->num_of_lumps);
-                        $total_wad_lumps_indexed += $wadfile->num_of_lumps;
-
-                        # Show what levels were contained inside the WAD (if
-                        # any)
-                        if ( defined $wadfile->levels ) {
-                            $log->info(q(WAD levels: )
-                                . join(q(, ), @{$wadfile->levels}));
-                        }
-
-                        # show checksum info
-                        $log->info(q(WAD MD5 checksum: )
-                            . $wadfile->md5_checksum);
-                        $total_md5_checksum_counter++;
-                        $total_md5_checksum_time
-                            += $wadfile->md5_checksum_gen_time;
-                        $log->info(q(Last MD5 checksum time: )
-                            . sprintf(q(%0.8f),
-                            $wadfile->md5_checksum_gen_time));
-
-                        $log->info(q(Current total MD5 checksum total time: )
-                            . sprintf(q(%0.8f), $total_md5_checksum_time));
-
-                        $log->info(q(WAD SHA checksum: )
-                            . $wadfile->sha_checksum);
-                        $total_sha_checksum_counter++;
-                        $total_sha_checksum_time
-                            += $wadfile->sha_checksum_gen_time;
-                        $log->info(q(Last SHA checksum time: )
-                            . sprintf(q(%0.8f),
-                            $wadfile->sha_checksum_gen_time));
-
-                        $log->info(q(Current total SHA checksum total time: )
-                            . sprintf(q(%0.8f), $total_sha_checksum_time));
-
-                        #push(@indexed_wads, $wadfile);
-                        # add the WADFile object to the database
-
-                        # don't add WADs to the index database unless there
-                        # actually is an index database to add them to
-                        if ( defined $idx_db && defined $wadfile ) {
-                            my $wad_add_status = $idx_db->add_wadfile(
-                                zip_keysum => $zipfile->keysum,
-                                wadfile    => $wadfile
-                            );
-                            if ( $wad_add_status->can(q(is_error)) ) {
-                                # $wad_add_status is an App::WADTools::Error
-                                # object
-                                $log->error(q(Received error adding WAD to DB));
-                                $log->error(qq(keysum: ) . $wadfile->keysum
-                                    . q(; INSERT -> 'wads' unsuccessful));
-                                $log->error(qq(ZIP filename: $filename));
-                                $log->error(qq(WAD filename: $wad_filename));
-                                $wad_add_status->log_error();
-                            } else {
-                                $log->info(qq(keysum: ) . $wadfile->keysum
-                                    . q(; INSERT -> 'wads' successful));
-                                $log->info(
-                                    sprintf(q(INSERT took %0.6f seconds),
-                                        $idx_db->add_wadfile_time)
-                                );
-                            }
-                        }
-                    }
-                }
+         # add the zipfile to the database
+         if ( defined $idx_db ) {
+            my $zip_add_status = $idx_db->add_zipfile(zipfile => $zipfile);
+            if ( $zip_add_status->can(q(is_error)) ) {
+               # $zip_add_status is an App::WADTools::Error object
+               $log->error(q(Received error adding Zip file to DB;));
+               $log->error(qq(ZIP filename: $filename));
+               $log->error(qq(keysum: ) . $zipfile->keysum
+                  . q(; INSERT -> 'zipfiles' unsuccessful));
+               $zip_add_status->log_error();
             } else {
-                $log->info(qq(No *.wad files in $file_path));
-                $log->info(q(Zipfile members:));
-                foreach my $member ( @members ) {
-                    $log->info(qq(- $member));
-                }
+               $log->info(qq(keysum: ) . $zipfile->keysum
+                  . q(; INSERT -> 'zipfiles' successful));
+               $log->info(sprintf(q(INSERT took %0.6f seconds),
+                     $idx_db->add_zipfile_time)
+               );
             }
-
-            # add the zipfile to the database
-            if ( defined $idx_db ) {
-                my $zip_add_status = $idx_db->add_zipfile(zipfile => $zipfile);
-                if ( $zip_add_status->can(q(is_error)) ) {
-                    # $zip_add_status is an App::WADTools::Error object
-                    $log->error(q(Received error adding Zip file to DB;));
-                    $log->error(qq(ZIP filename: $filename));
-                    $log->error(qq(keysum: ) . $zipfile->keysum
-                        . q(; INSERT -> 'zipfiles' unsuccessful));
-                    $zip_add_status->log_error();
-                } else {
-                    $log->info(qq(keysum: ) . $zipfile->keysum
-                        . q(; INSERT -> 'zipfiles' successful));
-                    $log->info(sprintf(q(INSERT took %0.6f seconds),
-                            $idx_db->add_zipfile_time)
-                    );
-                }
-            }
+         }
 
 
-        } else {
-            $log->info(qq(Not a zip file: $filename));
-        }
-        $log->warn(qq(~~~~ End: $file_path ~~~~));
-    }
+      } else {
+         $log->info(qq(Not a zip file: $filename));
+      }
+      $log->warn(qq(~~~~ End: $file_path ~~~~));
+   }
 
-    $timer->stop(name => $my_name);
-    $total_script_execution_time =
-        $timer->time_value_difference(name => $my_name);
-    $log->warn(q(Total script execution time: )
-        . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
-    $log->warn(q(Total zipfiles touched: ) . $total_zip_extract_counter);
-    $log->warn(q(Total zip errors: ) . $total_unzip_error_counter);
-    $log->warn(q(Total zip extraction time: )
-        . sprintf(q(%0.2f), $total_zip_extract_time) . q( seconds));
-    $log->warn(q(Total WAD files indexed: ) . $total_wadfile_counter);
-    $log->warn(q(Total WAD lumps indexed: ) . $total_wad_lumps_indexed);
-    $log->warn(q(Total WAD index time: )
-        . sprintf(q(%0.2f), $total_wadfile_index_time) . q( seconds));
-    $log->warn(q(Total MD5 checksums computed: )
-        . $total_md5_checksum_counter);
-    $log->warn(q(Total time spent computing MD5 checksums: )
-        . sprintf(q(%0.2f), $total_md5_checksum_time) . q( seconds));
-    $log->warn(q(Total SHA checksums computed: )
-        . $total_sha_checksum_counter);
-    $log->warn(q(Total time spent computing SHA checksums: )
-        . sprintf(q(%0.2f), $total_sha_checksum_time) . q( seconds));
+   $timer->stop(name => $my_name);
+   $total_script_execution_time =
+      $timer->time_value_difference(name => $my_name);
+   $log->warn(q(Total script execution time: )
+      . sprintf(q(%0.2f), $total_script_execution_time) . q( seconds));
+   $log->warn(q(Total zipfiles touched: ) . $total_zip_extract_counter);
+   $log->warn(q(Total zip errors: ) . $total_unzip_error_counter);
+   $log->warn(q(Total zip extraction time: )
+      . sprintf(q(%0.2f), $total_zip_extract_time) . q( seconds));
+   $log->warn(q(Total WAD files indexed: ) . $total_wadfile_counter);
+   $log->warn(q(Total WAD lumps indexed: ) . $total_wad_lumps_indexed);
+   $log->warn(q(Total WAD index time: )
+      . sprintf(q(%0.2f), $total_wadfile_index_time) . q( seconds));
+   $log->warn(q(Total MD5 checksums computed: )
+      . $total_md5_checksum_counter);
+   $log->warn(q(Total time spent computing MD5 checksums: )
+      . sprintf(q(%0.2f), $total_md5_checksum_time) . q( seconds));
+   $log->warn(q(Total SHA checksums computed: )
+      . $total_sha_checksum_counter);
+   $log->warn(q(Total time spent computing SHA checksums: )
+      . sprintf(q(%0.2f), $total_sha_checksum_time) . q( seconds));
 
 =head1 AUTHOR
 
@@ -575,7 +572,7 @@ C<< <https://github.com/spicyjack/wadtools/issues> >>.
 You can view the full documentation for this script with the C<perldoc>
 command.
 
-    perldoc wadindex
+   perldoc wadindex
 
 =head1 COPYRIGHT & LICENSE
 
@@ -587,4 +584,4 @@ under the same terms as Perl itself.
 =cut
 
 # fin!
-# vim: set shiftwidth=4 tabstop=4
+# vim: set shiftwidth=3 tabstop=3

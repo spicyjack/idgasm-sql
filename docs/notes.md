@@ -1,5 +1,11 @@
 ## WADTools Project Notes ##
 
+Perl module dependencies
+- strictures
+- Data::Hexdumper
+- Digest::CRC
+- Math::BaseCalc
+
 ### App Definition ###
 WADTools will be able to:
 - Read WAD file

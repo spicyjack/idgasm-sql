@@ -1,6 +1,6 @@
 ## WADTools Project Notes ##
 
-Perl module dependencies
+Perl module dependencies for `wadindex`
 - strictures
 - Data::Hexdumper
 - Digest::CRC
@@ -48,5 +48,41 @@ Tokenizer
   - Tokenizes whole words, as well as first 1, 2, 3, 4, 5 characters
 - Exports a database of tokenized values to be used in local/offline searches
   from a client app
+
+### SQLite links ###
+Helpful links for SQL-type things:
+- SQLite3 Datatypes: http://sqlite.org/datatype3.html
+  - available datatypes: NULL, INTEGER, REAL, TEXT, BLOB
+- date/time functions: http://sqlite.org/lang_datefunc.html
+- `ON CONFLICT` clause: http://www.sqlite.org/lang_conflict.html
+- `UNIQUE` contstraints:
+  http://www.sqlite.org/lang_createtable.html#uniqueconst
+
+### Where to find files to index/catalog ###
+- WAD Search Object (**wad.so**)
+  - Master index
+  - Keeps track of files found at:
+    - idGames Archive on **Doomworld**
+    - Individual shovelware CDs on **archive.org**
+
+### wad.so Site description ###
+- Allows for searching by filename
+- Returns a list of short URLs to the sites that have a copy of that file
+  - List has file size of the files for comparison
+  - List files that have checksums in the database as being cataloged/indexed
+  - Add a special icon in the listings for Cacoward recipients
+
+Typical workflow for indexing/cataloging
+- Download files/CD ISO
+- Catalog/index files
+- Add catalog/index info to database
+  - idGames Archive info gets it's own database
+  - Create databases for each shovelware CD
+  - Create a "master database", which stores:
+    - `filename`
+    - `checksum`
+    - Title?
+    - `wad.so` short URL
+    - Which database can be queried for more information
 
 vim: filetype=markdown shiftwidth=2 tabstop=2

@@ -535,7 +535,7 @@ sub get_file_by_path  {
         $log->warn(q(Executing query for file failed));
         $log->warn(q(Error message: ) . $sth->errstr);
         my $error = App::WADTools::Error->new(
-            level   => q(fatal)
+            level   => q(fatal),
             id      => q(index-db.get_file_by_path.execute),
             message => $dbh->errstr
         );

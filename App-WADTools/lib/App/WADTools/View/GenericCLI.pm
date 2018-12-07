@@ -5,6 +5,7 @@ package App::WADTools::View::GenericCLI;
 
 ### System Modules
 use 5.010;
+use IO::Interactive qw(is_interactive);
 use Moo;
 use Term::ANSIColor;
 
@@ -102,7 +103,7 @@ sub BUILD {
     my $self = shift;
 
     my $cfg = $self->config;
-    if ( -t STDOUT || $cfg->defined(q(colorize)) ) {
+    if ( is_interactive() || $cfg->defined(q(colorize)) ) {
         # this is how you set attribs when "is => q(rwp)" is used
         $self->_set_colorize(1);
     }

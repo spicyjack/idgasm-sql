@@ -1,10 +1,11 @@
 ## WADTools Project Notes ##
 
 Perl module dependencies for `wadindex`
-- strictures
-- Data::Hexdumper
-- Digest::CRC
-- Math::BaseCalc
+- _strictures_
+- _Data::Hexdumper_
+- _Digest::CRC_
+- _Math::BaseCalc_
+- _IO::Interactive_
 
 ### App Definition ###
 WADTools will be able to:

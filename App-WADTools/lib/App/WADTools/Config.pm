@@ -135,7 +135,7 @@ sub get {
     my %args = %{$self->{_args}};
 
     if ( exists $args{$key} ) { return $args{$key}; }
-    return undef;
+    return;
 }
 
 =item set(key => $value)
@@ -162,7 +162,7 @@ sub set {
         $args{$key}    = $value;
         $self->{_args} = \%args;
     } # if ( exists $args{$key} )
-    return undef;
+    return;
 }
 
 =item get_args( )

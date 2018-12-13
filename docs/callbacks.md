@@ -6,6 +6,10 @@
   - `$controller->run`
 - _Controller_ sets up the other objects, and passes references to itself to
   the other objects
+- Data gets inserted into the _Model_
+- _Model_ informs the _Controller_ that data has been updated
+- _Controller_ informs the _View_ that data has been updated
+- _View_ asks the _Controller_ for updated data
 - _Controller_ object will then pull data from _Model_ (the model), and call
   `update_view()` on the view
 - View will display the data that's passed into it, in whatever format was

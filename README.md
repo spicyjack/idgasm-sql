@@ -31,10 +31,12 @@ specific format.
   used with `idgames_db_dump`
 
 **wadindex**
-- Creates an index and/or a catalog of files in a local copy of the `idGames
-  Archive`.  An index is a mapping of WAD levels to files in the local copy of
-  `idGames Archive`, whereas a catalog is a complete listing of resources used
-  in a `WAD` file, including vertexes, sectors, textures, sprites and audio.
+- Creates an index and/or a catalog of files using a local copy of the
+  `idGames Archive`.
+  - An _index_ is a mapping of WAD levels to files in the local copy of
+    `idGames Archive`
+  - A _catalog_ is a complete listing of resources used in a `WAD` file,
+    including vertexes, sectors, textures, sprites and audio.
 
 **dump_o_matic**
 - Combines the contents of one or more databases into a new database file
